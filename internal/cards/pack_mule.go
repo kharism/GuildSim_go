@@ -1,0 +1,51 @@
+package cards
+
+type PackMule struct {
+	RookieAdventurer
+}
+
+func NewPackMule(state AbstractGamestate) PackMule {
+	base := NewRookieAdventurer(state)
+	this := PackMule{base}
+	return this
+}
+
+func (r *PackMule) GetName() string {
+	return "Pack mule"
+}
+func (r *PackMule) GetDescription() string {
+	return "Add 1 exlporation point, gains additional 1 Exploration point if you play or have played advanced adventurer this turn"
+}
+func (r *PackMule) GetCost() Cost {
+	cost := NewCost()
+	cost.Resource.Detail[RESOURCE_NAME_MONEY] = 50
+	return cost
+}
+
+type AddResourceOnce struct {
+	state        AbstractGamestate
+	resourceName string
+	amount       int
+}
+
+func (a *AddResourceOnce) DoAction() {
+	a.state.AddResource(a.resourceName, a.amount)
+}
+func (r *PackMule) OnPlay() {
+	r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 1)
+	aa := AdvancedAdventurer{}
+	filter := CardFilter{Key: FILTER_NAME, Op: Eq, Value: aa.GetName()}
+	if Contains(r.gamestate.GetPlayedCards(), filter) {
+		r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 1)
+	} else {
+		// add one time event listener
+		addResourceAction := NewAddResourceAction(r.gamestate, RESOURCE_NAME_EXPLORATION, 1)
+		removeEventListenerAction := NewRemoveEventListenerAction(r.gamestate, EVENT_CARD_PLAYED, nil)
+		compositeAction := NewCompositeAction(r.gamestate, addResourceAction, removeEventListenerAction)
+		cardPlayedListener := NewCardPlayedListener(filter, compositeAction)
+		removeEventListenerAction.(*RemoveEventListenerAction).listener = cardPlayedListener
+		// fmt.Println(removeEventListenerAction)
+		// packMuleListener := DecorateOnceListener(CardPlayedListener, EVENT_ATTR_CARD_PLAYED, r.gamestate)
+		r.gamestate.AttachListener(EVENT_CARD_PLAYED, cardPlayedListener)
+	}
+}
