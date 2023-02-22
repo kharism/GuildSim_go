@@ -78,8 +78,10 @@ func (d *DummyGamestate) PlayCard(c cards.Card) {
 	// fmt.Println("Card played", c.GetName())
 	cardPlayedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_PLAYED: c}
 
-	l := d.TopicsListeners[cards.EVENT_CARD_PLAYED]
-	l.Notify(cardPlayedEvent)
+	l, ok := d.TopicsListeners[cards.EVENT_CARD_PLAYED]
+	if ok {
+		l.Notify(cardPlayedEvent)
+	}
 
 	d.CardsPlayed = append(d.CardsPlayed, c)
 }
