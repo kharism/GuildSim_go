@@ -86,3 +86,40 @@ func TestRookieCombatant(t *testing.T) {
 		}
 	}
 }
+
+func TestExpore(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	dungeon1 := cards.NewEasyDungeonArea(gamestate)
+	baseHero1 := cards.BaseHero{}
+	centerDeck := cards.Deck{}
+	centerDeck.Push(&dungeon1)
+	centerDeck.Push(&baseHero1)
+	gamestate.(*DummyGamestate).CardsInCenterDeck = centerDeck
+	gamestate.CenterRowInit()
+	if len(gamestate.GetCenterCard()) != 1 {
+		t.Error("DDDDD")
+		t.FailNow()
+	}
+
+	rookieAdv := cards.NewRookieAdventurer(gamestate)
+	advAdv := cards.NewAdvancedAdventurer(gamestate)
+
+	gamestate.PlayCard(&rookieAdv)
+	gamestate.PlayCard(&advAdv)
+
+	gamestate.Explore(&dungeon1)
+
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_MONEY] != 100 {
+		t.Error("Failed to gain resource")
+		t.FailNow()
+	}
+	centerCard := gamestate.GetCenterCard()
+	if len(centerCard) != 1 {
+		t.Error("Failed to Replace card in center row")
+		t.FailNow()
+	}
+	if centerCard[0].GetName() == "EasyDungeonArea" {
+		t.Error("Failed to Replace card in center row")
+		t.FailNow()
+	}
+}

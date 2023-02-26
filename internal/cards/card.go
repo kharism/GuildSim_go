@@ -2,13 +2,46 @@ package cards
 
 import "math/rand"
 
+type CardType int64
+
+const (
+	Hero CardType = iota
+	Area
+	Monster
+	Event
+)
+
 type Card interface {
 	GetName() string
 	GetDescription() string
 	GetCost() Cost
 
-	// when played on hand, to this
+	// return Hero,Area,Monster,Event etc
+	GetCardType() CardType
+
+	// when played from hand, do this
 	OnPlay()
+
+	// when explored, do this
+	OnExplored()
+
+	// when slain, do this
+	OnSlain()
+
+	// when discarded to cooldown pile, do this
+	OnDiscarded()
+}
+
+func RemoveCard(cards []Card, card Card) []Card {
+	newCards := []Card{}
+
+	for _, v := range cards {
+		if v == card {
+			continue
+		}
+		newCards = append(newCards, v)
+	}
+	return newCards
 }
 
 type Deck struct {

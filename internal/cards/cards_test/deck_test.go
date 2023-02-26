@@ -42,11 +42,13 @@ func (d *DummyEventListener) Notify(data map[string]interface{}) {
 
 // Dummygamestate implements abstractgamestate and publisher
 type DummyGamestate struct {
-	currentResource cards.Resource
-	CardsInDeck     cards.Deck
-	TopicsListeners map[string]*DummyEventListener
-	CardsInHand     []cards.Card
-	CardsPlayed     []cards.Card
+	currentResource   cards.Resource
+	CardsInDeck       cards.Deck
+	CardsInCenterDeck cards.Deck
+	TopicsListeners   map[string]*DummyEventListener
+	CardsInHand       []cards.Card
+	CardsPlayed       []cards.Card
+	CenterCards       []cards.Card
 }
 
 func (d *DummyGamestate) AttachListener(eventName string, l observer.Listener) {
@@ -71,6 +73,7 @@ func NewDummyGamestate() cards.AbstractGamestate {
 	d.currentResource = cards.NewResource()
 	d.CardsPlayed = []cards.Card{}
 	d.TopicsListeners = map[string]*DummyEventListener{}
+	d.CenterCards = []cards.Card{}
 	return &d
 }
 func (d *DummyGamestate) PlayCard(c cards.Card) {
@@ -92,12 +95,49 @@ func (d *DummyGamestate) GetCardInHand() []cards.Card {
 	return d.CardsInHand
 }
 func (d *DummyGamestate) GetCenterCard() []cards.Card {
-	return []cards.Card{}
+	return d.CenterCards
 }
 func (d *DummyGamestate) RecruitCard(c cards.Card) {
 	return
 }
 func (d *DummyGamestate) DiscardCard(c cards.Card) {
+	return
+}
+func (d *DummyGamestate) CenterRowInit() {
+	f := d.ReplaceCenterCard()
+	d.CenterCards = append(d.CenterCards, f)
+}
+func (d *DummyGamestate) Explore(c cards.Card) {
+	// check cost and resource
+	f := c.GetCost()
+	res := d.currentResource
+	if (&f).IsEnough(res) {
+		c.OnExplored()
+		cardExploredEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_EXPLORED: c}
+
+		l, ok := d.TopicsListeners[cards.EVENT_CARD_EXPLORED]
+		if ok {
+			l.Notify(cardExploredEvent)
+		}
+		// remove c from center cards
+		replacementCard := d.ReplaceCenterCard()
+		newCenterCards := []cards.Card{}
+		for _, v := range d.CenterCards {
+			if v == c {
+				newCenterCards = append(newCenterCards, replacementCard)
+			} else {
+				newCenterCards = append(newCenterCards, v)
+			}
+		}
+		d.CenterCards = newCenterCards
+	}
+}
+func (d *DummyGamestate) ReplaceCenterCard() cards.Card {
+	return d.CardsInCenterDeck.Draw()
+}
+func (d *DummyGamestate) Draw() {
+	newCard := d.CardsInDeck.Draw()
+	d.CardsInHand = append(d.CardsInHand, newCard)
 	return
 }
 func (d *DummyGamestate) BanishCard(c cards.Card) {

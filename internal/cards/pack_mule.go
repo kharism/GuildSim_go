@@ -1,12 +1,15 @@
 package cards
 
+import "github/kharism/GuildSim_go/internal/observer"
+
 type PackMule struct {
 	RookieAdventurer
+	eventListener observer.Listener
 }
 
 func NewPackMule(state AbstractGamestate) PackMule {
 	base := NewRookieAdventurer(state)
-	this := PackMule{base}
+	this := PackMule{base, nil}
 	return this
 }
 
@@ -30,6 +33,9 @@ type AddResourceOnce struct {
 
 func (a *AddResourceOnce) DoAction() {
 	a.state.AddResource(a.resourceName, a.amount)
+}
+func (r *PackMule) OnDiscarded() {
+
 }
 func (r *PackMule) OnPlay() {
 	r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 1)

@@ -1,11 +1,12 @@
 package cards
 
 type RookieCombatant struct {
+	BaseHero
 	gamestate AbstractGamestate
 }
 
 func NewRookieCombatant(state AbstractGamestate) RookieCombatant {
-	this := RookieCombatant{}
+	this := RookieCombatant{BaseHero: BaseHero{}}
 	this.gamestate = state
 	return this
 }
