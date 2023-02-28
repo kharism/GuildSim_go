@@ -109,10 +109,13 @@ func TestExpore(t *testing.T) {
 
 	gamestate.Explore(&dungeon1)
 
+	// check rewards
 	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_MONEY] != 100 {
 		t.Error("Failed to gain resource")
 		t.FailNow()
 	}
+
+	// check replacement
 	centerCard := gamestate.GetCenterCard()
 	if len(centerCard) != 1 {
 		t.Error("Failed to Replace card in center row")
@@ -122,4 +125,39 @@ func TestExpore(t *testing.T) {
 		t.Error("Failed to Replace card in center row")
 		t.FailNow()
 	}
+
+	// check current resource
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_EXPLORATION] != 0 {
+		t.Error("Resource is not reduced")
+		t.FailNow()
+	}
+}
+
+func TestDefeat(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	monster := cards.BaseMonster{}
+	goblin := cards.NewGoblinMonster(gamestate)
+
+	combatant := cards.NewRookieCombatant(gamestate)
+	gamestate.PlayCard(&combatant)
+	gamestate.(*DummyGamestate).CardsInCenterDeck.Push(&monster)
+	gamestate.(*DummyGamestate).CenterCards = append(gamestate.(*DummyGamestate).CenterCards, &goblin)
+	gamestate.DefeatCard(&goblin)
+
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_COMBAT] != 0 {
+		t.Error("Resource is not reduced")
+		t.FailNow()
+	}
+
+	// check replacement
+	centerCard := gamestate.GetCenterCard()
+	if len(centerCard) != 1 {
+		t.Error("Failed to Replace card in center row")
+		t.FailNow()
+	}
+	if centerCard[0].GetName() == "GoblinMonster" {
+		t.Error("Failed to Replace card in center row")
+		t.FailNow()
+	}
+
 }

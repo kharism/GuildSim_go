@@ -1,12 +1,13 @@
 package cards
 
 type AdvancedAdventurer struct {
-	RookieAdventurer
+	BaseHero
+	gamestate AbstractGamestate
 }
 
 func NewAdvancedAdventurer(state AbstractGamestate) AdvancedAdventurer {
-	base := NewRookieAdventurer(state)
-	this := AdvancedAdventurer{base}
+	// base := NewRookieAdventurer(state)
+	this := AdvancedAdventurer{gamestate: state}
 	return this
 }
 

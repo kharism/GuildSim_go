@@ -37,4 +37,5 @@ type AbstractGamestate interface {
 	RemoveListener(eventName string, l observer.Listener)
 	GetCurrentResource() Resource
 	AddResource(name string, amount int)
+	PayResource(cost Cost)
 }

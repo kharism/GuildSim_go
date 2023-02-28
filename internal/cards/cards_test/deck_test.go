@@ -51,6 +51,12 @@ type DummyGamestate struct {
 	CenterCards       []cards.Card
 }
 
+func (d *DummyGamestate) PayResource(cost cards.Cost) {
+	for key, val := range cost.Detail {
+		d.currentResource.Detail[key] -= val
+	}
+}
+
 func (d *DummyGamestate) AttachListener(eventName string, l observer.Listener) {
 	if _, ok := d.TopicsListeners[eventName]; !ok {
 		d.TopicsListeners[eventName] = &DummyEventListener{}
@@ -74,6 +80,7 @@ func NewDummyGamestate() cards.AbstractGamestate {
 	d.CardsPlayed = []cards.Card{}
 	d.TopicsListeners = map[string]*DummyEventListener{}
 	d.CenterCards = []cards.Card{}
+	d.CardsInHand = []cards.Card{}
 	return &d
 }
 func (d *DummyGamestate) PlayCard(c cards.Card) {
@@ -107,11 +114,25 @@ func (d *DummyGamestate) CenterRowInit() {
 	f := d.ReplaceCenterCard()
 	d.CenterCards = append(d.CenterCards, f)
 }
+func (d *DummyGamestate) updateCenterCard(c cards.Card) {
+	replacementCard := d.ReplaceCenterCard()
+	newCenterCards := []cards.Card{}
+	for _, v := range d.CenterCards {
+		if v == c {
+			newCenterCards = append(newCenterCards, replacementCard)
+		} else {
+			newCenterCards = append(newCenterCards, v)
+		}
+	}
+	d.CenterCards = newCenterCards
+}
 func (d *DummyGamestate) Explore(c cards.Card) {
 	// check cost and resource
 	f := c.GetCost()
 	res := d.currentResource
 	if (&f).IsEnough(res) {
+		// payResource
+		d.PayResource(f)
 		c.OnExplored()
 		cardExploredEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_EXPLORED: c}
 
@@ -120,16 +141,7 @@ func (d *DummyGamestate) Explore(c cards.Card) {
 			l.Notify(cardExploredEvent)
 		}
 		// remove c from center cards
-		replacementCard := d.ReplaceCenterCard()
-		newCenterCards := []cards.Card{}
-		for _, v := range d.CenterCards {
-			if v == c {
-				newCenterCards = append(newCenterCards, replacementCard)
-			} else {
-				newCenterCards = append(newCenterCards, v)
-			}
-		}
-		d.CenterCards = newCenterCards
+		d.updateCenterCard(c)
 	}
 }
 func (d *DummyGamestate) ReplaceCenterCard() cards.Card {
@@ -144,6 +156,22 @@ func (d *DummyGamestate) BanishCard(c cards.Card) {
 	return
 }
 func (d *DummyGamestate) DefeatCard(c cards.Card) {
+	f := c.GetCost()
+	res := d.currentResource
+	if (&f).IsEnough(res) {
+		d.PayResource(f)
+		c.OnSlain()
+
+		cardDefeatedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_DEFEATED: c}
+
+		l, ok := d.TopicsListeners[cards.EVENT_CARD_DEFEATED]
+		if ok {
+			l.Notify(cardDefeatedEvent)
+		}
+		// remove c from center cards
+		d.updateCenterCard(c)
+
+	}
 	return
 }
 func (d *DummyGamestate) GetCurrentResource() cards.Resource {
