@@ -2,6 +2,8 @@ package cards
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 )
 
 var RESOURCE_NOT_FOUND_ERROR = errors.New("Resource not found")
@@ -55,6 +57,15 @@ func NewCost() Cost {
 	cost.Resource = &res
 	cost.Detail = map[string]int{}
 	return cost
+}
+
+func (c Cost) String() string {
+	output := []string{}
+
+	for key, val := range c.Detail {
+		output = append(output, fmt.Sprintf("%s:%d, ", key, val))
+	}
+	return strings.Join(output, "|")
 }
 
 // compare the cost to resource

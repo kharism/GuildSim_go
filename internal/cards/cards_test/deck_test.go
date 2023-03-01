@@ -1,9 +1,13 @@
 package cards_test
 
 import (
+	"bufio"
+	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
 	"github/kharism/GuildSim_go/internal/observer"
 	"math/rand"
+	"os"
+	"strconv"
 	"testing"
 )
 
@@ -40,6 +44,26 @@ func (d *DummyEventListener) Notify(data map[string]interface{}) {
 	}
 }
 
+// show a basic card picker using stdin/stdout
+type TextCardPicker struct{}
+
+func (t *TextCardPicker) PickCard(list []cards.Card, message string) int {
+	fmt.Println(message)
+	for i, card := range list {
+		fmt.Printf("[%d] %s [%s]\n", i, card.GetName(), card.GetCost())
+	}
+	reader := bufio.NewReader(os.Stdin)
+	text, _ := reader.ReadString('\n')
+	for {
+		picks, err := strconv.Atoi(text)
+		if err != nil {
+			continue
+		}
+		return picks
+	}
+
+}
+
 // Dummygamestate implements abstractgamestate and publisher
 type DummyGamestate struct {
 	currentResource   cards.Resource
@@ -49,6 +73,9 @@ type DummyGamestate struct {
 	CardsInHand       []cards.Card
 	CardsPlayed       []cards.Card
 	CenterCards       []cards.Card
+	HitPoint          int
+	//ui stuff
+	cardPiker cards.AbstractCardPicker
 }
 
 func (d *DummyGamestate) PayResource(cost cards.Cost) {
@@ -81,7 +108,57 @@ func NewDummyGamestate() cards.AbstractGamestate {
 	d.TopicsListeners = map[string]*DummyEventListener{}
 	d.CenterCards = []cards.Card{}
 	d.CardsInHand = []cards.Card{}
+	d.cardPiker = &TextCardPicker{}
+	d.HitPoint = 60
 	return &d
+}
+func (d *DummyGamestate) GetCurrentHP() int {
+	return d.HitPoint
+}
+func (d *DummyGamestate) TakeDamage(dmg int) {
+	d.HitPoint -= dmg
+	l, ok := d.TopicsListeners[cards.EVENT_TAKE_DAMAGE]
+	takeDamageEvent := map[string]interface{}{cards.EVENT_TAKE_DAMAGE: dmg}
+	if ok {
+		l.Notify(takeDamageEvent)
+	}
+}
+func (d *DummyGamestate) GetCardPicker() cards.AbstractCardPicker {
+	return d.cardPiker
+}
+func (d *DummyGamestate) EndTurn() {
+	// reset resource except money and reputation
+	curRes := d.GetCurrentResource().Detail
+	for k, _ := range curRes {
+		if k == cards.RESOURCE_NAME_MONEY || k == cards.RESOURCE_NAME_REPUTATION {
+			continue
+		}
+		d.GetCurrentResource().Detail[k] = 0
+	}
+
+	// remove cards played
+	for _, c := range d.CardsPlayed {
+		c.OnDiscarded()
+		if pun, ok := c.(cards.Punisher); ok {
+			pun.OnPunish()
+		}
+	}
+	d.CardsPlayed = []cards.Card{}
+
+	// remove cards in hand
+	for _, c := range d.CardsInHand {
+		c.OnDiscarded()
+		if pun, ok := c.(cards.Punisher); ok {
+			pun.OnPunish()
+		}
+	}
+	d.CardsInHand = []cards.Card{}
+	for _, c := range d.CenterCards {
+		c.OnDiscarded()
+		if pun, ok := c.(cards.Punisher); ok {
+			pun.OnPunish()
+		}
+	}
 }
 func (d *DummyGamestate) PlayCard(c cards.Card) {
 	c.OnPlay()

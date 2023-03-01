@@ -7,12 +7,15 @@ var EVENT_CARD_PLAYED = "CardPlayed"
 var EVENT_CARD_EXPLORED = "CardExplored"
 var EVENT_CARD_DEFEATED = "CardDefeated"
 var EVENT_CARD_BANISHED = "CardBanished"
+var EVENT_TAKE_DAMAGE = "TakeDamage"
 
 // this is the key of map[string]interface
 var EVENT_ATTR_CARD_PLAYED = "CardPlayed"
 var EVENT_ATTR_CARD_EXPLORED = "CardExplored"
 var EVENT_ATTR_CARD_DEFEATED = "CardDefeated"
 var EVENT_ATTR_CARD_BANISHED = "CardBanished"
+
+var EVENT_ATTR_DAMAGE_AMMT = "DamageAmount"
 
 type AbstractGamestate interface {
 	GetPlayedCards() []Card
@@ -25,6 +28,14 @@ type AbstractGamestate interface {
 	PlayCard(c Card)
 	Explore(c Card)
 
+	// end turn, remove event listener attached by played cards, remove resources except money+reputation,
+	// take punishment etc
+	EndTurn()
+
+	// damage
+	GetCurrentHP() int
+	TakeDamage(int)
+
 	// return a card drawn from central deck
 	ReplaceCenterCard() Card
 	// init center row
@@ -32,6 +43,9 @@ type AbstractGamestate interface {
 
 	// its pot of greed but halved
 	Draw()
+
+	// get abstract card picker
+	GetCardPicker() AbstractCardPicker
 
 	AttachListener(eventName string, l observer.Listener)
 	RemoveListener(eventName string, l observer.Listener)

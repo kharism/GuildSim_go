@@ -29,3 +29,8 @@ func (m *BaseMonster) OnSlain() {}
 
 // when discarded to cooldown pile, do this
 func (m *BaseMonster) OnDiscarded() {}
+
+// all monster that do punishing move on end phase should implement this
+type Punisher interface {
+	OnPunish()
+}

@@ -9,6 +9,7 @@ const (
 	Area
 	Monster
 	Event
+	Curse
 )
 
 type Card interface {

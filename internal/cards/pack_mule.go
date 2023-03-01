@@ -28,6 +28,7 @@ func (r *PackMule) GetCost() Cost {
 type AddResourceOnce struct {
 	state        AbstractGamestate
 	resourceName string
+	cardEvent    observer.Listener
 	amount       int
 }
 
@@ -35,7 +36,7 @@ func (a *AddResourceOnce) DoAction() {
 	a.state.AddResource(a.resourceName, a.amount)
 }
 func (r *PackMule) OnDiscarded() {
-
+	r.gamestate.RemoveListener(EVENT_CARD_PLAYED, r.eventListener)
 }
 func (r *PackMule) OnPlay() {
 	r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 1)
@@ -45,13 +46,17 @@ func (r *PackMule) OnPlay() {
 		r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 1)
 	} else {
 		// add one time event listener
-		addResourceAction := NewAddResourceAction(r.gamestate, RESOURCE_NAME_EXPLORATION, 1)
-		removeEventListenerAction := NewRemoveEventListenerAction(r.gamestate, EVENT_CARD_PLAYED, nil)
-		compositeAction := NewCompositeAction(r.gamestate, addResourceAction, removeEventListenerAction)
-		cardPlayedListener := NewCardPlayedListener(filter, compositeAction)
-		removeEventListenerAction.(*RemoveEventListenerAction).listener = cardPlayedListener
+		if r.eventListener == nil {
+			addResourceAction := NewAddResourceAction(r.gamestate, RESOURCE_NAME_EXPLORATION, 1)
+			removeEventListenerAction := NewRemoveEventListenerAction(r.gamestate, EVENT_CARD_PLAYED, nil)
+			compositeAction := NewCompositeAction(r.gamestate, addResourceAction, removeEventListenerAction)
+			cardPlayedListener := NewCardPlayedListener(filter, compositeAction)
+			removeEventListenerAction.(*RemoveEventListenerAction).listener = cardPlayedListener
+			r.eventListener = cardPlayedListener
+		}
+
 		// fmt.Println(removeEventListenerAction)
 		// packMuleListener := DecorateOnceListener(CardPlayedListener, EVENT_ATTR_CARD_PLAYED, r.gamestate)
-		r.gamestate.AttachListener(EVENT_CARD_PLAYED, cardPlayedListener)
+		r.gamestate.AttachListener(EVENT_CARD_PLAYED, r.eventListener)
 	}
 }

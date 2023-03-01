@@ -50,9 +50,16 @@ func TestPackMuleEventListener(t *testing.T) {
 	}
 	evtListerner := gamestate.(*DummyGamestate).TopicsListeners[cards.EVENT_CARD_PLAYED]
 	if len(evtListerner.Listeners) != 1 {
+		t.Log("Event listener not attached")
+		t.FailNow()
+	}
+	gamestate.EndTurn()
+	evtListerner = gamestate.(*DummyGamestate).TopicsListeners[cards.EVENT_CARD_PLAYED]
+	if len(evtListerner.Listeners) != 0 {
 		t.Log("Event listener not detached")
 		t.FailNow()
 	}
+	gamestate.PlayCard(&packMule)
 	gamestate.PlayCard(&advancedAdventurer)
 	if _, ok := gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_EXPLORATION]; ok {
 		hh := gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_EXPLORATION]
@@ -157,6 +164,24 @@ func TestDefeat(t *testing.T) {
 	}
 	if centerCard[0].GetName() == "GoblinMonster" {
 		t.Error("Failed to Replace card in center row")
+		t.FailNow()
+	}
+
+}
+
+func TestPunish(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	monster := cards.BaseMonster{}
+	goblinWolfRaider := cards.NewGoblinWolfRaiderMonster(gamestate)
+	hpStart := gamestate.GetCurrentHP()
+	gamestate.(*DummyGamestate).CardsInCenterDeck.Push(&monster)
+	gamestate.(*DummyGamestate).CenterCards = append(gamestate.(*DummyGamestate).CenterCards, &goblinWolfRaider)
+
+	gamestate.EndTurn()
+	hpAfterPunish := gamestate.GetCurrentHP()
+	t.Log(hpAfterPunish)
+	if hpAfterPunish != hpStart-2 {
+		t.Log("Failed to inflict punish")
 		t.FailNow()
 	}
 
