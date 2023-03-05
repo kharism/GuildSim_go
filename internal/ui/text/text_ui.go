@@ -1,11 +1,12 @@
-package cards_test
+package text
 
 import (
+	"bufio"
 	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
 	"github/kharism/GuildSim_go/internal/observer"
-	"math/rand"
-	"testing"
+	"os"
+	"strconv"
 )
 
 type DummyEventListener struct {
@@ -41,55 +42,31 @@ func (d *DummyEventListener) Notify(data map[string]interface{}) {
 	}
 }
 
-// show a basic card picker using stdin/stdout
-type TestCardPicker struct {
-	ChooseMethod func() int
+type TextCardPicker struct {
+	// ChooseMethod func() int
 }
 
-func (t *TestCardPicker) PickCard(list []cards.Card, message string) int {
+func (t *TextCardPicker) PickCard(list []cards.Card, message string) int {
 	fmt.Println(message)
 	for i, card := range list {
 		fmt.Printf("[%d] %s [%s]\n", i, card.GetName(), card.GetCost())
 	}
 	// reader := bufio.NewReader(os.Stdin)
-	// scanner := bufio.NewScanner(os.Stdin)
+	scanner := bufio.NewScanner(os.Stdin)
 
-	// //text, _ := reader.ReadString('\n')
-	// for scanner.Scan() {
-	// 	picks, err := strconv.Atoi(scanner.Text())
-	// 	if err != nil {
-	// 		continue
-	// 	}
-	// 	return picks
-	// }
-	// return -1
-	return t.ChooseMethod()
-}
-
-func NewRandomCardPickerChooser(list []cards.Card) func() int {
-	return func() int {
-		rand.Seed(10)
-		return rand.Int() % len(list)
+	// text, _ := reader.ReadString('\n')
+	for scanner.Scan() {
+		picks, err := strconv.Atoi(scanner.Text())
+		if err != nil {
+			continue
+		}
+		return picks
 	}
-}
-func StaticCardPicker(index int) func() int {
-	return func() int {
-		return index
-	}
-}
-func TestTextCardPicker(t *testing.T) {
-	cardPicker := TestCardPicker{}
-	cardPicker.ChooseMethod = StaticCardPicker(0)
-	gamestate := NewDummyGamestate()
-	rookieAdv := cards.NewRookieAdventurer(gamestate)
-	packMule := cards.NewPackMule(gamestate)
-	cards := []cards.Card{&rookieAdv, &packMule}
-	cardsPicked := cardPicker.PickCard(cards, "Pick cards")
-	t.Log(cardsPicked)
+	return -1
+	// return t.ChooseMethod()
 }
 
-// Dummygamestate implements abstractgamestate and publisher
-type DummyGamestate struct {
+type TextUIGamestate struct {
 	currentResource   cards.Resource
 	CardsInDeck       cards.Deck
 	CardsInCenterDeck cards.Deck
@@ -102,13 +79,25 @@ type DummyGamestate struct {
 	cardPiker cards.AbstractCardPicker
 }
 
-func (d *DummyGamestate) PayResource(cost cards.Cost) {
+func NewTextUIGamestate() cards.AbstractGamestate {
+	d := TextUIGamestate{}
+	d.currentResource = cards.NewResource()
+	d.CardsPlayed = []cards.Card{}
+	d.TopicsListeners = map[string]*DummyEventListener{}
+	d.CenterCards = []cards.Card{}
+	d.CardsInHand = []cards.Card{}
+	d.cardPiker = &TextCardPicker{}
+	d.HitPoint = 60
+	return &d
+}
+
+func (d *TextUIGamestate) PayResource(cost cards.Cost) {
 	for key, val := range cost.Detail {
 		d.currentResource.Detail[key] -= val
 	}
 }
 
-func (d *DummyGamestate) AttachListener(eventName string, l observer.Listener) {
+func (d *TextUIGamestate) AttachListener(eventName string, l observer.Listener) {
 	if _, ok := d.TopicsListeners[eventName]; !ok {
 		d.TopicsListeners[eventName] = &DummyEventListener{}
 	}
@@ -116,7 +105,7 @@ func (d *DummyGamestate) AttachListener(eventName string, l observer.Listener) {
 	k.Attach(l)
 	// fmt.Println("Attach Listener", len(d.TopicsListeners[eventName].Listeners))
 }
-func (d *DummyGamestate) RemoveListener(eventName string, l observer.Listener) {
+func (d *TextUIGamestate) RemoveListener(eventName string, l observer.Listener) {
 	if _, ok := d.TopicsListeners[eventName]; !ok {
 		return
 	}
@@ -125,21 +114,10 @@ func (d *DummyGamestate) RemoveListener(eventName string, l observer.Listener) {
 	k.Detach(l)
 }
 
-func NewDummyGamestate() cards.AbstractGamestate {
-	d := DummyGamestate{}
-	d.currentResource = cards.NewResource()
-	d.CardsPlayed = []cards.Card{}
-	d.TopicsListeners = map[string]*DummyEventListener{}
-	d.CenterCards = []cards.Card{}
-	d.CardsInHand = []cards.Card{}
-	d.cardPiker = &TestCardPicker{}
-	d.HitPoint = 60
-	return &d
-}
-func (d *DummyGamestate) GetCurrentHP() int {
+func (d *TextUIGamestate) GetCurrentHP() int {
 	return d.HitPoint
 }
-func (d *DummyGamestate) TakeDamage(dmg int) {
+func (d *TextUIGamestate) TakeDamage(dmg int) {
 	d.HitPoint -= dmg
 	l, ok := d.TopicsListeners[cards.EVENT_TAKE_DAMAGE]
 	takeDamageEvent := map[string]interface{}{cards.EVENT_TAKE_DAMAGE: dmg}
@@ -147,10 +125,10 @@ func (d *DummyGamestate) TakeDamage(dmg int) {
 		l.Notify(takeDamageEvent)
 	}
 }
-func (d *DummyGamestate) GetCardPicker() cards.AbstractCardPicker {
+func (d *TextUIGamestate) GetCardPicker() cards.AbstractCardPicker {
 	return d.cardPiker
 }
-func (d *DummyGamestate) EndTurn() {
+func (d *TextUIGamestate) EndTurn() {
 	// reset resource except money and reputation
 	curRes := d.GetCurrentResource().Detail
 	for k, _ := range curRes {
@@ -184,7 +162,7 @@ func (d *DummyGamestate) EndTurn() {
 		}
 	}
 }
-func (d *DummyGamestate) PlayCard(c cards.Card) {
+func (d *TextUIGamestate) PlayCard(c cards.Card) {
 	c.OnPlay()
 	// fmt.Println("Card played", c.GetName())
 	cardPlayedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_PLAYED: c}
@@ -196,26 +174,26 @@ func (d *DummyGamestate) PlayCard(c cards.Card) {
 
 	d.CardsPlayed = append(d.CardsPlayed, c)
 }
-func (d *DummyGamestate) GetPlayedCards() []cards.Card {
+func (d *TextUIGamestate) GetPlayedCards() []cards.Card {
 	return d.CardsPlayed
 }
-func (d *DummyGamestate) GetCardInHand() []cards.Card {
+func (d *TextUIGamestate) GetCardInHand() []cards.Card {
 	return d.CardsInHand
 }
-func (d *DummyGamestate) GetCenterCard() []cards.Card {
+func (d *TextUIGamestate) GetCenterCard() []cards.Card {
 	return d.CenterCards
 }
-func (d *DummyGamestate) RecruitCard(c cards.Card) {
+func (d *TextUIGamestate) RecruitCard(c cards.Card) {
 	return
 }
-func (d *DummyGamestate) DiscardCard(c cards.Card) {
+func (d *TextUIGamestate) DiscardCard(c cards.Card) {
 	return
 }
-func (d *DummyGamestate) CenterRowInit() {
+func (d *TextUIGamestate) CenterRowInit() {
 	f := d.ReplaceCenterCard()
 	d.CenterCards = append(d.CenterCards, f)
 }
-func (d *DummyGamestate) updateCenterCard(c cards.Card) {
+func (d *TextUIGamestate) updateCenterCard(c cards.Card) {
 	replacementCard := d.ReplaceCenterCard()
 	newCenterCards := []cards.Card{}
 	for _, v := range d.CenterCards {
@@ -227,7 +205,7 @@ func (d *DummyGamestate) updateCenterCard(c cards.Card) {
 	}
 	d.CenterCards = newCenterCards
 }
-func (d *DummyGamestate) Explore(c cards.Card) {
+func (d *TextUIGamestate) Explore(c cards.Card) {
 	// check cost and resource
 	f := c.GetCost()
 	res := d.currentResource
@@ -245,18 +223,18 @@ func (d *DummyGamestate) Explore(c cards.Card) {
 		d.updateCenterCard(c)
 	}
 }
-func (d *DummyGamestate) ReplaceCenterCard() cards.Card {
+func (d *TextUIGamestate) ReplaceCenterCard() cards.Card {
 	return d.CardsInCenterDeck.Draw()
 }
-func (d *DummyGamestate) Draw() {
+func (d *TextUIGamestate) Draw() {
 	newCard := d.CardsInDeck.Draw()
 	d.CardsInHand = append(d.CardsInHand, newCard)
 	return
 }
-func (d *DummyGamestate) BanishCard(c cards.Card) {
+func (d *TextUIGamestate) BanishCard(c cards.Card) {
 	return
 }
-func (d *DummyGamestate) DefeatCard(c cards.Card) {
+func (d *TextUIGamestate) DefeatCard(c cards.Card) {
 	f := c.GetCost()
 	res := d.currentResource
 	if (&f).IsEnough(res) {
@@ -275,32 +253,9 @@ func (d *DummyGamestate) DefeatCard(c cards.Card) {
 	}
 	return
 }
-func (d *DummyGamestate) GetCurrentResource() cards.Resource {
+func (d *TextUIGamestate) GetCurrentResource() cards.Resource {
 	return d.currentResource
 }
-func (d *DummyGamestate) AddResource(name string, amount int) {
+func (d *TextUIGamestate) AddResource(name string, amount int) {
 	d.currentResource.AddResource(name, amount)
-}
-
-func TestDeck(t *testing.T) {
-	deck := cards.Deck{}
-	gamestate := DummyGamestate{}
-	rookieCombatant := cards.NewRookieCombatant(&gamestate)
-	rookieAdventurer := cards.NewRookieCombatant(&gamestate)
-	// deck = append(deck, &rookieAdventurer, &rookieCombatant, &rookieCombatant, &rookieCombatant)
-	deck.Push(&rookieAdventurer)
-	deck.Push(&rookieCombatant)
-	deck.Push(&rookieCombatant)
-	deck.Push(&rookieCombatant)
-	if deck.Size() != 4 {
-		t.Error("Seharusnya 4")
-	}
-	rand.Seed(10)
-
-	top := deck.Draw()
-	if deck.Size() != 3 {
-		t.Error("Seharusnya 3")
-		t.FailNow()
-	}
-	t.Log(top.GetName())
 }
