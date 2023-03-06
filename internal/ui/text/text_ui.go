@@ -7,6 +7,7 @@ import (
 	"github/kharism/GuildSim_go/internal/observer"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type DummyEventListener struct {
@@ -89,6 +90,13 @@ func NewTextUIGamestate() cards.AbstractGamestate {
 	d.cardPiker = &TextCardPicker{}
 	d.HitPoint = 60
 	return &d
+}
+
+func (d *TextUIGamestate) AddCardToCenterDeck(c ...cards.Card) {
+	for _, cc := range c {
+		d.CardsInCenterDeck.Stack(cc)
+	}
+	d.CardsInCenterDeck.Shuffle()
 }
 
 func (d *TextUIGamestate) PayResource(cost cards.Cost) {
@@ -258,4 +266,69 @@ func (d *TextUIGamestate) GetCurrentResource() cards.Resource {
 }
 func (d *TextUIGamestate) AddResource(name string, amount int) {
 	d.currentResource.AddResource(name, amount)
+}
+func InverseCenterCardsKey(s string) int {
+	i := "qwert"
+	for idx, v := range i {
+		if strings.ToLower(string(v)) == strings.ToLower(s) {
+			return idx
+		}
+	}
+	return -1
+}
+func SwitchCenterCardsKey(idx int) string {
+	switch idx {
+	case 0:
+		return "q"
+	case 1:
+		return "w"
+	case 2:
+		return "e"
+	case 3:
+		return "r"
+	case 4:
+		return "t"
+	}
+	return ""
+}
+func (d *TextUIGamestate) Render() {
+	fmt.Println("Resource")
+	for key, val := range d.currentResource.Detail {
+		fmt.Print("%s:%d  ", key, val)
+	}
+	fmt.Println("Cards In center Row:")
+	for idx, card := range d.CenterCards {
+		fmt.Printf("[%s] %s [%s]:%s\n", SwitchCenterCardsKey(idx), card.GetName(), card.GetCost(), card.GetDescription())
+	}
+	fmt.Println("Cards in hand:")
+	for idx, card := range d.CenterCards {
+		fmt.Printf("[%d] %s [%s]:%s\n", idx, card.GetName(), card.GetCost(), card.GetDescription())
+	}
+}
+func (d *TextUIGamestate) Run() {
+	scanner := bufio.NewScanner(os.Stdin)
+	d.Render()
+	// text, _ := reader.ReadString('\n')
+	for scanner.Scan() {
+		input := scanner.Text()
+		ll, err := strconv.Atoi(input)
+		if err != nil {
+			// NaN meaning we acquire cards
+			cardIdx := InverseCenterCardsKey(input)
+			choosenCard := d.CenterCards[cardIdx]
+			switch choosenCard.GetCardType() {
+			case cards.Monster:
+				d.DefeatCard(choosenCard)
+			case cards.Area:
+				d.Explore(choosenCard)
+			case cards.Hero:
+				d.RecruitCard(choosenCard)
+			}
+		} else {
+			// we play a card
+			choosenCard := d.CenterCards[ll]
+			d.PlayCard(choosenCard)
+		}
+		d.Render()
+	}
 }

@@ -47,6 +47,9 @@ type AbstractGamestate interface {
 	// get abstract card picker
 	GetCardPicker() AbstractCardPicker
 
+	// make center deck thicker
+	AddCardToCenterDeck(c ...Card)
+
 	AttachListener(eventName string, l observer.Listener)
 	RemoveListener(eventName string, l observer.Listener)
 	GetCurrentResource() Resource

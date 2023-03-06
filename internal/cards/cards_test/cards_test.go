@@ -36,7 +36,28 @@ func TestRookieAdventurer(t *testing.T) {
 		t.FailNow()
 	}
 }
+func TestNurse(t *testing.T) {
+	gamestate := NewDummyGamestate()
 
+	rookieNurse := cards.NewRookieNurse(gamestate)
+
+	dgs := gamestate.(*DummyGamestate)
+	rokieCombatant := cards.NewRookieCombatant(gamestate)
+	dgs.CardsDiscarded.Push(&rokieCombatant)
+	dgs.PlayCard(&rookieNurse)
+	if len(dgs.CardsInHand) != 1 {
+		t.Log("failed to draw")
+		t.FailNow()
+	}
+	if dgs.CardsInDeck.Size() != 0 {
+		t.Log("failed to shuffle back 1")
+		t.FailNow()
+	}
+	if dgs.CardsDiscarded.Size() != 0 {
+		t.Log("failed to shuffle back 2")
+		t.FailNow()
+	}
+}
 func TestPackMuleEventListener(t *testing.T) {
 	gamestate := NewDummyGamestate()
 	advancedAdventurer := cards.NewAdvancedAdventurer(gamestate)

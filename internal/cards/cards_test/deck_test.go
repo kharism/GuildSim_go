@@ -97,6 +97,7 @@ type DummyGamestate struct {
 	CardsInHand       []cards.Card
 	CardsPlayed       []cards.Card
 	CenterCards       []cards.Card
+	CardsDiscarded    cards.Deck
 	HitPoint          int
 	//ui stuff
 	cardPiker cards.AbstractCardPicker
@@ -133,6 +134,9 @@ func NewDummyGamestate() cards.AbstractGamestate {
 	d.CenterCards = []cards.Card{}
 	d.CardsInHand = []cards.Card{}
 	d.cardPiker = &TestCardPicker{}
+	d.CardsInDeck = cards.Deck{}
+	d.CardsDiscarded = cards.Deck{}
+
 	d.HitPoint = 60
 	return &d
 }
@@ -162,6 +166,7 @@ func (d *DummyGamestate) EndTurn() {
 
 	// remove cards played
 	for _, c := range d.CardsPlayed {
+		d.CardsDiscarded.Push(c)
 		c.OnDiscarded()
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
@@ -171,6 +176,7 @@ func (d *DummyGamestate) EndTurn() {
 
 	// remove cards in hand
 	for _, c := range d.CardsInHand {
+		d.CardsDiscarded.Push(c)
 		c.OnDiscarded()
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
@@ -178,11 +184,19 @@ func (d *DummyGamestate) EndTurn() {
 	}
 	d.CardsInHand = []cards.Card{}
 	for _, c := range d.CenterCards {
+		d.CardsDiscarded.Push(c)
 		c.OnDiscarded()
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
 		}
 	}
+
+}
+func (d *DummyGamestate) AddCardToCenterDeck(c ...cards.Card) {
+	for _, cc := range c {
+		d.CardsInCenterDeck.Stack(cc)
+	}
+	d.CardsInCenterDeck.Shuffle()
 }
 func (d *DummyGamestate) PlayCard(c cards.Card) {
 	c.OnPlay()
@@ -249,6 +263,12 @@ func (d *DummyGamestate) ReplaceCenterCard() cards.Card {
 	return d.CardsInCenterDeck.Draw()
 }
 func (d *DummyGamestate) Draw() {
+	if d.CardsInDeck.Size() == 0 {
+		// shuffle discard pile
+		d.CardsDiscarded.Shuffle()
+		d.CardsInDeck = d.CardsDiscarded
+		d.CardsDiscarded = cards.Deck{}
+	}
 	newCard := d.CardsInDeck.Draw()
 	d.CardsInHand = append(d.CardsInHand, newCard)
 	return
