@@ -24,6 +24,8 @@ func (m *BaseMonster) OnPlay() {}
 // when explored, do this
 func (m *BaseMonster) OnExplored() {}
 
+func (m *BaseMonster) OnAddedToHand() {}
+
 // when slain, do this
 func (m *BaseMonster) OnSlain() {}
 

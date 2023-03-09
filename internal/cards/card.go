@@ -31,6 +31,9 @@ type Card interface {
 
 	// when discarded to cooldown pile, do this
 	OnDiscarded()
+
+	// when added to hand do this
+	OnAddedToHand()
 }
 
 func RemoveCard(cards []Card, card Card) []Card {

@@ -23,6 +23,8 @@ func (a *BaseArea) OnPlay() {}
 // when explored, do this
 func (a *BaseArea) OnExplored() {}
 
+func (a *BaseArea) OnAddedToHand() {}
+
 // when slain, do this
 func (a *BaseArea) OnSlain() {}
 

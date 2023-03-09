@@ -18,6 +18,8 @@ func (h *BaseHero) GetCardType() CardType {
 	return Hero
 }
 
+func (h *BaseHero) OnAddedToHand() {}
+
 // when played from hand, do this
 func (h *BaseHero) OnPlay() {}
 
@@ -29,3 +31,13 @@ func (h *BaseHero) OnSlain() {}
 
 // when discarded to cooldown pile, do this
 func (h *BaseHero) OnDiscarded() {}
+
+func (h *BaseHero) OnRecruit() {
+
+}
+
+// all Hero or recruitable monster/things must implement this interface
+// although it does nothing on recuit
+type Recruitable interface {
+	OnRecruit()
+}
