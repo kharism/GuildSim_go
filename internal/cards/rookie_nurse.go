@@ -14,10 +14,10 @@ func (r *RookieNurse) Dispose() {
 	r.gamestate.DiscardCard(r)
 }
 func (r *RookieNurse) GetName() string {
-	return "RookieCombatant"
+	return "RookieNurse"
 }
 func (r *RookieNurse) GetDescription() string {
-	return "Draw 1 card"
+	return "Heal 2 Hp"
 }
 func (r *RookieNurse) GetCost() Cost {
 	cost := NewCost()
@@ -25,5 +25,6 @@ func (r *RookieNurse) GetCost() Cost {
 	return cost
 }
 func (r *RookieNurse) OnPlay() {
-	r.gamestate.Draw()
+	// r.gamestate.Draw()
+	r.gamestate.TakeDamage(-1)
 }
