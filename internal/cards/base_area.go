@@ -16,6 +16,9 @@ func (a *BaseArea) GetCost() Cost {
 func (a *BaseArea) GetCardType() CardType {
 	return Area
 }
+func (a *BaseArea) Dispose() {
+
+}
 
 // when played from hand, do this
 func (a *BaseArea) OnPlay() {}

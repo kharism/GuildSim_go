@@ -205,5 +205,52 @@ func TestPunish(t *testing.T) {
 		t.Log("Failed to inflict punish")
 		t.FailNow()
 	}
+}
 
+func TestEndTurn(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	monster := cards.BaseMonster{}
+	goblinWolfRaider := cards.NewGoblinWolfRaiderMonster(gamestate)
+	hpStart := gamestate.GetCurrentHP()
+	dummyGamestate := gamestate.(*DummyGamestate)
+	dummyGamestate.CardsInCenterDeck.Push(&monster)
+	dummyGamestate.CenterCards = append(gamestate.(*DummyGamestate).CenterCards, &goblinWolfRaider)
+
+	adventurer1 := cards.NewRookieAdventurer(gamestate)
+	adventurer2 := cards.NewRookieAdventurer(gamestate)
+
+	baseHero1 := cards.BaseHero{}
+	baseHero2 := cards.BaseHero{}
+	onDrawCurse := cards.NewDamageDrawCurse(gamestate)
+
+	dummyGamestate.CardsInHand = []cards.Card{&adventurer1, &adventurer2}
+	dummyGamestate.CardsInDeck = cards.Deck{}
+
+	dummyGamestate.CardsInDeck.Push(&onDrawCurse)
+	dummyGamestate.CardsInDeck.Push(&baseHero1)
+	dummyGamestate.CardsInDeck.Push(&baseHero2)
+	gamestate.EndTurn()
+	if dummyGamestate.CardsDiscarded.Size() != 2 {
+		t.Log("It should be 2")
+		t.FailNow()
+	}
+	// draw 3 cards
+	for i := 0; i < 3; i++ {
+		gamestate.Draw()
+	}
+
+	if len(dummyGamestate.CardsInHand) != 2 {
+		t.Log("cards in hand should be 2")
+		t.FailNow()
+	}
+	if len(dummyGamestate.CardsBanished) != 1 {
+		t.Log("It should be 1 , but it is", len(dummyGamestate.CardsBanished), " instead")
+		t.FailNow()
+	}
+	hpNow := gamestate.GetCurrentHP()
+	// 4 dmg from wolfraider+damage draw curse
+	if hpStart-hpNow != 4 {
+		t.Log("Failed to inflict 4 dmg ", hpStart-hpNow)
+		t.FailNow()
+	}
 }

@@ -25,3 +25,6 @@ func (r *AdvancedAdventurer) GetCost() Cost {
 func (r *AdvancedAdventurer) OnPlay() {
 	r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 2)
 }
+func (r *AdvancedAdventurer) Dispose() {
+	r.gamestate.DiscardCard(r)
+}

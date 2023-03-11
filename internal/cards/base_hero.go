@@ -36,6 +36,10 @@ func (h *BaseHero) OnRecruit() {
 
 }
 
+func (h *BaseHero) Dispose() {
+
+}
+
 // all Hero or recruitable monster/things must implement this interface
 // although it does nothing on recuit
 type Recruitable interface {

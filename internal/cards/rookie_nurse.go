@@ -10,6 +10,9 @@ func NewRookieNurse(state AbstractGamestate) RookieNurse {
 	n.gamestate = state
 	return n
 }
+func (r *RookieNurse) Dispose() {
+	r.gamestate.DiscardCard(r)
+}
 func (r *RookieNurse) GetName() string {
 	return "RookieCombatant"
 }

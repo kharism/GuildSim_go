@@ -29,6 +29,8 @@ func (m *BaseMonster) OnAddedToHand() {}
 // when slain, do this
 func (m *BaseMonster) OnSlain() {}
 
+func (m *BaseMonster) Dispose() {}
+
 // when discarded to cooldown pile, do this
 func (m *BaseMonster) OnDiscarded() {}
 

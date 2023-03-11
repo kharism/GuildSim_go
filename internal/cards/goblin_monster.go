@@ -13,6 +13,9 @@ func NewGoblinMonster(state AbstractGamestate) GoblinMonster {
 func (ed *GoblinMonster) GetName() string {
 	return "GoblinMonster"
 }
+func (ed *GoblinMonster) Dispose() {
+	ed.state.BanishCard(ed)
+}
 func (ed *GoblinMonster) GetDescription() string {
 	return "Reward: 1 Reputation"
 }

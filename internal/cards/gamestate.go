@@ -25,6 +25,10 @@ type AbstractGamestate interface {
 	DiscardCard(c Card)
 	BanishCard(c Card)
 	DefeatCard(c Card)
+	// just play card from no particular location and added it to list of played card
+	// It will assume the card is played from hand and try to remove cards from hand if possible
+	// the card will not automatically go to discard/cooldown pile
+	// otherwise remove the card accordingly
 	PlayCard(c Card)
 	Explore(c Card)
 
@@ -35,6 +39,12 @@ type AbstractGamestate interface {
 	// damage
 	GetCurrentHP() int
 	TakeDamage(int)
+
+	// remove cards
+	RemoveCardFromHand(c Card)
+	RemoveCardFromHandIdx(i int)
+	RemoveCardFromCenterRow(c Card)
+	RemoveCardFromCenterRowIdx(i int)
 
 	// return a card drawn from central deck
 	ReplaceCenterCard() Card

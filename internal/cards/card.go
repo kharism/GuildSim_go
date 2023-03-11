@@ -34,6 +34,9 @@ type Card interface {
 
 	// when added to hand do this
 	OnAddedToHand()
+
+	// get rid of this card, you either send this to discard pile or banished pile
+	Dispose()
 }
 
 func RemoveCard(cards []Card, card Card) []Card {

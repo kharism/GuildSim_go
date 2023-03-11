@@ -143,6 +143,18 @@ func (d *TextUIGamestate) GetCurrentResource() cards.Resource {
 func (d *TextUIGamestate) AddResource(name string, amount int) {
 	d.gamestate.AddResource(name, amount)
 }
+func (d *TextUIGamestate) RemoveCardFromHand(c cards.Card) {
+	d.gamestate.RemoveCardFromHand(c)
+}
+func (d *TextUIGamestate) RemoveCardFromHandIdx(i int) {
+	d.gamestate.RemoveCardFromHandIdx(i)
+}
+func (d *TextUIGamestate) RemoveCardFromCenterRow(c cards.Card) {
+	d.gamestate.RemoveCardFromCenterRow(c)
+}
+func (d *TextUIGamestate) RemoveCardFromCenterRowIdx(i int) {
+	d.gamestate.RemoveCardFromCenterRowIdx(i)
+}
 func InverseCenterCardsKey(s string) int {
 	i := "qwert"
 	for idx, v := range i {

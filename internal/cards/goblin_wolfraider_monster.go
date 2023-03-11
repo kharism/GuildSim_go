@@ -23,3 +23,6 @@ func (m *GoblinWolfRaiderMonster) GetCost() Cost {
 func (m *GoblinWolfRaiderMonster) OnPunish() {
 	m.state.TakeDamage(2)
 }
+func (m *GoblinWolfRaiderMonster) Dispose() {
+	m.state.DiscardCard(m)
+}

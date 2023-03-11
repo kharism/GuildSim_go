@@ -47,6 +47,8 @@ type DefaultGamestate struct {
 	CardsPlayed       []cards.Card
 	CenterCards       []cards.Card
 	HitPoint          int
+	CardsDiscarded    cards.Deck
+	CardsBanished     []cards.Card
 	//ui stuff
 	cardPiker cards.AbstractCardPicker
 }
@@ -76,7 +78,30 @@ func (d *DefaultGamestate) PayResource(cost cards.Cost) {
 		d.currentResource.Detail[key] -= val
 	}
 }
-
+func (d *DefaultGamestate) RemoveCardFromHand(c cards.Card) {
+	for idx, c2 := range d.CardsInHand {
+		if c2 == c {
+			d.RemoveCardFromHandIdx(idx)
+			return
+		}
+	}
+}
+func (d *DefaultGamestate) RemoveCardFromHandIdx(i int) {
+	j := append(d.CardsInHand[:i], d.CardsInHand[i+1:]...)
+	d.CardsInHand = j
+}
+func (d *DefaultGamestate) RemoveCardFromCenterRow(c cards.Card) {
+	for idx, c2 := range d.CardsInHand {
+		if c2 == c {
+			d.RemoveCardFromCenterRowIdx(idx)
+			return
+		}
+	}
+}
+func (d *DefaultGamestate) RemoveCardFromCenterRowIdx(i int) {
+	j := append(d.CenterCards[:i], d.CenterCards[i+1:]...)
+	d.CenterCards = j
+}
 func (d *DefaultGamestate) AttachListener(eventName string, l observer.Listener) {
 	if _, ok := d.TopicsListeners[eventName]; !ok {
 		d.TopicsListeners[eventName] = &DummyEventListener{}
@@ -112,7 +137,7 @@ func (d *DefaultGamestate) GetCardPicker() cards.AbstractCardPicker {
 func (d *DefaultGamestate) EndTurn() {
 	// reset resource except money and reputation
 	curRes := d.GetCurrentResource().Detail
-	for k, _ := range curRes {
+	for k := range curRes {
 		if k == cards.RESOURCE_NAME_MONEY || k == cards.RESOURCE_NAME_REPUTATION {
 			continue
 		}
@@ -209,11 +234,23 @@ func (d *DefaultGamestate) ReplaceCenterCard() cards.Card {
 	return d.CardsInCenterDeck.Draw()
 }
 func (d *DefaultGamestate) Draw() {
+	if d.CardsInDeck.Size() == 0 {
+		// shuffle discard pile
+		d.CardsDiscarded.Shuffle()
+		d.CardsInDeck = d.CardsDiscarded
+		d.CardsDiscarded = cards.Deck{}
+	}
 	newCard := d.CardsInDeck.Draw()
 	d.CardsInHand = append(d.CardsInHand, newCard)
+	newCard.OnAddedToHand()
 	return
 }
 func (d *DefaultGamestate) BanishCard(c cards.Card) {
+	d.CardsBanished = append(d.CardsBanished, c)
+	if _, ok := d.TopicsListeners[cards.EVENT_CARD_BANISHED]; ok {
+		notification := map[string]interface{}{cards.EVENT_ATTR_CARD_BANISHED: c}
+		d.TopicsListeners[cards.EVENT_CARD_BANISHED].Notify(notification)
+	}
 	return
 }
 func (d *DefaultGamestate) DefeatCard(c cards.Card) {

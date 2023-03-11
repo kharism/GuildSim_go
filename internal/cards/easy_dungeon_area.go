@@ -31,5 +31,9 @@ func (ed *EasyDungeonArea) OnExplored() {
 // when slain, do this
 func (ed *EasyDungeonArea) OnSlain() {}
 
+func (ed *EasyDungeonArea) Dispose() {
+	ed.state.BanishCard(ed)
+}
+
 // when discarded to cooldown pile, do this
 func (ed *EasyDungeonArea) OnDiscarded() {}

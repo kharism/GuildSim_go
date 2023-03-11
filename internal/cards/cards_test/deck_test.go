@@ -97,6 +97,7 @@ type DummyGamestate struct {
 	CardsInHand       []cards.Card
 	CardsPlayed       []cards.Card
 	CenterCards       []cards.Card
+	CardsBanished     []cards.Card
 	CardsDiscarded    cards.Deck
 	HitPoint          int
 	//ui stuff
@@ -136,6 +137,7 @@ func NewDummyGamestate() cards.AbstractGamestate {
 	d.cardPiker = &TestCardPicker{}
 	d.CardsInDeck = cards.Deck{}
 	d.CardsDiscarded = cards.Deck{}
+	d.CardsBanished = []cards.Card{}
 
 	d.HitPoint = 60
 	return &d
@@ -157,7 +159,7 @@ func (d *DummyGamestate) GetCardPicker() cards.AbstractCardPicker {
 func (d *DummyGamestate) EndTurn() {
 	// reset resource except money and reputation
 	curRes := d.GetCurrentResource().Detail
-	for k, _ := range curRes {
+	for k := range curRes {
 		if k == cards.RESOURCE_NAME_MONEY || k == cards.RESOURCE_NAME_REPUTATION {
 			continue
 		}
@@ -167,7 +169,7 @@ func (d *DummyGamestate) EndTurn() {
 	// remove cards played
 	for _, c := range d.CardsPlayed {
 		d.CardsDiscarded.Push(c)
-		c.OnDiscarded()
+		c.Dispose()
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
 		}
@@ -177,15 +179,13 @@ func (d *DummyGamestate) EndTurn() {
 	// remove cards in hand
 	for _, c := range d.CardsInHand {
 		d.CardsDiscarded.Push(c)
-		c.OnDiscarded()
+		c.Dispose()
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
 		}
 	}
 	d.CardsInHand = []cards.Card{}
 	for _, c := range d.CenterCards {
-		d.CardsDiscarded.Push(c)
-		c.OnDiscarded()
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
 		}
@@ -198,6 +198,11 @@ func (d *DummyGamestate) AddCardToCenterDeck(c ...cards.Card) {
 	}
 	d.CardsInCenterDeck.Shuffle()
 }
+
+// just play card from no particular location and added it to list of played card
+// It will assume the card is played from hand and try to remove cards from hand if possible
+// the card will not automatically go to discard/cooldown pile
+// otherwise remove the card accordingly
 func (d *DummyGamestate) PlayCard(c cards.Card) {
 	c.OnPlay()
 	// fmt.Println("Card played", c.GetName())
@@ -228,6 +233,30 @@ func (d *DummyGamestate) DiscardCard(c cards.Card) {
 func (d *DummyGamestate) CenterRowInit() {
 	f := d.ReplaceCenterCard()
 	d.CenterCards = append(d.CenterCards, f)
+}
+func (d *DummyGamestate) RemoveCardFromHand(c cards.Card) {
+	for idx, c2 := range d.CardsInHand {
+		if c2 == c {
+			d.RemoveCardFromHandIdx(idx)
+			return
+		}
+	}
+}
+func (d *DummyGamestate) RemoveCardFromHandIdx(i int) {
+	j := append(d.CardsInHand[:i], d.CardsInHand[i+1:]...)
+	d.CardsInHand = j
+}
+func (d *DummyGamestate) RemoveCardFromCenterRow(c cards.Card) {
+	for idx, c2 := range d.CardsInHand {
+		if c2 == c {
+			d.RemoveCardFromCenterRowIdx(idx)
+			return
+		}
+	}
+}
+func (d *DummyGamestate) RemoveCardFromCenterRowIdx(i int) {
+	j := append(d.CenterCards[:i], d.CenterCards[i+1:]...)
+	d.CenterCards = j
 }
 func (d *DummyGamestate) updateCenterCard(c cards.Card) {
 	replacementCard := d.ReplaceCenterCard()
@@ -271,9 +300,15 @@ func (d *DummyGamestate) Draw() {
 	}
 	newCard := d.CardsInDeck.Draw()
 	d.CardsInHand = append(d.CardsInHand, newCard)
+	newCard.OnAddedToHand()
 	return
 }
 func (d *DummyGamestate) BanishCard(c cards.Card) {
+	d.CardsBanished = append(d.CardsBanished, c)
+	if _, ok := d.TopicsListeners[cards.EVENT_CARD_BANISHED]; ok {
+		notification := map[string]interface{}{cards.EVENT_ATTR_CARD_BANISHED: c}
+		d.TopicsListeners[cards.EVENT_CARD_BANISHED].Notify(notification)
+	}
 	return
 }
 func (d *DummyGamestate) DefeatCard(c cards.Card) {
