@@ -40,21 +40,14 @@ func TestNurse(t *testing.T) {
 	gamestate := NewDummyGamestate()
 
 	rookieNurse := cards.NewRookieNurse(gamestate)
-
+	hpStart := gamestate.GetCurrentHP()
 	dgs := gamestate.(*DummyGamestate)
 	rokieCombatant := cards.NewRookieCombatant(gamestate)
 	dgs.CardsDiscarded.Push(&rokieCombatant)
 	dgs.PlayCard(&rookieNurse)
-	if len(dgs.CardsInHand) != 1 {
-		t.Log("failed to draw")
-		t.FailNow()
-	}
-	if dgs.CardsInDeck.Size() != 0 {
-		t.Log("failed to shuffle back 1")
-		t.FailNow()
-	}
-	if dgs.CardsDiscarded.Size() != 0 {
-		t.Log("failed to shuffle back 2")
+	hpCurrent := gamestate.GetCurrentHP()
+	if hpCurrent-hpStart != 1 {
+		t.Log("failed to recover")
 		t.FailNow()
 	}
 }
@@ -220,15 +213,16 @@ func TestEndTurn(t *testing.T) {
 	adventurer2 := cards.NewRookieAdventurer(gamestate)
 
 	baseHero1 := cards.BaseHero{}
-	baseHero2 := cards.BaseHero{}
 	onDrawCurse := cards.NewDamageDrawCurse(gamestate)
+	onEndTurnCurse := cards.NewDamageEndturnCurse(gamestate)
 
 	dummyGamestate.CardsInHand = []cards.Card{&adventurer1, &adventurer2}
 	dummyGamestate.CardsInDeck = cards.Deck{}
 
 	dummyGamestate.CardsInDeck.Push(&onDrawCurse)
 	dummyGamestate.CardsInDeck.Push(&baseHero1)
-	dummyGamestate.CardsInDeck.Push(&baseHero2)
+	dummyGamestate.CardsInDeck.Push(&onEndTurnCurse)
+	// wolf raider inflct damage here
 	gamestate.EndTurn()
 	if dummyGamestate.CardsDiscarded.Size() != 2 {
 		t.Log("It should be 2")
@@ -251,6 +245,13 @@ func TestEndTurn(t *testing.T) {
 	// 4 dmg from wolfraider+damage draw curse
 	if hpStart-hpNow != 4 {
 		t.Log("Failed to inflict 4 dmg ", hpStart-hpNow)
+		t.FailNow()
+	}
+	// inflict damage on end turn by wolf raider+end turn curse
+	gamestate.EndTurn()
+	hpNow = gamestate.GetCurrentHP()
+	if hpStart-hpNow != 8 {
+		t.Log("Failed to inflict 8 dmg ", hpStart-hpNow)
 		t.FailNow()
 	}
 }
