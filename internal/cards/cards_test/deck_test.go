@@ -147,11 +147,20 @@ func (d *DummyGamestate) GetCurrentHP() int {
 }
 func (d *DummyGamestate) TakeDamage(dmg int) {
 	d.HitPoint -= dmg
-	l, ok := d.TopicsListeners[cards.EVENT_TAKE_DAMAGE]
-	takeDamageEvent := map[string]interface{}{cards.EVENT_TAKE_DAMAGE: dmg}
-	if ok {
-		l.Notify(takeDamageEvent)
+	if dmg > 0 {
+		l, ok := d.TopicsListeners[cards.EVENT_TAKE_DAMAGE]
+		takeDamageEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT: dmg}
+		if ok {
+			l.Notify(takeDamageEvent)
+		}
+	} else {
+		l, ok := d.TopicsListeners[cards.EVENT_HEAL_DAMAGE]
+		takeDamageEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT: dmg}
+		if ok {
+			l.Notify(takeDamageEvent)
+		}
 	}
+
 }
 func (d *DummyGamestate) GetCardPicker() cards.AbstractCardPicker {
 	return d.cardPiker
@@ -168,7 +177,7 @@ func (d *DummyGamestate) EndTurn() {
 
 	// remove cards played
 	for _, c := range d.CardsPlayed {
-		d.CardsDiscarded.Push(c)
+		// d.CardsDiscarded.Push(c)
 		c.Dispose()
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
@@ -178,7 +187,7 @@ func (d *DummyGamestate) EndTurn() {
 
 	// remove cards in hand
 	for _, c := range d.CardsInHand {
-		d.CardsDiscarded.Push(c)
+		// d.CardsDiscarded.Push(c)
 		c.Dispose()
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
@@ -228,6 +237,8 @@ func (d *DummyGamestate) RecruitCard(c cards.Card) {
 	return
 }
 func (d *DummyGamestate) DiscardCard(c cards.Card) {
+	d.CardsDiscarded.Push(c)
+	c.OnDiscarded()
 	return
 }
 func (d *DummyGamestate) CenterRowInit() {

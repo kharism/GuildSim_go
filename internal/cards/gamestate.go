@@ -8,12 +8,16 @@ var EVENT_CARD_EXPLORED = "CardExplored"
 var EVENT_CARD_DEFEATED = "CardDefeated"
 var EVENT_CARD_BANISHED = "CardBanished"
 var EVENT_TAKE_DAMAGE = "TakeDamage"
+var EVENT_HEAL_DAMAGE = "HealDamage"
 
 // this is the key of map[string]interface
 var EVENT_ATTR_CARD_PLAYED = "CardPlayed"
 var EVENT_ATTR_CARD_EXPLORED = "CardExplored"
 var EVENT_ATTR_CARD_DEFEATED = "CardDefeated"
 var EVENT_ATTR_CARD_BANISHED = "CardBanished"
+var EVENT_ATTR_CARD_TAKE_DAMAGE = "CardTakeDamage"
+var EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT = "CardTakeDamageAmt"
+var EVENT_ATTR_CARD_HEAL_DAMAGE = "CardHealDamage"
 
 var EVENT_ATTR_DAMAGE_AMMT = "DamageAmount"
 
@@ -38,6 +42,9 @@ type AbstractGamestate interface {
 
 	// damage
 	GetCurrentHP() int
+
+	// take damage, the parameter can also take negative damage which means heals
+	// it also trigger takeDamage or healDamage event
 	TakeDamage(int)
 
 	// remove cards

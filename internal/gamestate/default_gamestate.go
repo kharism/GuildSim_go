@@ -146,7 +146,7 @@ func (d *DefaultGamestate) EndTurn() {
 
 	// remove cards played
 	for _, c := range d.CardsPlayed {
-		c.OnDiscarded()
+		c.Dispose()
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
 		}
@@ -155,7 +155,7 @@ func (d *DefaultGamestate) EndTurn() {
 
 	// remove cards in hand
 	for _, c := range d.CardsInHand {
-		c.OnDiscarded()
+		c.Dispose()
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
 		}
@@ -194,6 +194,8 @@ func (d *DefaultGamestate) RecruitCard(c cards.Card) {
 	return
 }
 func (d *DefaultGamestate) DiscardCard(c cards.Card) {
+	d.CardsDiscarded.Push(c)
+	c.OnDiscarded()
 	return
 }
 func (d *DefaultGamestate) CenterRowInit() {
