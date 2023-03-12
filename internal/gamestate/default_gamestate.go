@@ -170,6 +170,7 @@ func (d *DefaultGamestate) EndTurn() {
 }
 
 func (d *DefaultGamestate) PlayCard(c cards.Card) {
+	d.RemoveCardFromHand(c)
 	c.OnPlay()
 	// fmt.Println("Card played", c.GetName())
 	cardPlayedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_PLAYED: c}

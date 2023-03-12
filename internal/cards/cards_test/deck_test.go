@@ -213,6 +213,7 @@ func (d *DummyGamestate) AddCardToCenterDeck(c ...cards.Card) {
 // the card will not automatically go to discard/cooldown pile
 // otherwise remove the card accordingly
 func (d *DummyGamestate) PlayCard(c cards.Card) {
+	d.RemoveCardFromHand(c)
 	c.OnPlay()
 	// fmt.Println("Card played", c.GetName())
 	cardPlayedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_PLAYED: c}
