@@ -47,7 +47,9 @@ func NewTextUIGamestate() cards.AbstractGamestate {
 	// d.HitPoint = 60
 	return &d
 }
-
+func (d *TextUIGamestate) GetCooldownCard() []cards.Card {
+	return d.gamestate.GetCooldownCard()
+}
 func (d *TextUIGamestate) AddCardToCenterDeck(c ...cards.Card) {
 	d.AddCardToCenterDeck(c...)
 }
