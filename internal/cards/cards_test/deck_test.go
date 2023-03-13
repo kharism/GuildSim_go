@@ -237,6 +237,9 @@ func (d *DummyGamestate) GetCenterCard() []cards.Card {
 func (d *DummyGamestate) RecruitCard(c cards.Card) {
 	return
 }
+func (d *DummyGamestate) GetCooldownCard() []cards.Card {
+	return d.CardsDiscarded.List()
+}
 func (d *DummyGamestate) DiscardCard(c cards.Card) {
 	d.CardsDiscarded.Push(c)
 	c.OnDiscarded()

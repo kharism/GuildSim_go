@@ -25,6 +25,7 @@ type AbstractGamestate interface {
 	GetPlayedCards() []Card
 	GetCardInHand() []Card
 	GetCenterCard() []Card
+	GetCooldownCard() []Card
 	RecruitCard(c Card)
 	DiscardCard(c Card)
 	BanishCard(c Card)

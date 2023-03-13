@@ -194,6 +194,9 @@ func (d *DefaultGamestate) GetCenterCard() []cards.Card {
 func (d *DefaultGamestate) RecruitCard(c cards.Card) {
 	return
 }
+func (d *DefaultGamestate) GetCooldownCard() []cards.Card {
+	return d.CardsDiscarded.List()
+}
 func (d *DefaultGamestate) DiscardCard(c cards.Card) {
 	d.CardsDiscarded.Push(c)
 	c.OnDiscarded()
