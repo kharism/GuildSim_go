@@ -205,6 +205,17 @@ func (d *DefaultGamestate) GetCenterCard() []cards.Card {
 	return d.CenterCards
 }
 func (d *DefaultGamestate) RecruitCard(c cards.Card) {
+	k := c.GetCost()
+	if k.IsEnough(d.currentResource) {
+		replacement := d.CardsInCenterDeck.Draw()
+		d.RemoveCardFromCenterRow(c)
+		d.CenterCards = append(d.CenterCards, replacement)
+		if _, ok := c.(cards.Recruitable); ok {
+			o := c.(cards.Recruitable)
+			o.OnRecruit()
+		}
+		d.CardsDiscarded.Stack(c)
+	}
 	return
 }
 func (d *DefaultGamestate) GetCooldownCard() []cards.Card {

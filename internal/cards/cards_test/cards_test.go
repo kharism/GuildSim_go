@@ -308,3 +308,43 @@ func TestRookieMage(t *testing.T) {
 	}
 
 }
+
+func TestWingedLion(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	cardPicker := TestCardPicker{}
+
+	cardPicker.ChooseMethod = StaticCardPicker(1)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.cardPiker = &cardPicker
+
+	area1 := cards.NewGoblinSmallLairArea(gamestate)
+	area2 := cards.NewEasyDungeonArea(gamestate)
+	monster1 := cards.NewGoblinMonster(gamestate)
+	monster2 := cards.NewGoblinWolfRaiderMonster(gamestate)
+	monster3 := cards.NewGoblinWolfRaiderMonster(gamestate)
+	dumGamestate.CenterCards = append(dumGamestate.CenterCards, &area1, &area2, &monster1, &monster2)
+
+	dumGamestate.CardsInCenterDeck.Push(&monster3)
+	for i := 0; i < 10; i++ {
+		j := cards.NewRookieMage(gamestate)
+		dumGamestate.CardsInCenterDeck.Push(&j)
+		k := cards.NewRookieAdventurer(gamestate)
+		dumGamestate.CardsInDeck.Push(&k)
+	}
+	wingedLion := cards.NewWingedLion(gamestate)
+	dumGamestate.CardsInHand = append(dumGamestate.CardsInHand, &wingedLion)
+	gamestate.PlayCard(&wingedLion)
+	newCenterCard := dumGamestate.CenterCards
+	// t.Log(newCenterCard[1].GetName())
+	if newCenterCard[1].GetName() == area2.GetName() {
+		t.Log("Failed to replace")
+		t.FailNow()
+	}
+	cardInHand := gamestate.GetCardInHand()
+	// t.Log(cardInHand[0].GetName())
+	if len(cardInHand) != 1 {
+		t.Log("Failed to Draw")
+		t.FailNow()
+	}
+
+}
