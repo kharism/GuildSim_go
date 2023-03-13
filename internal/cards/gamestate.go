@@ -53,6 +53,8 @@ type AbstractGamestate interface {
 	RemoveCardFromHandIdx(i int)
 	RemoveCardFromCenterRow(c Card)
 	RemoveCardFromCenterRowIdx(i int)
+	RemoveCardFromCooldown(c Card)
+	RemoveCardFromCooldownIdx(i int)
 
 	// return a card drawn from central deck
 	ReplaceCenterCard() Card

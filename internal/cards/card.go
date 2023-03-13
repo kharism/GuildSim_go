@@ -80,6 +80,10 @@ func (d *Deck) List() []Card {
 	return d.cards
 }
 
+func (d *Deck) SetList(l []Card) {
+	d.cards = l
+}
+
 func (d *Deck) Draw() Card {
 	c := d.cards[0]
 	j := d.cards[1:]

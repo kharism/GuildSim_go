@@ -91,7 +91,7 @@ func (d *DefaultGamestate) RemoveCardFromHandIdx(i int) {
 	d.CardsInHand = j
 }
 func (d *DefaultGamestate) RemoveCardFromCenterRow(c cards.Card) {
-	for idx, c2 := range d.CardsInHand {
+	for idx, c2 := range d.CenterCards {
 		if c2 == c {
 			d.RemoveCardFromCenterRowIdx(idx)
 			return
@@ -101,6 +101,19 @@ func (d *DefaultGamestate) RemoveCardFromCenterRow(c cards.Card) {
 func (d *DefaultGamestate) RemoveCardFromCenterRowIdx(i int) {
 	j := append(d.CenterCards[:i], d.CenterCards[i+1:]...)
 	d.CenterCards = j
+}
+func (d *DefaultGamestate) RemoveCardFromCooldown(c cards.Card) {
+	for idx, c2 := range d.CardsDiscarded.List() {
+		if c2 == c {
+			d.RemoveCardFromCooldownIdx(idx)
+			return
+		}
+	}
+}
+func (d *DefaultGamestate) RemoveCardFromCooldownIdx(i int) {
+	cooldownList := d.CardsDiscarded.List()
+	j := append(cooldownList[:i], cooldownList[i+1:]...)
+	d.CardsDiscarded.SetList(j)
 }
 func (d *DefaultGamestate) AttachListener(eventName string, l observer.Listener) {
 	if _, ok := d.TopicsListeners[eventName]; !ok {

@@ -157,6 +157,12 @@ func (d *TextUIGamestate) RemoveCardFromCenterRow(c cards.Card) {
 func (d *TextUIGamestate) RemoveCardFromCenterRowIdx(i int) {
 	d.gamestate.RemoveCardFromCenterRowIdx(i)
 }
+func (d *TextUIGamestate) RemoveCardFromCooldown(c cards.Card) {
+	d.gamestate.RemoveCardFromCooldown(c)
+}
+func (d *TextUIGamestate) RemoveCardFromCooldownIdx(idx int) {
+	d.gamestate.RemoveCardFromCooldownIdx(idx)
+}
 func InverseCenterCardsKey(s string) int {
 	i := "qwert"
 	for idx, v := range i {

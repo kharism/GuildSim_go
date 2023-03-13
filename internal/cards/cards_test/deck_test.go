@@ -49,7 +49,7 @@ type TestCardPicker struct {
 func (t *TestCardPicker) PickCard(list []cards.Card, message string) int {
 	fmt.Println(message)
 	for i, card := range list {
-		fmt.Printf("[%d] %s [%s]\n", i, card.GetName(), card.GetCost())
+		fmt.Printf("[%d] %s [%s] %s\n", i, card.GetName(), card.GetCost(), card.GetDescription())
 	}
 	// reader := bufio.NewReader(os.Stdin)
 	// scanner := bufio.NewScanner(os.Stdin)
@@ -262,7 +262,7 @@ func (d *DummyGamestate) RemoveCardFromHandIdx(i int) {
 	d.CardsInHand = j
 }
 func (d *DummyGamestate) RemoveCardFromCenterRow(c cards.Card) {
-	for idx, c2 := range d.CardsInHand {
+	for idx, c2 := range d.CenterCards {
 		if c2 == c {
 			d.RemoveCardFromCenterRowIdx(idx)
 			return
@@ -272,6 +272,19 @@ func (d *DummyGamestate) RemoveCardFromCenterRow(c cards.Card) {
 func (d *DummyGamestate) RemoveCardFromCenterRowIdx(i int) {
 	j := append(d.CenterCards[:i], d.CenterCards[i+1:]...)
 	d.CenterCards = j
+}
+func (d *DummyGamestate) RemoveCardFromCooldown(c cards.Card) {
+	for idx, c2 := range d.CardsDiscarded.List() {
+		if c2 == c {
+			d.RemoveCardFromCooldownIdx(idx)
+			return
+		}
+	}
+}
+func (d *DummyGamestate) RemoveCardFromCooldownIdx(i int) {
+	cooldownList := d.CardsDiscarded.List()
+	j := append(cooldownList[:i], cooldownList[i+1:]...)
+	d.CardsDiscarded.SetList(j)
 }
 func (d *DummyGamestate) updateCenterCard(c cards.Card) {
 	replacementCard := d.ReplaceCenterCard()
