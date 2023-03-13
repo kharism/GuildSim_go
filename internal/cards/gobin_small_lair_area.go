@@ -5,6 +5,11 @@ type GoblinSmallLairArea struct {
 	gamestate AbstractGamestate
 }
 
+func NewGoblinSmallLairArea(state AbstractGamestate) GoblinSmallLairArea {
+	h := GoblinSmallLairArea{gamestate: state}
+	return h
+}
+
 func (ed *GoblinSmallLairArea) GetName() string {
 	return "GoblinSmallLairArea"
 }
