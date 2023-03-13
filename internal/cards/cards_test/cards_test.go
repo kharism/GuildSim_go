@@ -260,7 +260,7 @@ func TestRookieMage(t *testing.T) {
 	gamestate := NewDummyGamestate()
 	cardPicker := TestCardPicker{}
 
-	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethod = StaticCardPicker(1)
 
 	dumGamestate := gamestate.(*DummyGamestate)
 
@@ -268,7 +268,9 @@ func TestRookieMage(t *testing.T) {
 	dumGamestate.cardPiker = &cardPicker
 
 	k := cards.NewRookieMage(gamestate)
+	l := cards.NewStagShaman(gamestate)
 	dumGamestate.CardsInDeck.Push(&k)
+	dumGamestate.CardsInDeck.Push(&l)
 
 	for i := 0; i < 10; i++ {
 		j := cards.NewRookieAdventurer(gamestate)
@@ -293,4 +295,16 @@ func TestRookieMage(t *testing.T) {
 		t.Log("Failed to discard")
 		t.FailNow()
 	}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	gamestate.PlayCard(&l)
+
+	if dumGamestate.CardsDiscarded.Size() != 0 {
+		t.Log("Failed to banish from cooldown pile")
+		t.FailNow()
+	}
+	if len(cardsInHand) != 5 {
+		t.Log("Failed to draw")
+		t.Fail()
+	}
+
 }
