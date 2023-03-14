@@ -8,11 +8,11 @@ type CardDefeatedListener struct {
 }
 
 func NewCardDefeatedListener(f CardFilter, action AbstractActon) observer.Listener {
-	p := &CardPlayedListener{filter: f, action: action}
+	p := &CardDefeatedListener{filter: f, action: action}
 	return p
 }
 func (l *CardDefeatedListener) DoAction(data map[string]interface{}) {
-	cardPlayed := data[EVENT_ATTR_CARD_PLAYED].(Card)
+	cardPlayed := data[EVENT_ATTR_CARD_DEFEATED].(Card)
 	if Match(cardPlayed, l.filter) {
 		l.action.DoAction()
 	}

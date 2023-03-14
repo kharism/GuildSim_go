@@ -20,6 +20,9 @@ func (m *SkeletonGuard) GetCost() Cost {
 	cost.AddResource(RESOURCE_NAME_COMBAT, 3)
 	return cost
 }
+func (m *SkeletonGuard) OnPunish() {
+	m.state.TakeDamage(3)
+}
 func (m *SkeletonGuard) OnSlain() {
 	m.state.AddResource(RESOURCE_NAME_EXPLORATION, 1)
 	m.state.AddResource(RESOURCE_NAME_REPUTATION, 1)
