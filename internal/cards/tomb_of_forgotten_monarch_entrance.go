@@ -37,7 +37,7 @@ func (a *TombForgottenMonarchEntrance) OnExplored() {
 	// add defeatSkeletonGuardCountEventListener
 	// defeat all skeleton guard to add lich mage to center deck
 	aa := NewSkeletonGuard(a.state)
-	cardFilter := CardFilter{Key: FILTER_NAME, Op: Eq, Value: aa.GetName()}
+	cardFilter := &CardFilter{Key: FILTER_NAME, Op: Eq, Value: aa.GetName()}
 
 	lichMageMonster := NewLichMageMonster(a.state)
 	cardsAdded := []Card{&lichMageMonster}

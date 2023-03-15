@@ -14,7 +14,7 @@ type CardFilter struct {
 	Value interface{}
 }
 
-func Match(c Card, filter CardFilter) bool {
+func Match(c Card, filter *CardFilter) bool {
 	if filter.Key == FILTER_NAME {
 		val_str := filter.Value.(string)
 		if filter.Op == Eq && val_str == c.GetName() {
@@ -25,7 +25,7 @@ func Match(c Card, filter CardFilter) bool {
 	}
 	return false
 }
-func Contains(pile []Card, filter CardFilter) bool {
+func Contains(pile []Card, filter *CardFilter) bool {
 	for _, c := range pile {
 		if Match(c, filter) {
 			return true

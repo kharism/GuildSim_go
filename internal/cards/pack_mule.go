@@ -45,7 +45,7 @@ func (r *PackMule) Dispose() {
 func (r *PackMule) OnPlay() {
 	r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 1)
 	aa := AdvancedAdventurer{}
-	filter := CardFilter{Key: FILTER_NAME, Op: Eq, Value: aa.GetName()}
+	filter := &CardFilter{Key: FILTER_NAME, Op: Eq, Value: aa.GetName()}
 	if Contains(r.gamestate.GetPlayedCards(), filter) {
 		r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 1)
 	} else {

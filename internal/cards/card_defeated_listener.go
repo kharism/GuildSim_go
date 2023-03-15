@@ -3,11 +3,11 @@ package cards
 import "github/kharism/GuildSim_go/internal/observer"
 
 type CardDefeatedListener struct {
-	filter CardFilter
+	filter *CardFilter
 	action AbstractActon
 }
 
-func NewCardDefeatedListener(f CardFilter, action AbstractActon) observer.Listener {
+func NewCardDefeatedListener(f *CardFilter, action AbstractActon) observer.Listener {
 	p := &CardDefeatedListener{filter: f, action: action}
 	return p
 }
