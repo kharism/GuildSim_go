@@ -2,6 +2,10 @@ package decorator
 
 import "github/kharism/GuildSim_go/internal/cards"
 
+// abstract function to attach customizable event listener
+type AbstractDecorator func(cards.AbstractGamestate) cards.AbstractGamestate
+
+// sample implementation of AbstractDecorator. This will add TombOfForgottenMonarch when the player recruit 3 Heroes
 func AttachTombOfForgottenMonarch(state cards.AbstractGamestate) cards.AbstractGamestate {
 	tomb := cards.NewTombMonarchEntrance(state)
 	cardsAdded := []cards.Card{&tomb}
