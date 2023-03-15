@@ -28,7 +28,7 @@ func (a *TombForgottenMonarchEntrance) OnExplored() {
 	a.state.AddResource(RESOURCE_NAME_MONEY, 100)
 
 	// add progress to the game
-	skeletonGuardCount := rand.Int() % 6
+	skeletonGuardCount := (rand.Int() % 6) + 3
 	allAddedCard := []Card{}
 	for i := 0; i < skeletonGuardCount; i++ {
 		k := NewSkeletonGuard(a.state)
