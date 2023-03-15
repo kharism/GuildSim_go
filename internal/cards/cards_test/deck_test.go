@@ -206,6 +206,7 @@ func (d *DummyGamestate) AddCardToCenterDeck(c ...cards.Card) {
 		d.CardsInCenterDeck.Stack(cc)
 	}
 	d.CardsInCenterDeck.Shuffle()
+	// fmt.Println("Done adding", d.CardsInCenterDeck.Size(), "To center deck")
 }
 
 // just play card from no particular location and added it to list of played card
@@ -317,6 +318,7 @@ func (d *DummyGamestate) Explore(c cards.Card) {
 		// payResource
 		d.PayResource(f)
 		c.OnExplored()
+		d.BanishCard(c)
 		cardExploredEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_EXPLORED: c}
 
 		l, ok := d.TopicsListeners[cards.EVENT_CARD_EXPLORED]
@@ -356,7 +358,7 @@ func (d *DummyGamestate) DefeatCard(c cards.Card) {
 	if (&f).IsEnough(res) {
 		d.PayResource(f)
 		c.OnSlain()
-
+		d.BanishCard(c)
 		cardDefeatedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_DEFEATED: c}
 
 		l, ok := d.TopicsListeners[cards.EVENT_CARD_DEFEATED]
