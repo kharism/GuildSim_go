@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
-	"github/kharism/GuildSim_go/internal/gamestate"
 	"github/kharism/GuildSim_go/internal/observer"
 	"os"
 	"strconv"
@@ -36,13 +35,13 @@ func (t *TextCardPicker) PickCard(list []cards.Card, message string) int {
 }
 
 type TextUIGamestate struct {
-	gamestate  gamestate.DefaultGamestate
+	gamestate  cards.AbstractGamestate
 	cardPicker cards.AbstractCardPicker
 }
 
-func NewTextUIGamestate() cards.AbstractGamestate {
+func NewTextUIGamestate(gamestate cards.AbstractGamestate) *TextUIGamestate {
 	d := TextUIGamestate{}
-
+	d.gamestate = gamestate
 	d.cardPicker = &TextCardPicker{}
 	// d.HitPoint = 60
 	return &d
@@ -202,6 +201,13 @@ func (d *TextUIGamestate) Render() {
 	}
 }
 func (d *TextUIGamestate) Run() {
+	// initialize gamestate
+	d.gamestate.CenterRowInit()
+	//draw 6
+
+	for i := 0; i < 6; i++ {
+		d.gamestate.Draw()
+	}
 	scanner := bufio.NewScanner(os.Stdin)
 	d.Render()
 	// text, _ := reader.ReadString('\n')
