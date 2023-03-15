@@ -68,8 +68,12 @@ func NewDefaultGamestate() cards.AbstractGamestate {
 	d.TopicsListeners = map[string]*DummyEventListener{}
 	d.CenterCards = []cards.Card{}
 	d.CardsInHand = []cards.Card{}
+	d.CardsBanished = []cards.Card{}
 	// d.cardPiker = &TextCardPicker{}
 	d.HitPoint = 60
+	d.CardsDiscarded = cards.Deck{}
+	d.CardsInCenterDeck = cards.Deck{}
+	d.CardsInDeck = cards.Deck{}
 	return &d
 }
 
