@@ -151,6 +151,9 @@ func (d *DefaultGamestate) TakeDamage(dmg int) {
 func (d *DefaultGamestate) GetCardPicker() cards.AbstractCardPicker {
 	return d.cardPiker
 }
+func (d *DefaultGamestate) SetCardPicker(a cards.AbstractCardPicker) {
+	d.cardPiker = a
+}
 func (d *DefaultGamestate) EndTurn() {
 	// reset resource except money and reputation
 	curRes := d.GetCurrentResource().Detail
@@ -231,8 +234,11 @@ func (d *DefaultGamestate) DiscardCard(c cards.Card) {
 	return
 }
 func (d *DefaultGamestate) CenterRowInit() {
-	f := d.ReplaceCenterCard()
-	d.CenterCards = append(d.CenterCards, f)
+	d.CardsInCenterDeck.Shuffle()
+	for i := 0; i < 6; i++ {
+		f := d.ReplaceCenterCard()
+		d.CenterCards = append(d.CenterCards, f)
+	}
 }
 func (d *DefaultGamestate) updateCenterCard(c cards.Card) {
 	replacementCard := d.ReplaceCenterCard()

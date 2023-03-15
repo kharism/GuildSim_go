@@ -34,6 +34,7 @@ func CustomizedDefaultGamestate(starterDeckSets, centerDeckSets []string, decora
 		starterDeck = append(starterDeck, newCards...)
 	}
 	defGameState.CardsInDeck.SetList(starterDeck)
+	defGameState.CardsInDeck.Shuffle()
 
 	var j cards.AbstractGamestate
 	// j := decorators[0](&defGameState)

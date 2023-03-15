@@ -68,6 +68,7 @@ type AbstractGamestate interface {
 
 	// get abstract card picker
 	GetCardPicker() AbstractCardPicker
+	SetCardPicker(AbstractCardPicker)
 
 	// make center deck thicker
 	AddCardToCenterDeck(c ...Card)

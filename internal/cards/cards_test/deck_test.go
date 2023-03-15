@@ -165,6 +165,9 @@ func (d *DummyGamestate) TakeDamage(dmg int) {
 func (d *DummyGamestate) GetCardPicker() cards.AbstractCardPicker {
 	return d.cardPiker
 }
+func (d *DummyGamestate) SetCardPicker(a cards.AbstractCardPicker) {
+	d.cardPiker = a
+}
 func (d *DummyGamestate) EndTurn() {
 	// reset resource except money and reputation
 	curRes := d.GetCurrentResource().Detail
