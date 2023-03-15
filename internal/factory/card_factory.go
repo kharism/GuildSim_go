@@ -2,7 +2,26 @@ package factory
 
 import "github/kharism/GuildSim_go/internal/cards"
 
-func CreateStarterDeck(gamestate cards.AbstractGamestate) []cards.Card {
+const SET_STARTER_DECK = "starter_deck"
+
+const SET_CENTER_DECK_1 = "center_deck"
+
+// generate list of cards. use public constant to pick which set of cards to generate
+// for future devs: add in more functions to create expansion set that just need to be slapped in without adding triggers/eventListeners
+// if you want to add expansion with event listeners use decorators
+func CardFactory(setname string, gamestate cards.AbstractGamestate) []cards.Card {
+	switch setname {
+	case SET_STARTER_DECK:
+		return createStarterDeck(gamestate)
+	case SET_CENTER_DECK_1:
+	default:
+		return createStarterCenterDeck(gamestate)
+
+	}
+	return createStarterCenterDeck(gamestate)
+}
+
+func createStarterDeck(gamestate cards.AbstractGamestate) []cards.Card {
 	deck := []cards.Card{}
 	for i := 0; i < 5; i++ {
 		h := cards.NewRookieAdventurer(gamestate)
@@ -13,7 +32,7 @@ func CreateStarterDeck(gamestate cards.AbstractGamestate) []cards.Card {
 	return deck
 }
 
-func CreateStarterCenterDeck(gamestate cards.AbstractGamestate) []cards.Card {
+func createStarterCenterDeck(gamestate cards.AbstractGamestate) []cards.Card {
 	deck := []cards.Card{}
 	for i := 0; i < 16; i++ {
 		h := cards.NewGoblinMonster(gamestate)
