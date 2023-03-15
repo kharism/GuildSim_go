@@ -250,6 +250,7 @@ func (d *DefaultGamestate) Explore(c cards.Card) {
 		// payResource
 		d.PayResource(f)
 		c.OnExplored()
+		d.BanishCard(c)
 		cardExploredEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_EXPLORED: c}
 
 		l, ok := d.TopicsListeners[cards.EVENT_CARD_EXPLORED]
@@ -289,7 +290,7 @@ func (d *DefaultGamestate) DefeatCard(c cards.Card) {
 	if (&f).IsEnough(res) {
 		d.PayResource(f)
 		c.OnSlain()
-
+		d.BanishCard(c)
 		cardDefeatedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_DEFEATED: c}
 
 		l, ok := d.TopicsListeners[cards.EVENT_CARD_DEFEATED]
