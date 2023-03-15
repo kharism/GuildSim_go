@@ -14,7 +14,7 @@ func (m *LichMageMonster) GetName() string {
 	return "Lich Mage"
 }
 func (m *LichMageMonster) GetDescription() string {
-	return "Add 1 Stun each turn, and additional 1 stun every 3 turns, on slain unlocks Tomb of forgotten monarch: central chamber"
+	return "Add 1 Stun each turn, and additional 2 dmg every 3 turns, on slain unlocks Tomb of forgotten monarch: central chamber"
 }
 func (m *LichMageMonster) GetCost() Cost {
 	cost := NewCost()
@@ -26,7 +26,6 @@ func (m *LichMageMonster) OnPunish() {
 	curse1 := NewStunCurse(m.state)
 	m.state.DiscardCard(&curse1)
 	if m.turnCounter%3 == 0 {
-		curse2 := NewStunCurse(m.state)
-		m.state.DiscardCard(&curse2)
+		m.state.TakeDamage(2)
 	}
 }
