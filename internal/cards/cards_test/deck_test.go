@@ -238,14 +238,19 @@ func (d *DummyGamestate) GetCenterCard() []cards.Card {
 func (d *DummyGamestate) RecruitCard(c cards.Card) {
 	k := c.GetCost()
 	if k.IsEnough(d.currentResource) {
-		replacement := d.CardsInCenterDeck.Draw()
-		d.RemoveCardFromCenterRow(c)
-		d.CenterCards = append(d.CenterCards, replacement)
+		d.PayResource(k)
 		if _, ok := c.(cards.Recruitable); ok {
-			o := c.(cards.Recruitable)
-			o.OnRecruit()
+			f := c.(cards.Recruitable)
+			f.OnRecruit()
 		}
-		d.CardsDiscarded.Stack(c)
+		d.DiscardCard(c)
+		cardRecruitedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_RECRUITED: c}
+		l, ok := d.TopicsListeners[cards.EVENT_CARD_RECRUITED]
+		if ok {
+			l.Notify(cardRecruitedEvent)
+		}
+		// remove c from center cards
+		d.updateCenterCard(c)
 	}
 	return
 }
