@@ -28,5 +28,25 @@ func TestCardsRecruitedListener(t *testing.T) {
 		t.Log("Failed to trigger")
 		t.FailNow()
 	}
+}
 
+var TEST_GAMEOVER = false
+
+type dummyAction2 struct {
+}
+
+func (d *dummyAction2) DoAction() {
+	TEST_GAMEOVER = true
+}
+
+func TestStillAlive(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	dumbAction := &dummyAction2{}
+	stillAliveListener := cards.NewStillAliveListener(gamestate, dumbAction)
+	gamestate.AttachListener(cards.EVENT_TAKE_DAMAGE, stillAliveListener)
+	gamestate.TakeDamage(100)
+	if !TEST_GAMEOVER {
+		t.Log("Gagal trigger game over")
+		t.FailNow()
+	}
 }
