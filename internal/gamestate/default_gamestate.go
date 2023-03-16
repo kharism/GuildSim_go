@@ -235,7 +235,7 @@ func (d *DefaultGamestate) DiscardCard(c cards.Card) {
 }
 func (d *DefaultGamestate) CenterRowInit() {
 	d.CardsInCenterDeck.Shuffle()
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 5; i++ {
 		f := d.ReplaceCenterCard()
 		d.CenterCards = append(d.CenterCards, f)
 	}

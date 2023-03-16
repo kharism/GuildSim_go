@@ -1,6 +1,9 @@
 package cards
 
-import "math/rand"
+import (
+	"math/rand"
+	"time"
+)
 
 type CardType int64
 
@@ -11,6 +14,22 @@ const (
 	Event
 	Curse
 )
+
+func (i CardType) String() string {
+	switch i {
+	case Hero:
+		return "Hero"
+	case Area:
+		return "Area"
+	case Monster:
+		return "Mons"
+	case Event:
+		return "Event"
+	case Curse:
+		return "Curse"
+	}
+	return ""
+}
 
 type Card interface {
 	GetName() string
@@ -60,7 +79,8 @@ func (d *Deck) Size() int {
 }
 
 func (d *Deck) Shuffle() {
-	rand.Shuffle(d.Size(), func(i, j int) { d.cards[i], d.cards[j] = d.cards[j], d.cards[i] })
+	shuffler := rand.New(rand.NewSource(time.Now().UnixNano()))
+	shuffler.Shuffle(d.Size(), func(i, j int) { d.cards[i], d.cards[j] = d.cards[j], d.cards[i] })
 }
 
 // put card on the bottom of deck

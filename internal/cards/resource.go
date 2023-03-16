@@ -63,7 +63,7 @@ func (c Cost) String() string {
 	output := []string{}
 
 	for key, val := range c.Detail {
-		output = append(output, fmt.Sprintf("%s:%d, ", key, val))
+		output = append(output, fmt.Sprintf("%s:%d", key, val))
 	}
 	return strings.Join(output, "|")
 }

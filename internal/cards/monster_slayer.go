@@ -21,7 +21,7 @@ func (r *MonsterSlayer) GetDescription() string {
 }
 func (r *MonsterSlayer) GetCost() Cost {
 	cost := NewCost()
-	cost.AddResource(RESOURCE_NAME_COMBAT, 4)
+	cost.AddResource(RESOURCE_NAME_EXPLORATION, 4)
 	return cost
 }
 func (r *MonsterSlayer) OnPlay() {

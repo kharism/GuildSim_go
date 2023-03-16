@@ -97,6 +97,9 @@ func (d *TextUIGamestate) GetCardPicker() cards.AbstractCardPicker {
 }
 func (d *TextUIGamestate) EndTurn() {
 	d.gamestate.EndTurn()
+	for i := 0; i < 5; i++ {
+		d.Draw()
+	}
 }
 func (d *TextUIGamestate) PlayCard(c cards.Card) {
 	d.gamestate.PlayCard(c)
@@ -188,12 +191,16 @@ func SwitchCenterCardsKey(idx int) string {
 }
 func (d *TextUIGamestate) Render() {
 	fmt.Println("Resource")
+	ResourceStr := []string{}
 	for key, val := range d.gamestate.GetCurrentResource().Detail {
-		fmt.Print("%s:%d  ", key, val)
+		// fmt.Printf("%s:%d  \n", key, val)
+		l := fmt.Sprintf("%s:%d", key, val)
+		ResourceStr = append(ResourceStr, l)
 	}
+	fmt.Println(strings.Join(ResourceStr, " "))
 	fmt.Println("Cards In center Row:")
 	for idx, card := range d.gamestate.GetCenterCard() {
-		fmt.Printf("[%s] %s [%s]:%s\n", SwitchCenterCardsKey(idx), card.GetName(), card.GetCost(), card.GetDescription())
+		fmt.Printf("[%s] %s (%s) [%s]:%s\n", SwitchCenterCardsKey(idx), card.GetName(), card.GetCardType(), card.GetCost(), card.GetDescription())
 	}
 	fmt.Println("Cards in hand:")
 	for idx, card := range d.gamestate.GetCardInHand() {
@@ -205,7 +212,7 @@ func (d *TextUIGamestate) Run() {
 	d.gamestate.CenterRowInit()
 	//draw 6
 
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 5; i++ {
 		d.gamestate.Draw()
 	}
 	scanner := bufio.NewScanner(os.Stdin)
@@ -215,7 +222,12 @@ func (d *TextUIGamestate) Run() {
 		input := scanner.Text()
 		ll, err := strconv.Atoi(input)
 		if err != nil {
-			// NaN meaning we acquire cards
+			// NaN meaning we acquire cards or end our turn
+			if input == "" {
+				d.EndTurn()
+				d.Render()
+				continue
+			}
 			cardIdx := InverseCenterCardsKey(input)
 			choosenCard := d.gamestate.GetCenterCard()[cardIdx]
 			switch choosenCard.GetCardType() {
@@ -228,7 +240,7 @@ func (d *TextUIGamestate) Run() {
 			}
 		} else {
 			// we play a card
-			choosenCard := d.gamestate.GetCenterCard()[ll]
+			choosenCard := d.gamestate.GetCardInHand()[ll]
 			d.PlayCard(choosenCard)
 		}
 		d.Render()
