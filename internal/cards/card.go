@@ -78,8 +78,18 @@ func (d *Deck) Size() int {
 	return len(d.cards)
 }
 
+var shuffler *rand.Rand
+
+// this is not the good way to do things if we want to implement client-service architecture. But on single comp multi-player
+// this is fine
+func GetShuffler() *rand.Rand {
+	if shuffler == nil {
+		shuffler = rand.New(rand.NewSource(time.Now().UnixNano()))
+	}
+	return shuffler
+}
 func (d *Deck) Shuffle() {
-	shuffler := rand.New(rand.NewSource(time.Now().UnixNano()))
+	shuffler := GetShuffler()
 	shuffler.Shuffle(d.Size(), func(i, j int) { d.cards[i], d.cards[j] = d.cards[j], d.cards[i] })
 }
 

@@ -214,6 +214,7 @@ func (d *DefaultGamestate) GetCenterCard() []cards.Card {
 func (d *DefaultGamestate) RecruitCard(c cards.Card) {
 	k := c.GetCost()
 	if k.IsEnough(d.currentResource) {
+		d.PayResource(k)
 		replacement := d.CardsInCenterDeck.Draw()
 		d.RemoveCardFromCenterRow(c)
 		d.CenterCards = append(d.CenterCards, replacement)

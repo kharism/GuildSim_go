@@ -46,6 +46,9 @@ type TestCardPicker struct {
 	ChooseMethod func() int
 }
 
+func (t *TestCardPicker) PickCardOptional(list []cards.Card, message string) int {
+	return t.ChooseMethod()
+}
 func (t *TestCardPicker) PickCard(list []cards.Card, message string) int {
 	fmt.Println(message)
 	for i, card := range list {

@@ -13,7 +13,7 @@ func (s *StagShaman) GetName() string {
 	return "Stag Shaman"
 }
 func (h *StagShaman) GetDescription() string {
-	return "Banish 1 card from Cooldown pile then draw 1 card regardless"
+	return "You can banish 1 card from Cooldown pile then draw 1 card regardless"
 }
 func (h *StagShaman) GetCost() Cost {
 	cost := NewCost()
@@ -27,9 +27,13 @@ func (h *StagShaman) Dispose() {
 
 func (h *StagShaman) OnPlay() {
 	cooldownList := h.state.GetCooldownCard()
-	cardPicker := h.state.GetCardPicker()
-	cardId := cardPicker.PickCard(cooldownList, "Pick a card to banish")
-	card := cooldownList[cardId]
-	h.state.RemoveCardFromCooldownIdx(cardId)
-	h.state.BanishCard(card)
+	if len(cooldownList) > 0 {
+		cardPicker := h.state.GetCardPicker()
+		cardId := cardPicker.PickCardOptional(cooldownList, "Pick a card to banish")
+		card := cooldownList[cardId]
+		h.state.RemoveCardFromCooldownIdx(cardId)
+		h.state.BanishCard(card)
+	}
+	h.state.Draw()
+
 }

@@ -25,17 +25,19 @@ func (h *RookieMage) GetCost() Cost {
 func (h *RookieMage) OnPlay() {
 	cardPicker := h.state.GetCardPicker()
 	cardInHand := h.state.GetCardInHand()
+	if len(cardInHand) > 0 {
+		discardedIdx := cardPicker.PickCard(cardInHand, "Choose Card to discard")
 
-	discardedIdx := cardPicker.PickCard(cardInHand, "Choose Card to discard")
+		discardedCard := cardInHand[discardedIdx]
 
-	discardedCard := cardInHand[discardedIdx]
+		h.state.RemoveCardFromHandIdx(discardedIdx)
 
-	h.state.RemoveCardFromHandIdx(discardedIdx)
-
-	h.state.DiscardCard(discardedCard)
-	for i := 0; i < 2; i++ {
-		h.state.Draw()
+		h.state.DiscardCard(discardedCard)
+		for i := 0; i < 2; i++ {
+			h.state.Draw()
+		}
 	}
+
 }
 
 func (h *RookieMage) Dispose() {
