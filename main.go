@@ -14,7 +14,7 @@ func main() {
 	decorators := []decorator.AbstractDecorator{decorator.AttachTombOfForgottenMonarch}
 	defaultGamestate := gamestate.CustomizedDefaultGamestate(starterDeckSet, centerDeckSet, decorators)
 	textUI := text.NewTextUIGamestate(defaultGamestate)
-
+	defaultGamestate.SetCardPicker(textUI.GetCardPicker())
 	// playerDeck := []cards.Card{}
 	// for i := 0; i < 5; i++ {
 	// 	kk := cards.NewRookieAdventurer(gamestate)

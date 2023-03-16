@@ -14,6 +14,29 @@ type TextCardPicker struct {
 	// ChooseMethod func() int
 }
 
+func (t *TextCardPicker) PickCardOptional(list []cards.Card, message string) int {
+	fmt.Println(message)
+	for i, card := range list {
+		fmt.Printf("[%d] %s [%s]\n", i, card.GetName(), card.GetCost())
+	}
+	// reader := bufio.NewReader(os.Stdin)
+	scanner := bufio.NewScanner(os.Stdin)
+
+	// text, _ := reader.ReadString('\n')
+	for scanner.Scan() {
+		if scanner.Text() == "" {
+			return -1
+		}
+		picks, err := strconv.Atoi(scanner.Text())
+		if err != nil || picks < 0 || picks > len(list) {
+			continue
+		}
+		return picks
+	}
+	return -1
+	// return t.ChooseMethod()
+}
+
 func (t *TextCardPicker) PickCard(list []cards.Card, message string) int {
 	fmt.Println(message)
 	for i, card := range list {
@@ -25,7 +48,7 @@ func (t *TextCardPicker) PickCard(list []cards.Card, message string) int {
 	// text, _ := reader.ReadString('\n')
 	for scanner.Scan() {
 		picks, err := strconv.Atoi(scanner.Text())
-		if err != nil {
+		if err != nil || picks < 0 || picks > len(list) {
 			continue
 		}
 		return picks
@@ -169,12 +192,17 @@ func InverseCenterCardsKey(s string) int {
 	i := "qwert"
 	for idx, v := range i {
 		if strings.ToLower(string(v)) == strings.ToLower(s) {
+			fmt.Println("access center card idx", idx)
 			return idx
 		}
 	}
 	return -1
 }
-func SwitchCenterCardsKey(idx int) string {
+func SwitchCenterCardsKey(idx int, card cards.Card, resource *cards.Resource) string {
+	cost := card.GetCost()
+	if !cost.IsEnough(*resource) {
+		return ""
+	}
 	switch idx {
 	case 0:
 		return "q"
@@ -191,16 +219,25 @@ func SwitchCenterCardsKey(idx int) string {
 }
 func (d *TextUIGamestate) Render() {
 	fmt.Println("Resource")
-	ResourceStr := []string{}
-	for key, val := range d.gamestate.GetCurrentResource().Detail {
-		// fmt.Printf("%s:%d  \n", key, val)
-		l := fmt.Sprintf("%s:%d", key, val)
-		ResourceStr = append(ResourceStr, l)
+	orderOfResource := []string{cards.RESOURCE_NAME_COMBAT, cards.RESOURCE_NAME_EXPLORATION, cards.RESOURCE_NAME_REPUTATION}
+	ResourceStr := []string{fmt.Sprintf("HP: %d", d.gamestate.GetCurrentHP())}
+	// for key, val := range d.gamestate.GetCurrentResource().Detail {
+	// 	// fmt.Printf("%s:%d  \n", key, val)
+	// 	l := fmt.Sprintf("%s:%d", key, val)
+	// 	ResourceStr = append(ResourceStr, l)
+	// }
+	res := d.gamestate.GetCurrentResource()
+	for _, val := range orderOfResource {
+		if _, ok := res.Detail[val]; ok {
+			l := fmt.Sprintf("%s:%d", val, res.Detail[val])
+			ResourceStr = append(ResourceStr, l)
+		}
+
 	}
 	fmt.Println(strings.Join(ResourceStr, " "))
 	fmt.Println("Cards In center Row:")
 	for idx, card := range d.gamestate.GetCenterCard() {
-		fmt.Printf("[%s] %s (%s) [%s]:%s\n", SwitchCenterCardsKey(idx), card.GetName(), card.GetCardType(), card.GetCost(), card.GetDescription())
+		fmt.Printf("[%s] %s (%s) [%s]:%s\n", SwitchCenterCardsKey(idx, card, &res), card.GetName(), card.GetCardType(), card.GetCost(), card.GetDescription())
 	}
 	fmt.Println("Cards in hand:")
 	for idx, card := range d.gamestate.GetCardInHand() {
@@ -227,6 +264,13 @@ func (d *TextUIGamestate) Run() {
 				d.EndTurn()
 				d.Render()
 				continue
+			} else if input == "A" {
+				cardsInHand := d.gamestate.GetCardInHand()
+				for i := len(cardsInHand) - 1; i >= 0; i-- {
+					d.gamestate.PlayCard(cardsInHand[i])
+				}
+				d.Render()
+				continue
 			}
 			cardIdx := InverseCenterCardsKey(input)
 			choosenCard := d.gamestate.GetCenterCard()[cardIdx]
@@ -240,6 +284,10 @@ func (d *TextUIGamestate) Run() {
 			}
 		} else {
 			// we play a card
+			if ll < 0 || ll >= len(d.gamestate.GetCardInHand()) {
+				fmt.Println("invalid number, try again")
+				continue
+			}
 			choosenCard := d.gamestate.GetCardInHand()[ll]
 			d.PlayCard(choosenCard)
 		}
