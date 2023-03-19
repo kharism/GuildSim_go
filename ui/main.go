@@ -84,8 +84,6 @@ func (g *Game) Update() error {
 	// return nil
 }
 
-var ShowCardDetail = false
-
 func (g *Game) Draw(screen *ebiten.Image) {
 	currentState.Draw(screen)
 }
