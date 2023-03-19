@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github/kharism/GuildSim_go/internal/cards"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -8,6 +9,7 @@ import (
 
 type EbitenCard struct {
 	image     *ebiten.Image
+	card      cards.Card
 	oriWidth  int
 	oriHeight int
 	// current position

@@ -222,6 +222,11 @@ func (d *DefaultGamestate) RecruitCard(c cards.Card) {
 			o := c.(cards.Recruitable)
 			o.OnRecruit()
 		}
+		if _, ok := d.TopicsListeners[cards.EVENT_CARD_RECRUITED]; ok {
+			evtDetails := map[string]interface{}{cards.EVENT_ATTR_CARD_RECRUITED: c}
+			j := d.TopicsListeners[cards.EVENT_CARD_RECRUITED]
+			j.Notify(evtDetails)
+		}
 		d.CardsDiscarded.Stack(c)
 	}
 	return
@@ -239,6 +244,11 @@ func (d *DefaultGamestate) CenterRowInit() {
 	for i := 0; i < 5; i++ {
 		f := d.ReplaceCenterCard()
 		d.CenterCards = append(d.CenterCards, f)
+		if _, ok := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]; ok {
+			evtDetails := map[string]interface{}{cards.EVENT_ATTR_CARD_DRAWN: f}
+			j := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]
+			j.Notify(evtDetails)
+		}
 	}
 }
 func (d *DefaultGamestate) updateCenterCard(c cards.Card) {
@@ -252,6 +262,11 @@ func (d *DefaultGamestate) updateCenterCard(c cards.Card) {
 		}
 	}
 	d.CenterCards = newCenterCards
+	if _, ok := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]; ok {
+		evtDetails := map[string]interface{}{cards.EVENT_ATTR_CARD_DRAWN: replacementCard}
+		j := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]
+		j.Notify(evtDetails)
+	}
 }
 func (d *DefaultGamestate) Explore(c cards.Card) {
 	// check cost and resource
@@ -275,6 +290,11 @@ func (d *DefaultGamestate) Explore(c cards.Card) {
 func (d *DefaultGamestate) ReplaceCenterCard() cards.Card {
 	return d.CardsInCenterDeck.Draw()
 }
+func (d *DefaultGamestate) BeginTurn() {
+	for i := 0; i < 5; i++ {
+		d.Draw()
+	}
+}
 func (d *DefaultGamestate) Draw() {
 	if d.CardsInDeck.Size() == 0 {
 		// shuffle discard pile
@@ -285,6 +305,11 @@ func (d *DefaultGamestate) Draw() {
 	newCard := d.CardsInDeck.Draw()
 	d.CardsInHand = append(d.CardsInHand, newCard)
 	newCard.OnAddedToHand()
+	if _, ok := d.TopicsListeners[cards.EVENT_CARD_DRAWN]; ok {
+		evtDetails := map[string]interface{}{cards.EVENT_ATTR_CARD_DRAWN: newCard}
+		j := d.TopicsListeners[cards.EVENT_CARD_DRAWN]
+		j.Notify(evtDetails)
+	}
 	return
 }
 func (d *DefaultGamestate) BanishCard(c cards.Card) {

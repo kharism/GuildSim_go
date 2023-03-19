@@ -1,6 +1,10 @@
 package main
 
 import (
+	"github/kharism/GuildSim_go/internal/cards"
+	"github/kharism/GuildSim_go/internal/decorator"
+	"github/kharism/GuildSim_go/internal/factory"
+	"github/kharism/GuildSim_go/internal/gamestate"
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -15,6 +19,9 @@ var (
 
 const (
 	HAND_SCALE = 0.25
+
+	ORI_CARD_WIDTH  = 450
+	ORI_CARD_HEIGHT = 600
 
 	SPRITE_WIDTH  = 450 * 0.25
 	SPRITE_HEIGHT = 600 * 0.25
@@ -36,10 +43,38 @@ var currentState AbstractEbitenState
 func init() {
 
 }
+
+type exitAction struct{}
+
+func (e *exitAction) DoAction() {
+	//fmt.Println("Game over")
+	//os.Exit(0)
+	currentState = mainMenu
+}
+func AttachGameOverListener(state cards.AbstractGamestate) cards.AbstractGamestate {
+	quit := exitAction{}
+	gameoverlistener := cards.NewStillAliveListener(state, &quit)
+	state.AttachListener(cards.EVENT_TAKE_DAMAGE, gameoverlistener)
+	return state
+}
+
+func AttachDrawMainDeckListener(state cards.AbstractGamestate) cards.AbstractGamestate {
+	draw := &OnDrawAction{mainGameState: mainGame.(*MainGameState)}
+	state.AttachListener(cards.EVENT_CARD_DRAWN, draw)
+	// fmt.Println("Done Attaching")
+	return state
+}
 func (g *Game) ChangeState(stateName string) {
 	switch stateName {
 	case STATE_MAIN_GAME:
+		starterDeckSet := []string{factory.SET_STARTER_DECK}
+		centerDeckSet := []string{factory.SET_CENTER_DECK_1}
+		decorators := []decorator.AbstractDecorator{AttachGameOverListener, AttachDrawMainDeckListener}
+		defaultGamestate := gamestate.CustomizedDefaultGamestate(starterDeckSet, centerDeckSet, decorators)
+		mm := mainGame.(*MainGameState)
+		mm.defaultGamestate = defaultGamestate.(*gamestate.DefaultGamestate)
 		currentState = mainGame
+		mm.defaultGamestate.BeginTurn()
 	case STATE_MAIN_MENU:
 		currentState = mainMenu
 	}
@@ -65,6 +100,7 @@ func main() {
 	game := &Game{}
 	mainMenu = NewMainMenuState(game)
 	mainGame = NewMainGameState(game)
+
 	currentState = mainMenu
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

@@ -4,6 +4,8 @@ import "github/kharism/GuildSim_go/internal/observer"
 
 // type of events
 var EVENT_CARD_PLAYED = "CardPlayed"
+var EVENT_CARD_DRAWN = "CardDraw"
+var EVENT_CARD_DRAWN_CENTER = "CardDrawCenter"
 var EVENT_CARD_EXPLORED = "CardExplored"
 var EVENT_CARD_DEFEATED = "CardDefeated"
 var EVENT_CARD_RECRUITED = "CardRecruited"
@@ -13,6 +15,7 @@ var EVENT_HEAL_DAMAGE = "HealDamage"
 
 // this is the key of map[string]interface
 var EVENT_ATTR_CARD_PLAYED = "CardPlayed"
+var EVENT_ATTR_CARD_DRAWN = "CardDrawn"
 var EVENT_ATTR_CARD_EXPLORED = "CardExplored"
 var EVENT_ATTR_CARD_DEFEATED = "CardDefeated"
 var EVENT_ATTR_CARD_RECRUITED = "CardRecruited"
