@@ -7,6 +7,10 @@ import (
 	"github/kharism/GuildSim_go/internal/gamestate"
 	"log"
 
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
+
+	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -34,14 +38,24 @@ const (
 	HAND_START_Y    = MAIN_DECK_Y
 	STATE_MAIN_MENU = "mainmenu"
 	STATE_MAIN_GAME = "maingame"
+	dpi             = 72
 )
 
 var mainMenu AbstractEbitenState
 var mainGame AbstractEbitenState
 var currentState AbstractEbitenState
+var mplusNormalFont font.Face
 
 func init() {
-
+	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
+	if err != nil {
+		log.Fatal(err)
+	}
+	mplusNormalFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    24,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	})
 }
 
 type exitAction struct{}
@@ -73,6 +87,7 @@ func (g *Game) ChangeState(stateName string) {
 		defaultGamestate := gamestate.CustomizedDefaultGamestate(starterDeckSet, centerDeckSet, decorators)
 		mm := mainGame.(*MainGameState)
 		mm.defaultGamestate = defaultGamestate.(*gamestate.DefaultGamestate)
+		mm.defaultGamestate.SetCardPicker(mm.cardPicker)
 		currentState = mainGame
 		mm.defaultGamestate.BeginTurn()
 	case STATE_MAIN_MENU:

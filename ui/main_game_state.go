@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
 	"github/kharism/GuildSim_go/internal/gamestate"
+	"image/color"
 	"log"
 	"math"
 
@@ -12,18 +13,25 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 type MainGameState struct {
 	bgImage          *ebiten.Image
 	bgImage2         *ebiten.Image
+	paperBg          *ebiten.Image
+	checkMark        *ebiten.Image
+	btn              *ebiten.Image
 	cardInHand       []*EbitenCard
 	stateChanger     AbstractStateChanger
 	detailViewCard   *EbitenCard
 	defaultGamestate *gamestate.DefaultGamestate
-	currentSubState  SubState
-	mainState        *mainMainState
-	detailState      *detailState
+
+	// sub-states
+	currentSubState SubState
+	mainState       *mainMainState
+	detailState     *detailState
+	cardPicker      *cardPickState
 }
 type SubState interface {
 	Draw(screen *ebiten.Image)
@@ -48,6 +56,15 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 		}
 		s.m.currentSubState = s.m.detailState
 	}
+	if inpututil.IsKeyJustReleased(ebiten.KeySpace) {
+		cardInHand := s.m.defaultGamestate.CardsInHand
+		fmt.Println("Space pressed")
+		go func() {
+			cardPick := s.m.defaultGamestate.GetCardPicker().PickCard(cardInHand, "Card from hand")
+			fmt.Println("DDDD", cardPick)
+		}()
+		s.m.currentSubState = s.m.cardPicker
+	}
 }
 
 type detailState struct {
@@ -64,6 +81,101 @@ func (s *detailState) Draw(screen *ebiten.Image) {
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		s.m.currentSubState = s.m.mainState
 	}
+}
+
+type cardPickState struct {
+	m            *MainGameState
+	cards        []cards.Card
+	selectedCard *EbitenCard
+
+	selectedIndex int
+	pickedCards   chan (int)
+}
+
+func (c *cardPickState) PickCard(list []cards.Card, message string) int {
+	c.cards = list
+	fmt.Println("Tunggu hasil")
+	pickedCards := <-c.pickedCards
+	fmt.Println("Dapat hasil", pickedCards)
+	return pickedCards
+}
+func (c *cardPickState) PickCardOptional(list []cards.Card, message string) int {
+
+	return 0
+}
+
+const (
+	CARDPICKER_START_X = 160
+	CARDPICKER_START_Y = 40
+)
+
+func (c *cardPickState) Draw(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	// op.GeoM.Translate(0, 0)
+	screen.DrawImage(c.m.bgImage2, op)
+	op2 := &ebiten.DrawImageOptions{}
+	op2.GeoM.Scale(1.3, 1.0)
+	op2.GeoM.Translate(120, 0)
+	screen.DrawImage(c.m.paperBg, op2)
+	op3 := &ebiten.DrawImageOptions{}
+	colPerRow := 6
+	cardList := []*EbitenCard{}
+	for idx, cc := range c.cards {
+		ebitenCard := NewEbitenCardFromCard(cc)
+		op3.GeoM.Reset()
+		op3.GeoM.Scale(HAND_SCALE, HAND_SCALE)
+		col := (idx % colPerRow) + 1
+		row := (idx / colPerRow) + 1
+		// fmt.Println(row, col)
+		ebitenCard.x = CARDPICKER_START_X * col
+		ebitenCard.y = CARDPICKER_START_Y * row
+		op3.GeoM.Translate(float64(CARDPICKER_START_X*col), float64(CARDPICKER_START_Y*row))
+		screen.DrawImage(ebitenCard.image, op3)
+		cardList = append(cardList, ebitenCard)
+	}
+
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		xCur, yCur := ebiten.CursorPosition()
+		fmt.Println("DDDDDD", xCur, yCur)
+
+		for _, ec := range cardList {
+			// fmt.Println(ec.x, ec.y)
+			if xCur > ec.x && xCur < ec.x+int(math.Floor(ORI_CARD_WIDTH*HAND_SCALE)) &&
+				yCur > ec.y && yCur < ec.y+int(math.Floor(ORI_CARD_HEIGHT*HAND_SCALE)) {
+				c.selectedCard = ec
+				// fmt.Println("Sel", c.selectedCard)
+			}
+		}
+		// check if OK button is clicked
+		if xCur > CARDPICKER_START_X && xCur < CARDPICKER_START_X+190 &&
+			yCur > 540 && yCur < 540+49 && c.selectedCard != nil {
+			fmt.Println("Click OK", len(c.cards))
+			for idx, j := range c.cards {
+				if j == c.selectedCard.card {
+					fmt.Println("Send stuff", idx)
+					c.pickedCards <- idx
+					c.m.currentSubState = c.m.mainState
+					c.selectedCard = nil
+
+					//close(c.pickedCards)
+					break
+
+				}
+			}
+		}
+	}
+
+	if c.selectedCard != nil {
+		op3.GeoM.Reset()
+		op3.GeoM.Translate(CARDPICKER_START_X, 540)
+		screen.DrawImage(c.m.btn, op3)
+		text.Draw(screen, "OK", mplusNormalFont, CARDPICKER_START_X+70, 570, color.White)
+		op3.GeoM.Reset()
+		// op3.GeoM.Scale(4, 4)
+		op3.GeoM.Translate(float64(c.selectedCard.x), float64(c.selectedCard.y))
+		screen.DrawImage(c.m.checkMark, op3)
+	}
+	// fmt.Println("===")
 }
 
 type OnDrawAction struct {
@@ -102,17 +214,32 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	if err != nil {
 		log.Fatal(err)
 	}
+	paperBg, _, err := ebitenutil.NewImageFromFile("img/misc/paper-plain.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	checkmark, _, err := ebitenutil.NewImageFromFile("img/misc/blue_checkmark.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	btn, _, err := ebitenutil.NewImageFromFile("img/misc/green_button00.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// image1, _, err := ebitenutil.NewImageFromFile("img/RookieAdventurer.png")
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
 	cardInHand := []*EbitenCard{}
-	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger}
+	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger,
+		paperBg: paperBg, checkMark: checkmark, btn: btn}
 	mainState := &mainMainState{m: mgs}
 	detailState := &detailState{m: mgs}
+	cardpicker := &cardPickState{m: mgs, pickedCards: make(chan int)}
 	mgs.currentSubState = mainState
 	mgs.mainState = mainState
 	mgs.detailState = detailState
+	mgs.cardPicker = cardpicker
 	return mgs
 }
 
