@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"math/rand"
 
 	csg "github.com/kharism/golang-csg/core"
 
@@ -67,6 +68,7 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 				com := cards.NewRookieCombatant(s.m.defaultGamestate)
 				kk = append(kk, &adv, &com)
 			}
+			rand.Shuffle(20, func(i, j int) { kk[i], kk[j] = kk[j], kk[i] })
 			cardPick := s.m.defaultGamestate.GetCardPicker().PickCard(kk, "Card from hand")
 			fmt.Println("DDDD", cardPick)
 		}()
@@ -177,7 +179,8 @@ func (c *cardPickState) Draw(screen *ebiten.Image) {
 		xCur, yCur := ebiten.CursorPosition()
 		//fmt.Println("DDDDDD", xCur, yCur)
 
-		for _, ec := range cardList {
+		for i := len(cardList) - 1; i >= 0; i-- {
+			ec := cardList[i]
 			// fmt.Println(ec.x, ec.y)
 			if xCur > ec.x && xCur < ec.x+int(math.Floor(ORI_CARD_WIDTH*HAND_SCALE)) &&
 				yCur > ec.y && yCur < ec.y+int(math.Floor(ORI_CARD_HEIGHT*HAND_SCALE)) {
