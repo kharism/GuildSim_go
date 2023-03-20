@@ -54,13 +54,20 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 				}
 			}
 		}
+		s.m.detailState.prevSubState = s
 		s.m.currentSubState = s.m.detailState
 	}
 	if inpututil.IsKeyJustReleased(ebiten.KeySpace) {
-		cardInHand := s.m.defaultGamestate.CardsInHand
+		// cardInHand := s.m.defaultGamestate.CardsInHand
 		fmt.Println("Space pressed")
 		go func() {
-			cardPick := s.m.defaultGamestate.GetCardPicker().PickCard(cardInHand, "Card from hand")
+			kk := []cards.Card{}
+			for i := 0; i < 10; i++ {
+				adv := cards.NewRookieAdventurer(s.m.defaultGamestate)
+				com := cards.NewRookieCombatant(s.m.defaultGamestate)
+				kk = append(kk, &adv, &com)
+			}
+			cardPick := s.m.defaultGamestate.GetCardPicker().PickCard(kk, "Card from hand")
 			fmt.Println("DDDD", cardPick)
 		}()
 		s.m.currentSubState = s.m.cardPicker
@@ -68,7 +75,8 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 }
 
 type detailState struct {
-	m *MainGameState
+	m            *MainGameState
+	prevSubState SubState
 }
 
 func (s *detailState) Draw(screen *ebiten.Image) {
@@ -79,7 +87,8 @@ func (s *detailState) Draw(screen *ebiten.Image) {
 	op2.GeoM.Translate(600-ORI_CARD_WIDTH/2, 0)
 	screen.DrawImage(s.m.detailViewCard.image, op2)
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
-		s.m.currentSubState = s.m.mainState
+		s.m.currentSubState = s.prevSubState
+		s.prevSubState = nil
 	}
 }
 
@@ -136,7 +145,7 @@ func (c *cardPickState) Draw(screen *ebiten.Image) {
 
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		xCur, yCur := ebiten.CursorPosition()
-		fmt.Println("DDDDDD", xCur, yCur)
+		//fmt.Println("DDDDDD", xCur, yCur)
 
 		for _, ec := range cardList {
 			// fmt.Println(ec.x, ec.y)
@@ -163,6 +172,22 @@ func (c *cardPickState) Draw(screen *ebiten.Image) {
 				}
 			}
 		}
+	}
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
+		xCur, yCur := ebiten.CursorPosition()
+		//fmt.Println("DDDDDD", xCur, yCur)
+
+		for _, ec := range cardList {
+			// fmt.Println(ec.x, ec.y)
+			if xCur > ec.x && xCur < ec.x+int(math.Floor(ORI_CARD_WIDTH*HAND_SCALE)) &&
+				yCur > ec.y && yCur < ec.y+int(math.Floor(ORI_CARD_HEIGHT*HAND_SCALE)) {
+				c.m.detailViewCard = ec
+				break
+				// fmt.Println("Sel", c.selectedCard)
+			}
+		}
+		c.m.detailState.prevSubState = c
+		c.m.currentSubState = c.m.detailState
 	}
 
 	if c.selectedCard != nil {
