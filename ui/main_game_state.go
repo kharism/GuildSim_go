@@ -96,31 +96,6 @@ func (s *detailState) Draw(screen *ebiten.Image) {
 	}
 }
 
-type cardPickState struct {
-	m             *MainGameState
-	cards         []cards.Card
-	selectedCard  *EbitenCard
-	optional      bool
-	selectedIndex int
-	pickedCards   chan (int)
-}
-
-func (c *cardPickState) PickCard(list []cards.Card, message string) int {
-	c.cards = list
-	fmt.Println("Tunggu hasil")
-	pickedCards := <-c.pickedCards
-	fmt.Println("Dapat hasil", pickedCards)
-	return pickedCards
-}
-func (c *cardPickState) PickCardOptional(list []cards.Card, message string) int {
-	c.cards = list
-	c.optional = true
-	fmt.Println("Tunggu hasil")
-	pickedCards := <-c.pickedCards
-	fmt.Println("Dapat hasil", pickedCards)
-	return pickedCards
-}
-
 type OnDrawAction struct {
 	mainGameState *MainGameState
 }

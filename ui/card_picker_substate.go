@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github/kharism/GuildSim_go/internal/cards"
 	"image/color"
 	"math"
 
@@ -18,6 +19,30 @@ const (
 	CARDPICKER_DIST_Y = 40
 )
 
+type cardPickState struct {
+	m             *MainGameState
+	cards         []cards.Card
+	selectedCard  *EbitenCard
+	optional      bool
+	selectedIndex int
+	pickedCards   chan (int)
+}
+
+func (c *cardPickState) PickCard(list []cards.Card, message string) int {
+	c.cards = list
+	fmt.Println("Tunggu hasil")
+	pickedCards := <-c.pickedCards
+	fmt.Println("Dapat hasil", pickedCards)
+	return pickedCards
+}
+func (c *cardPickState) PickCardOptional(list []cards.Card, message string) int {
+	c.cards = list
+	c.optional = true
+	fmt.Println("Tunggu hasil")
+	pickedCards := <-c.pickedCards
+	fmt.Println("Dapat hasil", pickedCards)
+	return pickedCards
+}
 func (c *cardPickState) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Translate(0, 0)
