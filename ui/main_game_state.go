@@ -23,6 +23,8 @@ type MainGameState struct {
 	paperBg          *ebiten.Image
 	checkMark        *ebiten.Image
 	btn              *ebiten.Image
+	iconCombat       *ebiten.Image
+	iconExplore      *ebiten.Image
 	cardInHand       []*EbitenCard
 	stateChanger     AbstractStateChanger
 	detailViewCard   *EbitenCard
@@ -276,13 +278,21 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	if err != nil {
 		log.Fatal(err)
 	}
+	iconExplore, _, err := ebitenutil.NewImageFromFile("img/misc/exploration.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	iconCombat, _, err := ebitenutil.NewImageFromFile("img/misc/combat.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// image1, _, err := ebitenutil.NewImageFromFile("img/RookieAdventurer.png")
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
 	cardInHand := []*EbitenCard{}
 	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger,
-		paperBg: paperBg, checkMark: checkmark, btn: btn}
+		paperBg: paperBg, checkMark: checkmark, btn: btn, iconCombat: iconCombat, iconExplore: iconExplore}
 	mainState := &mainMainState{m: mgs}
 	detailState := &detailState{m: mgs}
 	cardpicker := &cardPickState{m: mgs, pickedCards: make(chan int)}
@@ -301,6 +311,30 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Translate(0, 0)
 	screen.DrawImage(m.bgImage, op)
+	res := m.defaultGamestate.GetCurrentResource()
+	hp := m.defaultGamestate.GetCurrentHP()
+	text.Draw(screen, fmt.Sprintf("HP %d", hp), mplusResource, 80, 40, color.RGBA{255, 0, 0, 255})
+
+	op.GeoM.Reset()
+	op.GeoM.Scale(0.8, 0.8)
+	op.GeoM.Translate(350, 0)
+	screen.DrawImage(m.iconCombat, op)
+	combat, ok := res.Detail[cards.RESOURCE_NAME_COMBAT]
+	if !ok {
+		combat = 0
+	}
+	text.Draw(screen, fmt.Sprintf("%d", combat), mplusResource, 500, 40, color.RGBA{255, 0, 0, 255})
+
+	op.GeoM.Reset()
+	op.GeoM.Scale(0.8, 0.8)
+	op.GeoM.Translate(540, 0)
+	screen.DrawImage(m.iconExplore, op)
+	explore, ok := res.Detail[cards.RESOURCE_NAME_EXPLORATION]
+	if !ok {
+		explore = 0
+	}
+	text.Draw(screen, fmt.Sprintf("%d", explore), mplusResource, 670, 40, color.RGBA{0, 255, 0, 255})
+
 	for _, c := range m.cardInHand {
 		c.Draw(screen)
 	}

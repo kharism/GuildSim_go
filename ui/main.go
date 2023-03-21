@@ -45,6 +45,7 @@ var mainMenu AbstractEbitenState
 var mainGame AbstractEbitenState
 var currentState AbstractEbitenState
 var mplusNormalFont font.Face
+var mplusResource font.Face
 
 func init() {
 	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
@@ -53,6 +54,11 @@ func init() {
 	}
 	mplusNormalFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    24,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	})
+	mplusResource, err = opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    48,
 		DPI:     dpi,
 		Hinting: font.HintingFull,
 	})
