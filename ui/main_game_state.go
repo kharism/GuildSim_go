@@ -19,15 +19,18 @@ import (
 )
 
 type MainGameState struct {
-	bgImage          *ebiten.Image
-	bgImage2         *ebiten.Image
-	paperBg          *ebiten.Image
-	checkMark        *ebiten.Image
-	btn              *ebiten.Image
-	iconCombat       *ebiten.Image
-	iconExplore      *ebiten.Image
-	cardInHand       []*EbitenCard
-	cardsPlayed      []*EbitenCard
+	bgImage     *ebiten.Image
+	bgImage2    *ebiten.Image
+	paperBg     *ebiten.Image
+	checkMark   *ebiten.Image
+	btn         *ebiten.Image
+	iconCombat  *ebiten.Image
+	iconExplore *ebiten.Image
+	cardInHand  []*EbitenCard
+	cardsPlayed []*EbitenCard
+	// cards in limbo meaning cards that is moving into cooldownpile or banished pile
+	// they have still visible until they reach those position
+	cardsInLimbo     []*EbitenCard
 	stateChanger     AbstractStateChanger
 	detailViewCard   *EbitenCard
 	mutex            *sync.Mutex
@@ -51,14 +54,18 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 		xCurInt, yCurInt := ebiten.CursorPosition()
 		// fmt.Println("oo", xCur, yCur)
 		xCur, yCur := float64(xCurInt), float64(yCurInt)
+		cardCollection := []*EbitenCard{}
 		if yCur > HAND_START_Y {
 			// right click on hand
-			for i := len(s.m.cardInHand) - 1; i >= 0; i-- {
-				if s.m.cardInHand[i].x < xCur {
-					s.m.detailViewCard = s.m.cardInHand[i]
-					//fmt.Println("cardIndex at", i)
-					break
-				}
+			cardCollection = s.m.cardInHand
+		} else if yCur > PLAYED_START_Y {
+			cardCollection = s.m.cardsPlayed
+		}
+		for i := len(cardCollection) - 1; i >= 0; i-- {
+			if cardCollection[i].x < xCur {
+				s.m.detailViewCard = cardCollection[i]
+				//fmt.Println("cardIndex at", i)
+				break
 			}
 		}
 		s.m.detailState.prevSubState = s
