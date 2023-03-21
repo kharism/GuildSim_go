@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"sync"
 
 	csg "github.com/kharism/golang-csg/core"
 
@@ -26,8 +27,10 @@ type MainGameState struct {
 	iconCombat       *ebiten.Image
 	iconExplore      *ebiten.Image
 	cardInHand       []*EbitenCard
+	cardsPlayed      []*EbitenCard
 	stateChanger     AbstractStateChanger
 	detailViewCard   *EbitenCard
+	mutex            *sync.Mutex
 	defaultGamestate *gamestate.DefaultGamestate
 
 	// sub-states
@@ -45,20 +48,36 @@ type mainMainState struct {
 
 func (s *mainMainState) Draw(screen *ebiten.Image) {
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
-		xCur, yCur := ebiten.CursorPosition()
-		fmt.Println("oo", xCur, yCur)
+		xCurInt, yCurInt := ebiten.CursorPosition()
+		// fmt.Println("oo", xCur, yCur)
+		xCur, yCur := float64(xCurInt), float64(yCurInt)
 		if yCur > HAND_START_Y {
 			// right click on hand
 			for i := len(s.m.cardInHand) - 1; i >= 0; i-- {
 				if s.m.cardInHand[i].x < xCur {
 					s.m.detailViewCard = s.m.cardInHand[i]
-					fmt.Println("cardIndex at", i)
+					//fmt.Println("cardIndex at", i)
 					break
 				}
 			}
 		}
 		s.m.detailState.prevSubState = s
 		s.m.currentSubState = s.m.detailState
+	}
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		xCurInt, yCurInt := ebiten.CursorPosition()
+		xCur, yCur := float64(xCurInt), float64(yCurInt)
+		if yCur > HAND_START_Y {
+			// right click on hand
+			for i := len(s.m.cardInHand) - 1; i >= 0; i-- {
+				if s.m.cardInHand[i].x < xCur {
+					go s.m.defaultGamestate.PlayCard(s.m.cardInHand[i].card)
+					//s.m.detailViewCard = s.m.cardInHand[i]
+					//fmt.Println("cardIndex at", i)
+					break
+				}
+			}
+		}
 	}
 	if inpututil.IsKeyJustReleased(ebiten.KeySpace) {
 		// cardInHand := s.m.defaultGamestate.CardsInHand
@@ -105,23 +124,71 @@ const (
 )
 
 func (d *OnDrawAction) DoAction(data map[string]interface{}) {
-	fmt.Println("OnDrawAction")
+	// fmt.Println("OnDrawAction")
 	drawnCards := data[cards.EVENT_ATTR_CARD_DRAWN].(cards.Card)
 	newEbitenCard := NewEbitenCardFromCard(drawnCards)
 	ll := mainGame.(*MainGameState)
 	indexCard := len(ll.defaultGamestate.CardsInHand) - 1
-	newEbitenCard.x = int(math.Floor(MAIN_DECK_X))
-	newEbitenCard.y = int(math.Floor(MAIN_DECK_Y))
-	newEbitenCard.tx = int(math.Floor(HAND_START_X + float64(indexCard)*HAND_DIST_X))
+	newEbitenCard.x = math.Floor(MAIN_DECK_X)
+	newEbitenCard.y = math.Floor(MAIN_DECK_Y)
+	newEbitenCard.tx = math.Floor(HAND_START_X + float64(indexCard)*HAND_DIST_X)
 	newEbitenCard.ty = HAND_START_Y
 	vx := float64(newEbitenCard.tx - newEbitenCard.x)
 	vy := float64(newEbitenCard.ty - newEbitenCard.y)
 	speedVector := csg.NewVector(vx, vy, 0)
 	speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-	newEbitenCard.vx = int(speedVector.X)
-	newEbitenCard.vy = int(speedVector.Y)
+	newEbitenCard.vx = speedVector.X
+	newEbitenCard.vy = speedVector.Y
 	fmt.Println(newEbitenCard.x, newEbitenCard.y, newEbitenCard.tx, newEbitenCard.ty)
+	ll.mutex.Lock()
 	ll.cardInHand = append(ll.cardInHand, newEbitenCard)
+	ll.mutex.Unlock()
+}
+
+type OnPlayAction struct {
+	mainGameState *MainGameState
+}
+
+func (p *OnPlayAction) DoAction(data map[string]interface{}) {
+	playedCards := data[cards.EVENT_ATTR_CARD_PLAYED].(cards.Card)
+	mm := mainGame.(*MainGameState)
+	newHand := []*EbitenCard{}
+	mm.mutex.Lock()
+	tx := PLAYED_START_X + 45*len(mm.cardsPlayed)
+	ty := PLAYED_START_Y
+	moveIndex := -1
+	for idx, val := range mm.cardInHand {
+		if val.card == playedCards {
+			moveIndex = idx
+			val.tx = float64(tx)
+			val.ty = float64(ty)
+			vx := float64(val.tx - val.x)
+			vy := float64(val.ty - val.y)
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(5)
+			val.vx = speedVector.X
+			val.vy = speedVector.Y
+
+			// fmt.Printf("Target (%d,%d) speedVector (%f,%f) v (%d,%d)\n", val.tx, val.ty, speedVector.X, speedVector.Y, val.vx, val.vy)
+			mm.cardsPlayed = append(mm.cardsPlayed, val)
+		} else {
+			newHand = append(newHand, val)
+		}
+	}
+	// move any card on the right of our picked cards
+	for i := moveIndex; i < len(newHand); i++ {
+		newHand[i].tx = math.Floor(HAND_START_X + float64(i)*HAND_DIST_X)
+		newHand[i].ty = HAND_START_Y
+		vx := float64(newHand[i].tx - newHand[i].x)
+		vy := float64(newHand[i].ty - newHand[i].y)
+		speedVector := csg.NewVector(vx, vy, 0)
+		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+		newHand[i].vx = speedVector.X
+		newHand[i].vy = speedVector.Y
+	}
+	mm.cardInHand = newHand
+	mm.mutex.Unlock()
+	// fmt.Println(mm.cardInHand)
 }
 func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	background, _, err := ebitenutil.NewImageFromFile("img/background.png")
@@ -152,13 +219,17 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	if err != nil {
 		log.Fatal(err)
 	}
+	mutex := &sync.Mutex{}
 	// image1, _, err := ebitenutil.NewImageFromFile("img/RookieAdventurer.png")
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
 	cardInHand := []*EbitenCard{}
+	cardsPlayed := []*EbitenCard{}
 	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger,
-		paperBg: paperBg, checkMark: checkmark, btn: btn, iconCombat: iconCombat, iconExplore: iconExplore}
+		paperBg: paperBg, checkMark: checkmark, btn: btn, iconCombat: iconCombat, iconExplore: iconExplore, mutex: mutex,
+		cardsPlayed: cardsPlayed,
+	}
 	mainState := &mainMainState{m: mgs}
 	detailState := &detailState{m: mgs}
 	cardpicker := &cardPickState{m: mgs, pickedCards: make(chan int)}
@@ -204,18 +275,24 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	for _, c := range m.cardInHand {
 		c.Draw(screen)
 	}
+	for _, c := range m.cardsPlayed {
+		c.Draw(screen)
+	}
 
 	m.currentSubState.Draw(screen)
 
-	if len(m.cardInHand) > 0 {
-		msg := fmt.Sprintf("Card1Pos=(%d,%d)\nCard1Target=(%d,%d)\nCard1V=(%d,%d)", m.cardInHand[0].x, m.cardInHand[0].y,
-			m.cardInHand[0].tx, m.cardInHand[1].ty, m.cardInHand[0].vx, m.cardInHand[1].vy)
+	if len(m.cardsPlayed) > 0 {
+		msg := fmt.Sprintf("Card1Pos=(%d,%d)\nCard1Target=(%d,%d)\nCard1V=(%d,%d)", m.cardsPlayed[0].x, m.cardsPlayed[0].y,
+			m.cardsPlayed[0].tx, m.cardsPlayed[0].ty, m.cardsPlayed[0].vx, m.cardsPlayed[0].vy)
 		ebitenutil.DebugPrint(screen, msg)
 	}
 
 }
 func (m *MainGameState) Update() error {
 	for _, c := range m.cardInHand {
+		c.Update()
+	}
+	for _, c := range m.cardsPlayed {
 		c.Update()
 	}
 	return nil

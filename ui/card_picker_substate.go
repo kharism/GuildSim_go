@@ -61,8 +61,8 @@ func (c *cardPickState) Draw(screen *ebiten.Image) {
 		col := (idx % colPerRow)
 		row := (idx / colPerRow)
 		// fmt.Println(row, col)
-		ebitenCard.x = CARDPICKER_START_X + CARDPICKER_DIST_X*col
-		ebitenCard.y = CARDPICKER_START_Y + CARDPICKER_DIST_Y*row
+		ebitenCard.x = float64(CARDPICKER_START_X + CARDPICKER_DIST_X*col)
+		ebitenCard.y = float64(CARDPICKER_START_Y + CARDPICKER_DIST_Y*row)
 		// op3.GeoM.Translate(float64(CARDPICKER_START_X*col), float64(CARDPICKER_START_Y*row))
 		op3.GeoM.Translate(float64(CARDPICKER_START_X+CARDPICKER_DIST_X*col), float64(CARDPICKER_START_Y+CARDPICKER_DIST_Y*row))
 		screen.DrawImage(ebitenCard.image, op3)
@@ -70,13 +70,13 @@ func (c *cardPickState) Draw(screen *ebiten.Image) {
 	}
 
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
-		xCur, yCur := ebiten.CursorPosition()
+		xCurInt, yCurInt := ebiten.CursorPosition()
 		//fmt.Println("DDDDDD", xCur, yCur)
-
+		xCur, yCur := float64(xCurInt), float64(yCurInt)
 		for _, ec := range cardList {
 			// fmt.Println(ec.x, ec.y)
-			if xCur > ec.x && xCur < ec.x+int(math.Floor(ORI_CARD_WIDTH*HAND_SCALE)) &&
-				yCur > ec.y && yCur < ec.y+int(math.Floor(ORI_CARD_HEIGHT*HAND_SCALE)) {
+			if xCur > ec.x && xCur < ec.x+math.Floor(ORI_CARD_WIDTH*HAND_SCALE) &&
+				yCur > ec.y && yCur < ec.y+math.Floor(ORI_CARD_HEIGHT*HAND_SCALE) {
 				c.selectedCard = ec
 				// fmt.Println("Sel", c.selectedCard)
 			}
@@ -108,14 +108,14 @@ func (c *cardPickState) Draw(screen *ebiten.Image) {
 		}
 	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
-		xCur, yCur := ebiten.CursorPosition()
+		xCurInt, yCurInt := ebiten.CursorPosition()
 		//fmt.Println("DDDDDD", xCur, yCur)
-
+		xCur, yCur := float64(xCurInt), float64(yCurInt)
 		for i := len(cardList) - 1; i >= 0; i-- {
 			ec := cardList[i]
 			// fmt.Println(ec.x, ec.y)
-			if xCur > ec.x && xCur < ec.x+int(math.Floor(ORI_CARD_WIDTH*HAND_SCALE)) &&
-				yCur > ec.y && yCur < ec.y+int(math.Floor(ORI_CARD_HEIGHT*HAND_SCALE)) {
+			if xCur > ec.x && xCur < ec.x+math.Floor(ORI_CARD_WIDTH*HAND_SCALE) &&
+				yCur > ec.y && yCur < ec.y+math.Floor(ORI_CARD_HEIGHT*HAND_SCALE) {
 				c.m.detailViewCard = ec
 				break
 				// fmt.Println("Sel", c.selectedCard)

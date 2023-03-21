@@ -13,14 +13,14 @@ type EbitenCard struct {
 	oriWidth  int
 	oriHeight int
 	// current position
-	x int
-	y int
+	x float64
+	y float64
 	// velocity of card movement
-	vx int
-	vy int
+	vx float64
+	vy float64
 	// target position if card moved
-	tx int
-	ty int
+	tx float64
+	ty float64
 }
 
 func (e *EbitenCard) Draw(screen *ebiten.Image) {
