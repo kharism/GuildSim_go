@@ -19,5 +19,5 @@ func (d *DamageDrawCurse) GetDescription() string {
 func (d *DamageDrawCurse) OnAddedToHand() {
 	d.state.TakeDamage(2)
 	d.state.RemoveCardFromHand(d)
-	d.state.BanishCard(d)
+	d.state.BanishCard(d, DISCARD_SOURCE_HAND)
 }

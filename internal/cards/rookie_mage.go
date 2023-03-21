@@ -32,7 +32,7 @@ func (h *RookieMage) OnPlay() {
 
 		h.state.RemoveCardFromHandIdx(discardedIdx)
 
-		h.state.DiscardCard(discardedCard)
+		h.state.DiscardCard(discardedCard, DISCARD_SOURCE_HAND)
 		for i := 0; i < 2; i++ {
 			h.state.Draw()
 		}
@@ -40,6 +40,6 @@ func (h *RookieMage) OnPlay() {
 
 }
 
-func (h *RookieMage) Dispose() {
-	h.state.DiscardCard(h)
+func (h *RookieMage) Dispose(source string) {
+	h.state.DiscardCard(h, source)
 }

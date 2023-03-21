@@ -24,7 +24,7 @@ func (m *LichMageMonster) GetCost() Cost {
 func (m *LichMageMonster) OnPunish() {
 	m.turnCounter += 1
 	curse1 := NewStunCurse(m.state)
-	m.state.DiscardCard(&curse1)
+	m.state.DiscardCard(&curse1, DISCARD_SOURCE_NAN)
 	if m.turnCounter%3 == 0 {
 		m.state.TakeDamage(2)
 	}

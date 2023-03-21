@@ -39,8 +39,8 @@ func (a *AddResourceOnce) DoAction() {
 func (r *PackMule) OnDiscarded() {
 	r.gamestate.RemoveListener(EVENT_CARD_PLAYED, r.eventListener)
 }
-func (r *PackMule) Dispose() {
-	r.gamestate.DiscardCard(r)
+func (r *PackMule) Dispose(source string) {
+	r.gamestate.DiscardCard(r, source)
 }
 func (r *PackMule) OnPlay() {
 	r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 1)

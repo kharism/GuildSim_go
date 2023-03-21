@@ -1,6 +1,9 @@
 package cards
 
-import "math/rand"
+import (
+	"fmt"
+	"math/rand"
+)
 
 type TombForgottenMonarchEntrance struct {
 	BaseArea
@@ -34,6 +37,7 @@ func (a *TombForgottenMonarchEntrance) OnExplored() {
 		k := NewSkeletonGuard(a.state)
 		allAddedCard = append(allAddedCard, &k)
 	}
+	fmt.Println("Len of skeletonguard", skeletonGuardCount)
 	// add defeatSkeletonGuardCountEventListener
 	// defeat all skeleton guard to add lich mage to center deck
 	aa := NewSkeletonGuard(a.state)

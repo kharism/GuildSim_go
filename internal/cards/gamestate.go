@@ -9,6 +9,7 @@ var EVENT_CARD_DRAWN_CENTER = "CardDrawCenter"
 var EVENT_CARD_EXPLORED = "CardExplored"
 var EVENT_CARD_DEFEATED = "CardDefeated"
 var EVENT_CARD_RECRUITED = "CardRecruited"
+var EVENT_CARD_DISCARDED = "CardDiscarded"
 var EVENT_CARD_BANISHED = "CardBanished"
 var EVENT_TAKE_DAMAGE = "TakeDamage"
 var EVENT_HEAL_DAMAGE = "HealDamage"
@@ -19,6 +20,7 @@ var EVENT_ATTR_CARD_DRAWN = "CardDrawn"
 var EVENT_ATTR_CARD_EXPLORED = "CardExplored"
 var EVENT_ATTR_CARD_DEFEATED = "CardDefeated"
 var EVENT_ATTR_CARD_RECRUITED = "CardRecruited"
+var EVENT_ATTR_CARD_DISCARDED = "CardDiscarded"
 var EVENT_ATTR_CARD_BANISHED = "CardBanished"
 var EVENT_ATTR_CARD_TAKE_DAMAGE = "CardTakeDamage"
 var EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT = "CardTakeDamageAmt"
@@ -26,14 +28,24 @@ var EVENT_ATTR_CARD_HEAL_DAMAGE = "CardHealDamage"
 
 var EVENT_ATTR_DAMAGE_AMMT = "DamageAmount"
 
+var EVENT_ATTR_DISCARD_SOURCE = "DiscardSource"
+
+const (
+	DISCARD_SOURCE_HAND     = "hand"
+	DISCARD_SOURCE_PLAYED   = "played"
+	DISCARD_SOURCE_CENTER   = "center"
+	DISCARD_SOURCE_COOLDOWN = "cooldown"
+	DISCARD_SOURCE_NAN      = "nan"
+)
+
 type AbstractGamestate interface {
 	GetPlayedCards() []Card
 	GetCardInHand() []Card
 	GetCenterCard() []Card
 	GetCooldownCard() []Card
 	RecruitCard(c Card)
-	DiscardCard(c Card)
-	BanishCard(c Card)
+	DiscardCard(c Card, source string)
+	BanishCard(c Card, source string)
 	DefeatCard(c Card)
 	// just play card from no particular location and added it to list of played card
 	// It will assume the card is played from hand and try to remove cards from hand if possible

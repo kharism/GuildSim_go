@@ -36,7 +36,7 @@ func (h *BaseHero) OnRecruit() {
 
 }
 
-func (h *BaseHero) Dispose() {
+func (h *BaseHero) Dispose(source string) {
 
 }
 

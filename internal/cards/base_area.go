@@ -16,7 +16,7 @@ func (a *BaseArea) GetCost() Cost {
 func (a *BaseArea) GetCardType() CardType {
 	return Area
 }
-func (a *BaseArea) Dispose() {
+func (a *BaseArea) Dispose(source string) {
 
 }
 

@@ -94,14 +94,14 @@ func TestTextCardPicker(t *testing.T) {
 // Dummygamestate implements abstractgamestate and publisher
 type DummyGamestate struct {
 	currentResource   cards.Resource
-	CardsInDeck       cards.Deck
-	CardsInCenterDeck cards.Deck
+	CardsInDeck       cards.DeterministicDeck
+	CardsInCenterDeck cards.DeterministicDeck
 	TopicsListeners   map[string]*DummyEventListener
 	CardsInHand       []cards.Card
 	CardsPlayed       []cards.Card
 	CenterCards       []cards.Card
 	CardsBanished     []cards.Card
-	CardsDiscarded    cards.Deck
+	CardsDiscarded    cards.DeterministicDeck
 	HitPoint          int
 	//ui stuff
 	cardPiker cards.AbstractCardPicker
@@ -138,8 +138,8 @@ func NewDummyGamestate() cards.AbstractGamestate {
 	d.CenterCards = []cards.Card{}
 	d.CardsInHand = []cards.Card{}
 	d.cardPiker = &TestCardPicker{}
-	d.CardsInDeck = cards.Deck{}
-	d.CardsDiscarded = cards.Deck{}
+	d.CardsInDeck = cards.DeterministicDeck{}
+	d.CardsDiscarded = cards.DeterministicDeck{}
 	d.CardsBanished = []cards.Card{}
 
 	d.HitPoint = 60
@@ -184,7 +184,7 @@ func (d *DummyGamestate) EndTurn() {
 	// remove cards played
 	for _, c := range d.CardsPlayed {
 		// d.CardsDiscarded.Push(c)
-		c.Dispose()
+		c.Dispose(cards.DISCARD_SOURCE_PLAYED)
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
 		}
@@ -194,7 +194,7 @@ func (d *DummyGamestate) EndTurn() {
 	// remove cards in hand
 	for _, c := range d.CardsInHand {
 		// d.CardsDiscarded.Push(c)
-		c.Dispose()
+		c.Dispose(cards.DISCARD_SOURCE_HAND)
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
 		}
@@ -249,7 +249,8 @@ func (d *DummyGamestate) RecruitCard(c cards.Card) {
 			f := c.(cards.Recruitable)
 			f.OnRecruit()
 		}
-		d.DiscardCard(c)
+		// d.DiscardCard(c)
+		d.CardsDiscarded.Push(c)
 		cardRecruitedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_RECRUITED: c}
 		l, ok := d.TopicsListeners[cards.EVENT_CARD_RECRUITED]
 		if ok {
@@ -263,7 +264,7 @@ func (d *DummyGamestate) RecruitCard(c cards.Card) {
 func (d *DummyGamestate) GetCooldownCard() []cards.Card {
 	return d.CardsDiscarded.List()
 }
-func (d *DummyGamestate) DiscardCard(c cards.Card) {
+func (d *DummyGamestate) DiscardCard(c cards.Card, source string) {
 	d.CardsDiscarded.Push(c)
 	c.OnDiscarded()
 	return
@@ -329,7 +330,7 @@ func (d *DummyGamestate) Explore(c cards.Card) {
 		// payResource
 		d.PayResource(f)
 		c.OnExplored()
-		d.BanishCard(c)
+		d.BanishCard(c, cards.DISCARD_SOURCE_CENTER)
 		cardExploredEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_EXPLORED: c}
 
 		l, ok := d.TopicsListeners[cards.EVENT_CARD_EXPLORED]
@@ -348,17 +349,17 @@ func (d *DummyGamestate) Draw() {
 		// shuffle discard pile
 		d.CardsDiscarded.Shuffle()
 		d.CardsInDeck = d.CardsDiscarded
-		d.CardsDiscarded = cards.Deck{}
+		d.CardsDiscarded = cards.DeterministicDeck{}
 	}
 	newCard := d.CardsInDeck.Draw()
 	d.CardsInHand = append(d.CardsInHand, newCard)
 	newCard.OnAddedToHand()
 	return
 }
-func (d *DummyGamestate) BanishCard(c cards.Card) {
+func (d *DummyGamestate) BanishCard(c cards.Card, source string) {
 	d.CardsBanished = append(d.CardsBanished, c)
 	if _, ok := d.TopicsListeners[cards.EVENT_CARD_BANISHED]; ok {
-		notification := map[string]interface{}{cards.EVENT_ATTR_CARD_BANISHED: c}
+		notification := map[string]interface{}{cards.EVENT_ATTR_CARD_BANISHED: c, cards.EVENT_ATTR_DISCARD_SOURCE: source}
 		d.TopicsListeners[cards.EVENT_CARD_BANISHED].Notify(notification)
 	}
 	return
@@ -369,7 +370,8 @@ func (d *DummyGamestate) DefeatCard(c cards.Card) {
 	if (&f).IsEnough(res) {
 		d.PayResource(f)
 		c.OnSlain()
-		d.BanishCard(c)
+		// d.BanishCard(c, cards.DISCARD_SOURCE_CENTER)
+		d.CardsBanished = append(d.CardsBanished, c)
 		cardDefeatedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_DEFEATED: c}
 
 		l, ok := d.TopicsListeners[cards.EVENT_CARD_DEFEATED]

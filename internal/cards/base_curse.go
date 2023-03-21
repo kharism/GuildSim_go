@@ -34,6 +34,6 @@ func (h *BaseCurse) OnDiscarded() {}
 func (h *BaseCurse) OnPunish() {
 
 }
-func (h *BaseCurse) Dispose() {
+func (h *BaseCurse) Dispose(source string) {
 
 }

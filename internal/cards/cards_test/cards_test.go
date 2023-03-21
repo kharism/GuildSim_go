@@ -112,7 +112,7 @@ func TestExpore(t *testing.T) {
 	gamestate := NewDummyGamestate()
 	dungeon1 := cards.NewEasyDungeonArea(gamestate)
 	baseHero1 := cards.BaseHero{}
-	centerDeck := cards.Deck{}
+	centerDeck := cards.DeterministicDeck{}
 	centerDeck.Push(&dungeon1)
 	centerDeck.Push(&baseHero1)
 	gamestate.(*DummyGamestate).CardsInCenterDeck = centerDeck
@@ -217,7 +217,7 @@ func TestEndTurn(t *testing.T) {
 	onEndTurnCurse := cards.NewDamageEndturnCurse(gamestate)
 
 	dummyGamestate.CardsInHand = []cards.Card{&adventurer1, &adventurer2}
-	dummyGamestate.CardsInDeck = cards.Deck{}
+	dummyGamestate.CardsInDeck = cards.DeterministicDeck{}
 
 	dummyGamestate.CardsInDeck.Push(&onDrawCurse)
 	dummyGamestate.CardsInDeck.Push(&baseHero1)
@@ -264,7 +264,7 @@ func TestRookieMage(t *testing.T) {
 
 	dumGamestate := gamestate.(*DummyGamestate)
 
-	dumGamestate.CardsInDeck = cards.Deck{}
+	dumGamestate.CardsInDeck = cards.DeterministicDeck{}
 	dumGamestate.cardPiker = &cardPicker
 
 	k := cards.NewRookieMage(gamestate)

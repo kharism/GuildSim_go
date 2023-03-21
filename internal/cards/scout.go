@@ -9,8 +9,8 @@ func NewScout(state AbstractGamestate) Scout {
 	return Scout{state: state}
 }
 
-func (r *Scout) Dispose() {
-	r.state.DiscardCard(r)
+func (r *Scout) Dispose(source string) {
+	r.state.DiscardCard(r, source)
 }
 
 func (r *Scout) GetName() string {

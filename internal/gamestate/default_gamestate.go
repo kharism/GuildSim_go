@@ -166,7 +166,7 @@ func (d *DefaultGamestate) EndTurn() {
 
 	// remove cards played
 	for _, c := range d.CardsPlayed {
-		c.Dispose()
+		c.Dispose(cards.DISCARD_SOURCE_PLAYED)
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
 		}
@@ -175,7 +175,7 @@ func (d *DefaultGamestate) EndTurn() {
 
 	// remove cards in hand
 	for _, c := range d.CardsInHand {
-		c.Dispose()
+		c.Dispose(cards.DISCARD_SOURCE_HAND)
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
 		}
@@ -234,9 +234,13 @@ func (d *DefaultGamestate) RecruitCard(c cards.Card) {
 func (d *DefaultGamestate) GetCooldownCard() []cards.Card {
 	return d.CardsDiscarded.List()
 }
-func (d *DefaultGamestate) DiscardCard(c cards.Card) {
+func (d *DefaultGamestate) DiscardCard(c cards.Card, source string) {
 	d.CardsDiscarded.Push(c)
 	c.OnDiscarded()
+	data := map[string]interface{}{cards.EVENT_ATTR_CARD_DISCARDED: c, cards.EVENT_ATTR_DISCARD_SOURCE: source}
+	if _, ok := d.TopicsListeners[cards.EVENT_CARD_DISCARDED]; ok {
+		d.TopicsListeners[cards.EVENT_CARD_DISCARDED].Notify(data)
+	}
 	return
 }
 func (d *DefaultGamestate) CenterRowInit() {
@@ -276,7 +280,7 @@ func (d *DefaultGamestate) Explore(c cards.Card) {
 		// payResource
 		d.PayResource(f)
 		c.OnExplored()
-		d.BanishCard(c)
+		d.BanishCard(c, cards.DISCARD_SOURCE_CENTER)
 		cardExploredEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_EXPLORED: c}
 
 		l, ok := d.TopicsListeners[cards.EVENT_CARD_EXPLORED]
@@ -312,10 +316,10 @@ func (d *DefaultGamestate) Draw() {
 	}
 	return
 }
-func (d *DefaultGamestate) BanishCard(c cards.Card) {
+func (d *DefaultGamestate) BanishCard(c cards.Card, source string) {
 	d.CardsBanished = append(d.CardsBanished, c)
 	if _, ok := d.TopicsListeners[cards.EVENT_CARD_BANISHED]; ok {
-		notification := map[string]interface{}{cards.EVENT_ATTR_CARD_BANISHED: c}
+		notification := map[string]interface{}{cards.EVENT_ATTR_CARD_BANISHED: c, cards.EVENT_ATTR_DISCARD_SOURCE: source}
 		d.TopicsListeners[cards.EVENT_CARD_BANISHED].Notify(notification)
 	}
 	return
@@ -326,7 +330,7 @@ func (d *DefaultGamestate) DefeatCard(c cards.Card) {
 	if (&f).IsEnough(res) {
 		d.PayResource(f)
 		c.OnSlain()
-		d.BanishCard(c)
+		d.BanishCard(c, cards.DISCARD_SOURCE_CENTER)
 		cardDefeatedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_DEFEATED: c}
 
 		l, ok := d.TopicsListeners[cards.EVENT_CARD_DEFEATED]

@@ -21,8 +21,8 @@ func (h *StagShaman) GetCost() Cost {
 	return cost
 }
 
-func (h *StagShaman) Dispose() {
-	h.state.DiscardCard(h)
+func (h *StagShaman) Dispose(source string) {
+	h.state.DiscardCard(h, source)
 }
 
 func (h *StagShaman) OnPlay() {
@@ -32,7 +32,7 @@ func (h *StagShaman) OnPlay() {
 		cardId := cardPicker.PickCardOptional(cooldownList, "Pick a card to banish")
 		card := cooldownList[cardId]
 		h.state.RemoveCardFromCooldownIdx(cardId)
-		h.state.BanishCard(card)
+		h.state.BanishCard(card, DISCARD_SOURCE_COOLDOWN)
 	}
 	h.state.Draw()
 

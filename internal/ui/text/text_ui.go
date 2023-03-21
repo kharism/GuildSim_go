@@ -140,10 +140,11 @@ func (d *TextUIGamestate) RecruitCard(c cards.Card) {
 	d.gamestate.RecruitCard(c)
 	return
 }
-func (d *TextUIGamestate) DiscardCard(c cards.Card) {
-	d.gamestate.DiscardCard(c)
-	return
-}
+
+// func (d *TextUIGamestate) DiscardCard(c cards.Card) {
+// 	d.gamestate.DiscardCard(c)
+// 	return
+// }
 func (d *TextUIGamestate) CenterRowInit() {
 	d.gamestate.CenterRowInit()
 }
@@ -157,10 +158,11 @@ func (d *TextUIGamestate) ReplaceCenterCard() cards.Card {
 func (d *TextUIGamestate) Draw() {
 	d.gamestate.Draw()
 }
-func (d *TextUIGamestate) BanishCard(c cards.Card) {
-	d.gamestate.BanishCard(c)
-	return
-}
+
+// func (d *TextUIGamestate) BanishCard(c cards.Card) {
+// 	d.gamestate.BanishCard(c)
+// 	return
+// }
 func (d *TextUIGamestate) DefeatCard(c cards.Card) {
 	d.gamestate.DefeatCard(c)
 }

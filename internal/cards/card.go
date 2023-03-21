@@ -55,7 +55,7 @@ type Card interface {
 	OnAddedToHand()
 
 	// get rid of this card, you either send this to discard pile or banished pile
-	Dispose()
+	Dispose(source string)
 }
 
 func RemoveCard(cards []Card, card Card) []Card {
@@ -91,6 +91,16 @@ func GetShuffler() *rand.Rand {
 func (d *Deck) Shuffle() {
 	shuffler := GetShuffler()
 	shuffler.Shuffle(d.Size(), func(i, j int) { d.cards[i], d.cards[j] = d.cards[j], d.cards[i] })
+}
+
+// This class is for testing purpose
+// the OG is causes bug in testing
+type DeterministicDeck struct {
+	Deck
+}
+
+func (d *DeterministicDeck) Shuffle() {
+	rand.Shuffle(d.Size(), func(i, j int) { d.cards[i], d.cards[j] = d.cards[j], d.cards[i] })
 }
 
 // put card on the bottom of deck

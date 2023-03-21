@@ -9,8 +9,8 @@ func NewMonsterSlayer(state AbstractGamestate) MonsterSlayer {
 	return MonsterSlayer{gamestate: state}
 }
 
-func (r *MonsterSlayer) Dispose() {
-	r.gamestate.DiscardCard(r)
+func (r *MonsterSlayer) Dispose(source string) {
+	r.gamestate.DiscardCard(r, source)
 }
 
 func (r *MonsterSlayer) GetName() string {

@@ -197,6 +197,19 @@ func (p *OnPlayAction) DoAction(data map[string]interface{}) {
 	mm.mutex.Unlock()
 	// fmt.Println(mm.cardInHand)
 }
+
+type onDiscardAction struct {
+	mainGameState *MainGameState
+}
+
+func (p *onDiscardAction) DoAction(data map[string]interface{}) {
+	// cardDiscarded := data[cards.EVENT_ATTR_CARD_DISCARDED].(cards.Card)
+	// check which card is discarded, either from hand or played card
+	defer p.mainGameState.mutex.Unlock()
+	p.mainGameState.mutex.Lock()
+
+}
+
 func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	background, _, err := ebitenutil.NewImageFromFile("img/background.png")
 	if err != nil {

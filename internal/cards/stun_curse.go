@@ -18,6 +18,6 @@ func (h *StunCurse) GetCost() Cost {
 	cost := NewCost()
 	return cost
 }
-func (h *StunCurse) Dispose() {
-	h.state.DiscardCard(h)
+func (h *StunCurse) Dispose(source string) {
+	h.state.DiscardCard(h, source)
 }

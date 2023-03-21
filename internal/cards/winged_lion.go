@@ -33,6 +33,6 @@ func (h *WingedLion) OnPlay() {
 	h.state.Draw()
 }
 
-func (h *WingedLion) Dispose() {
-	h.state.DiscardCard(h)
+func (h *WingedLion) Dispose(source string) {
+	h.state.DiscardCard(h, source)
 }
