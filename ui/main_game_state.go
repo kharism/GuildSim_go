@@ -7,7 +7,6 @@ import (
 	"image/color"
 	"log"
 	"math"
-	"math/rand"
 	"sync"
 
 	csg "github.com/kharism/golang-csg/core"
@@ -26,6 +25,9 @@ type MainGameState struct {
 	btn         *ebiten.Image
 	iconCombat  *ebiten.Image
 	iconExplore *ebiten.Image
+	DiscardPile *ebiten.Image
+	MainDeck    *ebiten.Image
+	EndturnBtn  *ebiten.Image
 	cardInHand  []*EbitenCard
 	cardsPlayed []*EbitenCard
 	// cards in limbo meaning cards that is moving into cooldownpile or banished pile
@@ -41,6 +43,7 @@ type MainGameState struct {
 	mainState       *mainMainState
 	detailState     *detailState
 	cardPicker      *cardPickState
+	cardListState   *cardListState
 }
 type SubState interface {
 	Draw(screen *ebiten.Image)
@@ -74,8 +77,17 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		xCurInt, yCurInt := ebiten.CursorPosition()
 		xCur, yCur := float64(xCurInt), float64(yCurInt)
-		if yCur > HAND_START_Y {
-			// right click on hand
+		if xCur > DISCARD_START_X && xCur < DISCARD_START_X+HAND_SCALE*ORI_CARD_WIDTH {
+			s.m.cardListState.cards = s.m.defaultGamestate.CardsDiscarded.List()
+			s.m.currentSubState = s.m.cardListState
+		} else if xCur > ENDTURN_START_X {
+			fmt.Println("Endturn")
+			go func() {
+				s.m.defaultGamestate.EndTurn()
+				s.m.defaultGamestate.BeginTurn()
+			}()
+		} else if yCur > HAND_START_Y && xCur < DISCARD_START_X {
+			// left click on hand
 			for i := len(s.m.cardInHand) - 1; i >= 0; i-- {
 				if s.m.cardInHand[i].x < xCur {
 					go s.m.defaultGamestate.PlayCard(s.m.cardInHand[i].card)
@@ -89,18 +101,19 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 	if inpututil.IsKeyJustReleased(ebiten.KeySpace) {
 		// cardInHand := s.m.defaultGamestate.CardsInHand
 		fmt.Println("Space pressed")
-		go func() {
-			kk := []cards.Card{}
-			for i := 0; i < 10; i++ {
-				adv := cards.NewRookieAdventurer(s.m.defaultGamestate)
-				com := cards.NewRookieCombatant(s.m.defaultGamestate)
-				kk = append(kk, &adv, &com)
-			}
-			rand.Shuffle(20, func(i, j int) { kk[i], kk[j] = kk[j], kk[i] })
-			cardPick := s.m.defaultGamestate.GetCardPicker().PickCardOptional(kk, "Card from hand")
-			fmt.Println("DDDD", cardPick)
-		}()
-		s.m.currentSubState = s.m.cardPicker
+		// go func() {
+		// 	kk := []cards.Card{}
+		// 	for i := 0; i < 10; i++ {
+		// 		adv := cards.NewRookieAdventurer(s.m.defaultGamestate)
+		// 		com := cards.NewRookieCombatant(s.m.defaultGamestate)
+		// 		kk = append(kk, &adv, &com)
+		// 	}
+		// 	rand.Shuffle(20, func(i, j int) { kk[i], kk[j] = kk[j], kk[i] })
+		// 	cardPick := s.m.defaultGamestate.GetCardPicker().PickCardOptional(kk, "Card from hand")
+		// 	fmt.Println("DDDD", cardPick)
+		// }()
+		// s.m.currentSubState = s.m.cardPicker
+		s.m.defaultGamestate.Draw()
 	}
 }
 
@@ -127,7 +140,7 @@ type OnDrawAction struct {
 }
 
 const (
-	CARD_MOVE_SPEED = 5
+	CARD_MOVE_SPEED = 10
 )
 
 func (d *OnDrawAction) DoAction(data map[string]interface{}) {
@@ -172,7 +185,7 @@ func (p *OnPlayAction) DoAction(data map[string]interface{}) {
 			vx := float64(val.tx - val.x)
 			vy := float64(val.ty - val.y)
 			speedVector := csg.NewVector(vx, vy, 0)
-			speedVector = speedVector.Normalize().MultiplyScalar(5)
+			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
 			val.vx = speedVector.X
 			val.vy = speedVector.Y
 
@@ -203,10 +216,47 @@ type onDiscardAction struct {
 }
 
 func (p *onDiscardAction) DoAction(data map[string]interface{}) {
-	// cardDiscarded := data[cards.EVENT_ATTR_CARD_DISCARDED].(cards.Card)
-	// check which card is discarded, either from hand or played card
+	cardDiscarded := data[cards.EVENT_ATTR_CARD_DISCARDED].(cards.Card)
+	source := data[cards.EVENT_ATTR_DISCARD_SOURCE].(string)
+
 	defer p.mainGameState.mutex.Unlock()
 	p.mainGameState.mutex.Lock()
+	// var ebitenCard *EbitenCard
+	sourceCard := []*EbitenCard{}
+	newSource := []*EbitenCard{}
+	if source == cards.DISCARD_SOURCE_HAND {
+		// p.mainGameState.cardInHand = newHand
+		sourceCard = p.mainGameState.cardInHand
+	} else if source == cards.DISCARD_SOURCE_PLAYED {
+		// newPlayed := []*EbitenCard{}
+		sourceCard = p.mainGameState.cardsPlayed
+		// p.mainGameState.cardsPlayed = newPlayed
+	}
+	for i := 0; i < len(sourceCard); i++ {
+		if sourceCard[i].card == cardDiscarded {
+			ebitenCard := sourceCard[i]
+			ebitenCard.tx = DISCARD_START_X
+			ebitenCard.ty = DISCARD_START_Y
+			vx := float64(ebitenCard.tx - ebitenCard.x)
+			vy := float64(ebitenCard.ty - ebitenCard.y)
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+			ebitenCard.vx = speedVector.X
+			ebitenCard.vy = speedVector.Y
+			// fmt.Println("DetectDiscarded", cardDiscarded.GetName(), source, ebitenCard.vx, ebitenCard.vy)
+			p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+		} else {
+			newSource = append(newSource, sourceCard[i])
+		}
+	}
+	if source == cards.DISCARD_SOURCE_HAND {
+		p.mainGameState.cardInHand = newSource
+		// sourceCard = p.mainGameState.cardInHand
+	} else if source == cards.DISCARD_SOURCE_PLAYED {
+		// newPlayed := []*EbitenCard{}
+		// sourceCard = p.mainGameState.cardsPlayed
+		p.mainGameState.cardsPlayed = newSource
+	}
 
 }
 
@@ -239,6 +289,18 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	if err != nil {
 		log.Fatal(err)
 	}
+	mainDeck, _, err := ebitenutil.NewImageFromFile("img/misc/main_deck.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	discardPile, _, err := ebitenutil.NewImageFromFile("img/misc/cool_down.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	EndturnBtn, _, err := ebitenutil.NewImageFromFile("img/misc/end_turn.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 	mutex := &sync.Mutex{}
 	// image1, _, err := ebitenutil.NewImageFromFile("img/RookieAdventurer.png")
 	// if err != nil {
@@ -248,15 +310,17 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	cardsPlayed := []*EbitenCard{}
 	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger,
 		paperBg: paperBg, checkMark: checkmark, btn: btn, iconCombat: iconCombat, iconExplore: iconExplore, mutex: mutex,
-		cardsPlayed: cardsPlayed,
+		cardsPlayed: cardsPlayed, DiscardPile: discardPile, MainDeck: mainDeck, EndturnBtn: EndturnBtn,
 	}
 	mainState := &mainMainState{m: mgs}
 	detailState := &detailState{m: mgs}
 	cardpicker := &cardPickState{m: mgs, pickedCards: make(chan int)}
+	cardListState := &cardListState{m: mgs}
 	mgs.currentSubState = mainState
 	mgs.mainState = mainState
 	mgs.detailState = detailState
 	mgs.cardPicker = cardpicker
+	mgs.cardListState = cardListState
 	return mgs
 }
 
@@ -298,6 +362,23 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	for _, c := range m.cardsPlayed {
 		c.Draw(screen)
 	}
+	for _, c := range m.cardsInLimbo {
+		c.Draw(screen)
+	}
+	op.GeoM.Reset()
+	op.GeoM.Scale(HAND_SCALE, HAND_SCALE)
+	op.GeoM.Translate(MAIN_DECK_X, MAIN_DECK_Y)
+	screen.DrawImage(m.MainDeck, op)
+
+	op.GeoM.Reset()
+	op.GeoM.Scale(HAND_SCALE, HAND_SCALE)
+	op.GeoM.Translate(DISCARD_START_X, DISCARD_START_Y)
+	screen.DrawImage(m.DiscardPile, op)
+
+	op.GeoM.Reset()
+	// op.GeoM.Scale(HAND_SCALE, HAND_SCALE)
+	op.GeoM.Translate(ENDTURN_START_X, ENDTURN_START_Y)
+	screen.DrawImage(m.EndturnBtn, op)
 
 	m.currentSubState.Draw(screen)
 
@@ -315,5 +396,14 @@ func (m *MainGameState) Update() error {
 	for _, c := range m.cardsPlayed {
 		c.Update()
 	}
+	newCardInLimbo := []*EbitenCard{}
+	for _, c := range m.cardsInLimbo {
+		c.Update()
+		if c.tx != c.x || c.ty != c.y {
+			newCardInLimbo = append(newCardInLimbo, c)
+		}
+	}
+	m.cardsInLimbo = newCardInLimbo
+
 	return nil
 }

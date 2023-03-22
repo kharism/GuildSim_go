@@ -42,6 +42,12 @@ const (
 
 	PLAYED_START_X = 30
 	PLAYED_START_Y = 600*3/4 - 200
+
+	DISCARD_START_X = 1000
+	DISCARD_START_Y = MAIN_DECK_Y
+
+	ENDTURN_START_X = 1100
+	ENDTURN_START_Y = MAIN_DECK_Y
 )
 
 var mainMenu AbstractEbitenState
@@ -92,12 +98,20 @@ func AttachCardPlayedListener(state cards.AbstractGamestate) cards.AbstractGames
 	state.AttachListener(cards.EVENT_ATTR_CARD_PLAYED, onPlayAction)
 	return state
 }
+func AttachCardDiscardListener(state cards.AbstractGamestate) cards.AbstractGamestate {
+	onPlayAction := &onDiscardAction{mainGameState: mainGame.(*MainGameState)}
+	state.AttachListener(cards.EVENT_ATTR_CARD_DISCARDED, onPlayAction)
+	return state
+}
 func (g *Game) ChangeState(stateName string) {
 	switch stateName {
 	case STATE_MAIN_GAME:
 		starterDeckSet := []string{factory.SET_STARTER_DECK}
 		centerDeckSet := []string{factory.SET_CENTER_DECK_1}
-		decorators := []decorator.AbstractDecorator{AttachGameOverListener, AttachDrawMainDeckListener, AttachCardPlayedListener}
+		decorators := []decorator.AbstractDecorator{
+			AttachGameOverListener, AttachDrawMainDeckListener, AttachCardPlayedListener,
+			AttachCardDiscardListener,
+		}
 		defaultGamestate := gamestate.CustomizedDefaultGamestate(starterDeckSet, centerDeckSet, decorators)
 		mm := mainGame.(*MainGameState)
 		mm.defaultGamestate = defaultGamestate.(*gamestate.DefaultGamestate)

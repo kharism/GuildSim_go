@@ -27,20 +27,24 @@ type cardPickState struct {
 	selectedIndex int
 	pickedCards   chan (int)
 }
+type cardListState struct {
+	m     *MainGameState
+	cards []cards.Card
+}
 
 func (c *cardPickState) PickCard(list []cards.Card, message string) int {
 	c.cards = list
-	fmt.Println("Tunggu hasil")
+	// fmt.Println("Tunggu hasil")
 	pickedCards := <-c.pickedCards
-	fmt.Println("Dapat hasil", pickedCards)
+	// fmt.Println("Dapat hasil", pickedCards)
 	return pickedCards
 }
 func (c *cardPickState) PickCardOptional(list []cards.Card, message string) int {
 	c.cards = list
 	c.optional = true
-	fmt.Println("Tunggu hasil")
+	// fmt.Println("Tunggu hasil")
 	pickedCards := <-c.pickedCards
-	fmt.Println("Dapat hasil", pickedCards)
+	// fmt.Println("Dapat hasil", pickedCards)
 	return pickedCards
 }
 func (c *cardPickState) Draw(screen *ebiten.Image) {
@@ -142,4 +146,62 @@ func (c *cardPickState) Draw(screen *ebiten.Image) {
 		text.Draw(screen, "CANCEL", mplusNormalFont, CARDPICKER_START_X+250, 570, color.White)
 	}
 	// fmt.Println("===")
+}
+func (c *cardListState) Draw(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	// op.GeoM.Translate(0, 0)
+	screen.DrawImage(c.m.bgImage2, op)
+	op2 := &ebiten.DrawImageOptions{}
+	op2.GeoM.Scale(1.3, 1.0)
+	op2.GeoM.Translate(120, 0)
+	screen.DrawImage(c.m.paperBg, op2)
+	op3 := &ebiten.DrawImageOptions{}
+	colPerRow := 7
+	cardList := []*EbitenCard{}
+	for idx, cc := range c.cards {
+		ebitenCard := NewEbitenCardFromCard(cc)
+		op3.GeoM.Reset()
+		op3.GeoM.Scale(HAND_SCALE, HAND_SCALE)
+		col := (idx % colPerRow)
+		row := (idx / colPerRow)
+		// fmt.Println(row, col)
+		ebitenCard.x = float64(CARDPICKER_START_X + CARDPICKER_DIST_X*col)
+		ebitenCard.y = float64(CARDPICKER_START_Y + CARDPICKER_DIST_Y*row)
+		// op3.GeoM.Translate(float64(CARDPICKER_START_X*col), float64(CARDPICKER_START_Y*row))
+		op3.GeoM.Translate(float64(CARDPICKER_START_X+CARDPICKER_DIST_X*col), float64(CARDPICKER_START_Y+CARDPICKER_DIST_Y*row))
+		screen.DrawImage(ebitenCard.image, op3)
+		cardList = append(cardList, ebitenCard)
+	}
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
+		xCurInt, yCurInt := ebiten.CursorPosition()
+		//fmt.Println("DDDDDD", xCur, yCur)
+		xCur, yCur := float64(xCurInt), float64(yCurInt)
+		for i := len(cardList) - 1; i >= 0; i-- {
+			ec := cardList[i]
+			// fmt.Println(ec.x, ec.y)
+			if xCur > ec.x && xCur < ec.x+math.Floor(ORI_CARD_WIDTH*HAND_SCALE) &&
+				yCur > ec.y && yCur < ec.y+math.Floor(ORI_CARD_HEIGHT*HAND_SCALE) {
+				c.m.detailViewCard = ec
+				break
+				// fmt.Println("Sel", c.selectedCard)
+			}
+		}
+		c.m.detailState.prevSubState = c
+		c.m.currentSubState = c.m.detailState
+	}
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		xCurInt, yCurInt := ebiten.CursorPosition()
+		//fmt.Println("DDDDDD", xCur, yCur)
+		xCur, yCur := float64(xCurInt), float64(yCurInt)
+		if xCur > CARDPICKER_START_X+200 && xCur < CARDPICKER_START_X+200+190 &&
+			yCur > 540 && yCur < 540+49 {
+			// c.pickedCards <- -1
+			c.m.currentSubState = c.m.mainState
+			// c.selectedCard = nil
+		}
+	}
+	op3.GeoM.Reset()
+	op3.GeoM.Translate(CARDPICKER_START_X+200, 540)
+	screen.DrawImage(c.m.btn, op3)
+	text.Draw(screen, "CANCEL", mplusNormalFont, CARDPICKER_START_X+250, 570, color.White)
 }
