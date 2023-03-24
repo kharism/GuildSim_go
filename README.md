@@ -30,3 +30,4 @@ clone the repo and just run `go build main.go` and run the executable
 
 ### GUI
 clone the repo and go to ui directory and run `go build -o main *.go`
+![](img/main_game.png)
