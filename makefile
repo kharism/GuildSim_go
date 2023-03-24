@@ -5,3 +5,5 @@ build_gui:
 	mkdir dist
 	cp ui/game.exe ./dist
 	cp -r ui/img/ ./dist
+test:
+	go test ./internal/cards/cards_test
