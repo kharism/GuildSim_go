@@ -38,31 +38,31 @@ func createStarterCenterDeck(gamestate cards.AbstractGamestate) []cards.Card {
 		h := cards.NewGoblinMonster(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 3; i++ {
 		h := cards.NewGoblinSmallLairArea(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 3; i++ {
 		h := cards.NewRookieNurse(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 3; i++ {
 		h := cards.NewRookieMage(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 3; i++ {
 		h := cards.NewScout(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 2; i++ {
 		h := cards.NewMonsterSlayer(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 2; i++ {
 		h := cards.NewStagShaman(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 2; i++ {
 		h := cards.NewWingedLion(gamestate)
 		deck = append(deck, &h)
 	}

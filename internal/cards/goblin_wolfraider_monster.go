@@ -1,28 +1,28 @@
 package cards
 
-type GoblinWolfRaiderMonster struct {
+type GoblinRaiderMonster struct {
 	BaseMonster
 	state AbstractGamestate
 }
 
-func NewGoblinWolfRaiderMonster(state AbstractGamestate) GoblinWolfRaiderMonster {
-	return GoblinWolfRaiderMonster{state: state}
+func NewGoblinWolfRaiderMonster(state AbstractGamestate) GoblinRaiderMonster {
+	return GoblinRaiderMonster{state: state}
 
 }
-func (m *GoblinWolfRaiderMonster) GetName() string {
-	return "GoblinWolfRaiderMonster"
+func (m *GoblinRaiderMonster) GetName() string {
+	return "GoblinRaiderMonster"
 }
-func (m *GoblinWolfRaiderMonster) GetDescription() string {
-	return "GoblinWolfRaiderMonster"
+func (m *GoblinRaiderMonster) GetDescription() string {
+	return "2 damage per turn"
 }
-func (m *GoblinWolfRaiderMonster) GetCost() Cost {
+func (m *GoblinRaiderMonster) GetCost() Cost {
 	cost := NewCost()
 	cost.Detail[RESOURCE_NAME_COMBAT] = 3
 	return cost
 }
-func (m *GoblinWolfRaiderMonster) OnPunish() {
+func (m *GoblinRaiderMonster) OnPunish() {
 	m.state.TakeDamage(2)
 }
-func (m *GoblinWolfRaiderMonster) Dispose(source string) {
+func (m *GoblinRaiderMonster) Dispose(source string) {
 	m.state.DiscardCard(m, source)
 }

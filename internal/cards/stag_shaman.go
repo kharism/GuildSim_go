@@ -30,9 +30,12 @@ func (h *StagShaman) OnPlay() {
 	if len(cooldownList) > 0 {
 		cardPicker := h.state.GetCardPicker()
 		cardId := cardPicker.PickCardOptional(cooldownList, "Pick a card to banish")
-		card := cooldownList[cardId]
-		h.state.RemoveCardFromCooldownIdx(cardId)
-		h.state.BanishCard(card, DISCARD_SOURCE_COOLDOWN)
+		if cardId > -1 {
+			card := cooldownList[cardId]
+			h.state.RemoveCardFromCooldownIdx(cardId)
+			h.state.BanishCard(card, DISCARD_SOURCE_COOLDOWN)
+		}
+
 	}
 	h.state.Draw()
 

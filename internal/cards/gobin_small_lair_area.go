@@ -32,7 +32,7 @@ func (ed *GoblinSmallLairArea) OnExplored() {
 		ll := NewGoblinWolfRaiderMonster(ed.gamestate)
 		wolfRaiders = append(wolfRaiders, &ll)
 	}
-	ed.gamestate.AddCardToCenterDeck(wolfRaiders...)
+	ed.gamestate.AddCardToCenterDeck(DISCARD_SOURCE_NAN, true, wolfRaiders...)
 }
 
 // when slain, do this

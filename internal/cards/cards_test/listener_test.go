@@ -11,7 +11,7 @@ type dummyAction struct {
 
 func (d *dummyAction) DoAction() {
 	newHero := cards.NewRookieNurse(d.state)
-	d.state.AddCardToCenterDeck(&newHero)
+	d.state.AddCardToCenterDeck(cards.DISCARD_SOURCE_NAN, true, &newHero)
 }
 func TestCardsRecruitedListener(t *testing.T) {
 	gamestate := NewDummyGamestate()

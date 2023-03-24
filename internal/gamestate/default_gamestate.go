@@ -1,6 +1,7 @@
 package gamestate
 
 import (
+	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
 	"github/kharism/GuildSim_go/internal/observer"
 )
@@ -50,15 +51,25 @@ type DefaultGamestate struct {
 	CardsDiscarded    cards.Deck
 	CardsBanished     []cards.Card
 	//ui stuff
-	cardPiker cards.AbstractCardPicker
+	cardPiker         cards.AbstractCardPicker
+	centerCardChanged bool
 }
 
 // AddCardToCenterDeck implements cards.AbstractGamestate
-func (d *DefaultGamestate) AddCardToCenterDeck(c ...cards.Card) {
+func (d *DefaultGamestate) AddCardToCenterDeck(source string, shuffle bool, c ...cards.Card) {
+	var j *DummyEventListener
+	j = d.TopicsListeners[cards.EVENT_CARD_GOTO_CENTER]
 	for _, cc := range c {
 		d.CardsInCenterDeck.Stack(cc)
+		if j != nil {
+			evt := map[string]interface{}{cards.EVENT_ATTR_CARD_GOTO_CENTER: cc, cards.EVENT_ATTR_DISCARD_SOURCE: source}
+			j.Notify(evt)
+		}
 	}
-	d.CardsInCenterDeck.Shuffle()
+	if shuffle {
+		d.CardsInCenterDeck.Shuffle()
+	}
+
 }
 
 func NewDefaultGamestate() cards.AbstractGamestate {
@@ -180,13 +191,25 @@ func (d *DefaultGamestate) EndTurn() {
 			pun.OnPunish()
 		}
 	}
+	if !d.centerCardChanged {
+		for i := len(d.CenterCards) - 1; i >= 0; i-- {
+			hh := d.CenterCards[i]
+			d.RemoveCardFromCenterRowIdx(i)
+			d.AddCardToCenterDeck(cards.DISCARD_SOURCE_CENTER, false, hh)
+		}
+		d.CardsInCenterDeck.Shuffle()
+		d.CenterRowInit()
+	}
 	d.CardsInHand = []cards.Card{}
 	for _, c := range d.CenterCards {
-		c.OnDiscarded()
+		// c.OnDiscarded()
+		fmt.Println("Check Punish", c.GetName())
 		if pun, ok := c.(cards.Punisher); ok {
+			fmt.Println("Punish")
 			pun.OnPunish()
 		}
 	}
+
 }
 
 func (d *DefaultGamestate) PlayCard(c cards.Card) {
@@ -215,19 +238,22 @@ func (d *DefaultGamestate) RecruitCard(c cards.Card) {
 	k := c.GetCost()
 	if k.IsEnough(d.currentResource) {
 		d.PayResource(k)
-		replacement := d.CardsInCenterDeck.Draw()
-		d.RemoveCardFromCenterRow(c)
-		d.CenterCards = append(d.CenterCards, replacement)
 		if _, ok := c.(cards.Recruitable); ok {
 			o := c.(cards.Recruitable)
 			o.OnRecruit()
 		}
+		fmt.Println("DefGS Recruit")
+		d.RemoveCardFromCenterRow(c)
+		d.CardsDiscarded.Stack(c)
+		d.updateCenterCard(c)
 		if _, ok := d.TopicsListeners[cards.EVENT_CARD_RECRUITED]; ok {
 			evtDetails := map[string]interface{}{cards.EVENT_ATTR_CARD_RECRUITED: c}
 			j := d.TopicsListeners[cards.EVENT_CARD_RECRUITED]
 			j.Notify(evtDetails)
 		}
-		d.CardsDiscarded.Stack(c)
+
+		// d.CenterCards = append(d.CenterCards, replacement)
+
 	}
 	return
 }
@@ -248,16 +274,12 @@ func (d *DefaultGamestate) CenterRowInit() {
 	for i := 0; i < 5; i++ {
 		f := d.ReplaceCenterCard()
 		d.CenterCards = append(d.CenterCards, f)
-		if _, ok := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]; ok {
-			evtDetails := map[string]interface{}{cards.EVENT_ATTR_CARD_DRAWN: f}
-			j := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]
-			j.Notify(evtDetails)
-		}
 	}
 }
 func (d *DefaultGamestate) updateCenterCard(c cards.Card) {
 	replacementCard := d.ReplaceCenterCard()
 	newCenterCards := []cards.Card{}
+	fmt.Println("Replace", c.GetName(), "with", replacementCard.GetName())
 	for _, v := range d.CenterCards {
 		if v == c {
 			newCenterCards = append(newCenterCards, replacementCard)
@@ -265,12 +287,9 @@ func (d *DefaultGamestate) updateCenterCard(c cards.Card) {
 			newCenterCards = append(newCenterCards, v)
 		}
 	}
+	newCenterCards = append(newCenterCards, replacementCard)
 	d.CenterCards = newCenterCards
-	if _, ok := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]; ok {
-		evtDetails := map[string]interface{}{cards.EVENT_ATTR_CARD_DRAWN: replacementCard}
-		j := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]
-		j.Notify(evtDetails)
-	}
+
 }
 func (d *DefaultGamestate) Explore(c cards.Card) {
 	// check cost and resource
@@ -280,6 +299,9 @@ func (d *DefaultGamestate) Explore(c cards.Card) {
 		// payResource
 		d.PayResource(f)
 		c.OnExplored()
+		d.RemoveCardFromCenterRow(c)
+		// remove c from center cards
+		d.updateCenterCard(c)
 		d.BanishCard(c, cards.DISCARD_SOURCE_CENTER)
 		cardExploredEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_EXPLORED: c}
 
@@ -287,14 +309,24 @@ func (d *DefaultGamestate) Explore(c cards.Card) {
 		if ok {
 			l.Notify(cardExploredEvent)
 		}
-		// remove c from center cards
-		d.updateCenterCard(c)
+
 	}
 }
+func (d *DefaultGamestate) AppendCenterCard(c cards.Card) {
+	d.CenterCards = append(d.CenterCards, c)
+}
 func (d *DefaultGamestate) ReplaceCenterCard() cards.Card {
-	return d.CardsInCenterDeck.Draw()
+	d.centerCardChanged = true
+	replacementCard := d.CardsInCenterDeck.Draw()
+	if _, ok := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]; ok {
+		evtDetails := map[string]interface{}{cards.EVENT_ATTR_CARD_DRAWN: replacementCard}
+		j := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]
+		j.Notify(evtDetails)
+	}
+	return replacementCard
 }
 func (d *DefaultGamestate) BeginTurn() {
+	d.centerCardChanged = false
 	for i := 0; i < 5; i++ {
 		d.Draw()
 	}
@@ -330,6 +362,9 @@ func (d *DefaultGamestate) DefeatCard(c cards.Card) {
 	if (&f).IsEnough(res) {
 		d.PayResource(f)
 		c.OnSlain()
+		d.RemoveCardFromCenterRow(c)
+		// remove c from center cards
+		d.updateCenterCard(c)
 		d.BanishCard(c, cards.DISCARD_SOURCE_CENTER)
 		cardDefeatedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_DEFEATED: c}
 
@@ -337,8 +372,6 @@ func (d *DefaultGamestate) DefeatCard(c cards.Card) {
 		if ok {
 			l.Notify(cardDefeatedEvent)
 		}
-		// remove c from center cards
-		d.updateCenterCard(c)
 
 	}
 	return

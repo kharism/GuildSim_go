@@ -35,6 +35,8 @@ type cardListState struct {
 func (c *cardPickState) PickCard(list []cards.Card, message string) int {
 	c.cards = list
 	// fmt.Println("Tunggu hasil")
+	c.optional = false
+	c.m.currentSubState = c
 	pickedCards := <-c.pickedCards
 	// fmt.Println("Dapat hasil", pickedCards)
 	return pickedCards
@@ -42,6 +44,7 @@ func (c *cardPickState) PickCard(list []cards.Card, message string) int {
 func (c *cardPickState) PickCardOptional(list []cards.Card, message string) int {
 	c.cards = list
 	c.optional = true
+	c.m.currentSubState = c
 	// fmt.Println("Tunggu hasil")
 	pickedCards := <-c.pickedCards
 	// fmt.Println("Dapat hasil", pickedCards)

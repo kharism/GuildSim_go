@@ -43,6 +43,15 @@ const (
 	PLAYED_START_X = 30
 	PLAYED_START_Y = 600*3/4 - 200
 
+	CENTER_DECK_START_X = 30
+	CENTER_DECK_START_Y = 75
+
+	CENTER_START_X = CENTER_DECK_START_X + HAND_DIST_X
+	CENTER_START_Y = CENTER_DECK_START_Y
+
+	BANISHED_START_X = 1100
+	BANISHED_START_Y = CENTER_START_Y
+
 	DISCARD_START_X = 1000
 	DISCARD_START_Y = MAIN_DECK_Y
 
@@ -78,7 +87,8 @@ type exitAction struct{}
 func (e *exitAction) DoAction() {
 	//fmt.Println("Game over")
 	//os.Exit(0)
-	currentState = mainMenu
+	ll := mainGame.(*MainGameState)
+	ll.currentSubState = ll.gameoverState
 }
 func AttachGameOverListener(state cards.AbstractGamestate) cards.AbstractGamestate {
 	quit := exitAction{}
@@ -99,8 +109,27 @@ func AttachCardPlayedListener(state cards.AbstractGamestate) cards.AbstractGames
 	return state
 }
 func AttachCardDiscardListener(state cards.AbstractGamestate) cards.AbstractGamestate {
-	onPlayAction := &onDiscardAction{mainGameState: mainGame.(*MainGameState)}
-	state.AttachListener(cards.EVENT_ATTR_CARD_DISCARDED, onPlayAction)
+	onDiscardAction := &onDiscardAction{mainGameState: mainGame.(*MainGameState)}
+	state.AttachListener(cards.EVENT_ATTR_CARD_DISCARDED, onDiscardAction)
+	return state
+}
+func AttachReturnToCenterListener(state cards.AbstractGamestate) cards.AbstractGamestate {
+	onReturn := &onGotoCenterDeckAction{mainGameState: mainGame.(*MainGameState)}
+	state.AttachListener(cards.EVENT_CARD_GOTO_CENTER, onReturn)
+	return state
+}
+func AttachCenterCardDrawnListener(state cards.AbstractGamestate) cards.AbstractGamestate {
+	onCenterDrawn := &onCenterDrawAction{mainGameState: mainGame.(*MainGameState)}
+	state.AttachListener(cards.EVENT_CARD_DRAWN_CENTER, onCenterDrawn)
+	return state
+}
+func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGamestate {
+	onExplore := &onExplorationAction{mainGameState: mainGame.(*MainGameState)}
+	onDefeat := &onDefeatAction{mainGameState: mainGame.(*MainGameState)}
+	onRecruit := &onRecruitAction{mainGameState: mainGame.(*MainGameState)}
+	state.AttachListener(cards.EVENT_CARD_EXPLORED, onExplore)
+	state.AttachListener(cards.EVENT_CARD_RECRUITED, onRecruit)
+	state.AttachListener(cards.EVENT_CARD_DEFEATED, onDefeat)
 	return state
 }
 func (g *Game) ChangeState(stateName string) {
@@ -108,15 +137,27 @@ func (g *Game) ChangeState(stateName string) {
 	case STATE_MAIN_GAME:
 		starterDeckSet := []string{factory.SET_STARTER_DECK}
 		centerDeckSet := []string{factory.SET_CENTER_DECK_1}
-		decorators := []decorator.AbstractDecorator{
+		decorators := []decorator.AbstractDecorator{decorator.AttachTombOfForgottenMonarch,
 			AttachGameOverListener, AttachDrawMainDeckListener, AttachCardPlayedListener,
-			AttachCardDiscardListener,
+			AttachCardDiscardListener, AttachCenterCardDrawnListener, AttachCenterCardRecDefExp,
+			AttachReturnToCenterListener,
 		}
 		defaultGamestate := gamestate.CustomizedDefaultGamestate(starterDeckSet, centerDeckSet, decorators)
 		mm := mainGame.(*MainGameState)
 		mm.defaultGamestate = defaultGamestate.(*gamestate.DefaultGamestate)
 		mm.defaultGamestate.SetCardPicker(mm.cardPicker)
+		mm.defaultGamestate.TakeDamage(40)
+		// rookieMage := cards.NewWingedLion(mm.defaultGamestate)
+		// ll := append(mm.defaultGamestate.CardsInDeck.List()[:3], &rookieMage)
+		// rest := mm.defaultGamestate.CardsInDeck.List()[4:]
+		// mm.defaultGamestate.CardsInDeck.SetList(append(ll, rest...))
+		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &rookieMage)
+		// rookieCard := NewEbitenCardFromCard(&rookieMage)
+		// rookieCard.x = HAND_START_X
+		// rookieCard.y = HAND_START_Y
+		// mm.cardInHand = append(mm.cardInHand, rookieCard)
 		currentState = mainGame
+		mm.defaultGamestate.CenterRowInit()
 		mm.defaultGamestate.BeginTurn()
 	case STATE_MAIN_MENU:
 		currentState = mainMenu

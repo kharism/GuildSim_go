@@ -207,11 +207,14 @@ func (d *DummyGamestate) EndTurn() {
 	}
 
 }
-func (d *DummyGamestate) AddCardToCenterDeck(c ...cards.Card) {
+func (d *DummyGamestate) AddCardToCenterDeck(source string, shuffle bool, c ...cards.Card) {
 	for _, cc := range c {
 		d.CardsInCenterDeck.Stack(cc)
 	}
-	d.CardsInCenterDeck.Shuffle()
+	if shuffle {
+		d.CardsInCenterDeck.Shuffle()
+	}
+
 	// fmt.Println("Done adding", d.CardsInCenterDeck.Size(), "To center deck")
 }
 
@@ -304,6 +307,9 @@ func (d *DummyGamestate) RemoveCardFromCooldown(c cards.Card) {
 			return
 		}
 	}
+}
+func (d *DummyGamestate) AppendCenterCard(c cards.Card) {
+	d.CenterCards = append(d.CenterCards, c)
 }
 func (d *DummyGamestate) RemoveCardFromCooldownIdx(i int) {
 	cooldownList := d.CardsDiscarded.List()

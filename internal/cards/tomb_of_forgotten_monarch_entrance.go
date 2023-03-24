@@ -16,7 +16,7 @@ func NewTombMonarchEntrance(state AbstractGamestate) TombForgottenMonarchEntranc
 }
 
 func (a *TombForgottenMonarchEntrance) GetName() string {
-	return "Tomb of Forgotten Monarch: entrance"
+	return "TombOfForgottenMonachEntrance"
 }
 func (a *TombForgottenMonarchEntrance) GetDescription() string {
 	return "Rewards: 100 Money, Release undead monsters to center deck on explore"
@@ -45,12 +45,12 @@ func (a *TombForgottenMonarchEntrance) OnExplored() {
 
 	lichMageMonster := NewLichMageMonster(a.state)
 	cardsAdded := []Card{&lichMageMonster}
-	pushCenterDeckAction := NewPushCenterDeckAction(a.state, cardsAdded)
+	pushCenterDeckAction := NewPushCenterDeckAction(a.state, cardsAdded, false)
 	removeEventListenerAction := NewRemoveEventListenerAction(a.state, EVENT_CARD_DEFEATED, nil)
 	compositeAction := NewCompositeAction(a.state, pushCenterDeckAction, removeEventListenerAction)
 	countDownAction := NewCountDownAction(skeletonGuardCount, 1, compositeAction)
 	skeletonGuardDefeatedListener := NewCardDefeatedListener(cardFilter, countDownAction)
 	removeEventListenerAction.(*RemoveEventListenerAction).listener = skeletonGuardDefeatedListener
 	a.state.AttachListener(EVENT_CARD_DEFEATED, skeletonGuardDefeatedListener)
-	a.state.AddCardToCenterDeck(allAddedCard...)
+	a.state.AddCardToCenterDeck(DISCARD_SOURCE_NAN, true, allAddedCard...)
 }

@@ -27,9 +27,11 @@ func (h *WingedLion) OnPlay() {
 
 	idx := cardPicker.PickCard(cardList, "Pick a card to shuffle to deck then draw")
 	selectedCard := cardList[idx]
+	h.state.RemoveCardFromCenterRowIdx(idx)
 	topdeck := h.state.ReplaceCenterCard()
-	cardList[idx] = topdeck
-	h.state.AddCardToCenterDeck(selectedCard)
+	h.state.AppendCenterCard(topdeck)
+	// cardList[idx] = topdeck
+	h.state.AddCardToCenterDeck(DISCARD_SOURCE_CENTER, false, selectedCard)
 	h.state.Draw()
 }
 

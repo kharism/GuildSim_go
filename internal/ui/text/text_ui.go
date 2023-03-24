@@ -72,8 +72,8 @@ func NewTextUIGamestate(gamestate cards.AbstractGamestate) *TextUIGamestate {
 func (d *TextUIGamestate) GetCooldownCard() []cards.Card {
 	return d.gamestate.GetCooldownCard()
 }
-func (d *TextUIGamestate) AddCardToCenterDeck(c ...cards.Card) {
-	d.AddCardToCenterDeck(c...)
+func (d *TextUIGamestate) AddCardToCenterDeck(source string, c ...cards.Card) {
+	d.AddCardToCenterDeck(source, c...)
 }
 
 func (d *TextUIGamestate) PayResource(cost cards.Cost) {

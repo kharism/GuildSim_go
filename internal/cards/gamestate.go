@@ -6,6 +6,7 @@ import "github/kharism/GuildSim_go/internal/observer"
 var EVENT_CARD_PLAYED = "CardPlayed"
 var EVENT_CARD_DRAWN = "CardDraw"
 var EVENT_CARD_DRAWN_CENTER = "CardDrawCenter"
+var EVENT_CARD_GOTO_CENTER = "CardGotoCenter"
 var EVENT_CARD_EXPLORED = "CardExplored"
 var EVENT_CARD_DEFEATED = "CardDefeated"
 var EVENT_CARD_RECRUITED = "CardRecruited"
@@ -22,6 +23,7 @@ var EVENT_ATTR_CARD_DEFEATED = "CardDefeated"
 var EVENT_ATTR_CARD_RECRUITED = "CardRecruited"
 var EVENT_ATTR_CARD_DISCARDED = "CardDiscarded"
 var EVENT_ATTR_CARD_BANISHED = "CardBanished"
+var EVENT_ATTR_CARD_GOTO_CENTER = "CardGotoCenter"
 var EVENT_ATTR_CARD_TAKE_DAMAGE = "CardTakeDamage"
 var EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT = "CardTakeDamageAmt"
 var EVENT_ATTR_CARD_HEAL_DAMAGE = "CardHealDamage"
@@ -36,6 +38,7 @@ const (
 	DISCARD_SOURCE_CENTER   = "center"
 	DISCARD_SOURCE_COOLDOWN = "cooldown"
 	DISCARD_SOURCE_NAN      = "nan"
+	DISCARD_SOURCE_DISCARD  = "discard"
 )
 
 type AbstractGamestate interface {
@@ -77,6 +80,7 @@ type AbstractGamestate interface {
 	ReplaceCenterCard() Card
 	// init center row
 	CenterRowInit()
+	AppendCenterCard(c Card)
 
 	// its pot of greed but halved
 	Draw()
@@ -86,7 +90,7 @@ type AbstractGamestate interface {
 	SetCardPicker(AbstractCardPicker)
 
 	// make center deck thicker
-	AddCardToCenterDeck(c ...Card)
+	AddCardToCenterDeck(source string, shuffle bool, c ...Card)
 
 	AttachListener(eventName string, l observer.Listener)
 	RemoveListener(eventName string, l observer.Listener)
