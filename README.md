@@ -24,10 +24,12 @@ For now I only support textUI only while I'm also planning to make some simple G
 
 ## installation
 
-
 ### TextUI
 clone the repo and just run `go build main.go` and run the executable
 
 ### GUI
 clone the repo and go to ui directory and run `go build -o main *.go`
 ![](img/main_game.png)
+
+## How to play
+[How to play](https://github.com/kharism/GuildSim_go/wiki/How-to-play-the-game)
