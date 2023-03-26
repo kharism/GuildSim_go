@@ -134,6 +134,8 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 				s.m.cardListState.cards[i], s.m.cardListState.cards[j] = s.m.cardListState.cards[j], s.m.cardListState.cards[i]
 			})
 			s.m.currentSubState = s.m.cardListState
+		} else if yCur > PLAYED_START_Y {
+			// do nothing. This is just so we have safe area to release left mouse button
 		} else if yCur > CENTER_START_Y {
 			// recruite/explore/defeat card from center row
 			for i := len(s.m.cardsInCenter) - 1; i >= 0; i-- {
