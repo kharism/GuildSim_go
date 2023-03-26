@@ -43,11 +43,15 @@ func (d *DummyEventListener) Notify(data map[string]interface{}) {
 
 // show a basic card picker using stdin/stdout
 type TestCardPicker struct {
-	ChooseMethod func() int
+	ChooseMethod     func() int
+	ChooseMethodBool func() bool
 }
 
 func (t *TestCardPicker) PickCardOptional(list []cards.Card, message string) int {
 	return t.ChooseMethod()
+}
+func (t *TestCardPicker) BoolPick(message string) bool {
+	return t.ChooseMethodBool()
 }
 func (t *TestCardPicker) PickCard(list []cards.Card, message string) int {
 	fmt.Println(message)
@@ -105,6 +109,7 @@ type DummyGamestate struct {
 	HitPoint          int
 	//ui stuff
 	cardPiker cards.AbstractCardPicker
+	boolPiker cards.AbstractBoolPicker
 }
 
 func (d *DummyGamestate) PayResource(cost cards.Cost) {
@@ -170,6 +175,12 @@ func (d *DummyGamestate) GetCardPicker() cards.AbstractCardPicker {
 }
 func (d *DummyGamestate) SetCardPicker(a cards.AbstractCardPicker) {
 	d.cardPiker = a
+}
+func (d *DummyGamestate) GetBoolPicker() cards.AbstractBoolPicker {
+	return d.boolPiker
+}
+func (d *DummyGamestate) SetBoolPicker(a cards.AbstractBoolPicker) {
+	d.boolPiker = a
 }
 func (d *DummyGamestate) EndTurn() {
 	// reset resource except money and reputation
