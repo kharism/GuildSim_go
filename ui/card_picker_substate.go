@@ -50,6 +50,7 @@ func (c *cardPickState) PickCardOptional(list []cards.Card, message string) int 
 	// fmt.Println("Dapat hasil", pickedCards)
 	return pickedCards
 }
+
 func (c *cardPickState) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Translate(0, 0)
@@ -207,4 +208,56 @@ func (c *cardListState) Draw(screen *ebiten.Image) {
 	op3.GeoM.Translate(CARDPICKER_START_X+200, 540)
 	screen.DrawImage(c.m.btn, op3)
 	text.Draw(screen, "CANCEL", mplusNormalFont, CARDPICKER_START_X+250, 570, color.White)
+}
+
+type boolPickState struct {
+	m            *MainGameState
+	msg          string
+	pickedOption chan (bool)
+}
+
+func (c *boolPickState) PickBool(message string) bool {
+	c.msg = message
+	c.m.currentSubState = c
+
+	pickedCards := <-c.pickedOption
+	// fmt.Println("Dapat hasil", pickedCards)
+	return pickedCards
+}
+func (c *boolPickState) Draw(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	// op.GeoM.Translate(0, 0)
+	screen.DrawImage(c.m.bgImage2, op)
+	op2 := &ebiten.DrawImageOptions{}
+	op2.GeoM.Scale(1.8, 0.3)
+	op2.GeoM.Translate(-50, 200)
+	screen.DrawImage(c.m.paperBg, op2)
+	text.Draw(screen, c.msg, mplusNormalFont, 100, 300, color.Black)
+
+	// ok button
+	op.GeoM.Reset()
+	op.GeoM.Translate(700, 400)
+	screen.DrawImage(c.m.btn, op)
+
+	// cancel button
+	op.GeoM.Reset()
+	op.GeoM.Translate(900, 400)
+	screen.DrawImage(c.m.btn, op)
+
+	text.Draw(screen, "Yes", mplusNormalFont, 780, 430, color.White)
+	text.Draw(screen, "No", mplusNormalFont, 980, 430, color.White)
+
+	// detect click
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		curX, curY := ebiten.CursorPosition()
+		if curY > 400 && curY < 530 {
+			if curX > 900 {
+				c.pickedOption <- false
+			} else if curX > 700 {
+				c.pickedOption <- true
+			}
+			c.m.currentSubState = c.m.mainState
+		}
+	}
+
 }

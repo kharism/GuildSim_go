@@ -89,6 +89,9 @@ type AbstractGamestate interface {
 	GetCardPicker() AbstractCardPicker
 	SetCardPicker(AbstractCardPicker)
 
+	GetBoolPicker() AbstractBoolPicker
+	SetBoolPicker(AbstractBoolPicker)
+
 	// make center deck thicker
 	AddCardToCenterDeck(source string, shuffle bool, c ...Card)
 

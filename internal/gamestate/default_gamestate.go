@@ -53,6 +53,7 @@ type DefaultGamestate struct {
 	//ui stuff
 	cardPiker         cards.AbstractCardPicker
 	centerCardChanged bool
+	boolPicker        cards.AbstractBoolPicker
 }
 
 // AddCardToCenterDeck implements cards.AbstractGamestate
@@ -164,6 +165,12 @@ func (d *DefaultGamestate) GetCardPicker() cards.AbstractCardPicker {
 }
 func (d *DefaultGamestate) SetCardPicker(a cards.AbstractCardPicker) {
 	d.cardPiker = a
+}
+func (d *DefaultGamestate) GetBoolPicker() cards.AbstractBoolPicker {
+	return d.boolPicker
+}
+func (d *DefaultGamestate) SetBoolPicker(a cards.AbstractBoolPicker) {
+	d.boolPicker = a
 }
 func (d *DefaultGamestate) EndTurn() {
 	// reset resource except money and reputation

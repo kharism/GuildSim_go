@@ -12,3 +12,8 @@ type AbstractCardPicker interface {
 	// return negative number if no cards are choosen
 	PickCardOptional(list []Card, message string) int
 }
+
+type AbstractBoolPicker interface {
+	// as yes/no question
+	BoolPick(message string) bool
+}
