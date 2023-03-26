@@ -36,6 +36,10 @@ type MainGameState struct {
 	cardsInCenter []*EbitenCard
 	cardInHand    []*EbitenCard
 	cardsPlayed   []*EbitenCard
+	startDragX    int
+	startDragY    int
+	dragMode      bool
+	dragDist      int
 	// cards in limbo meaning cards that is moving into cooldownpile or banished pile
 	// they have still visible until they reach those position
 	cardsInLimbo     []*EbitenCard
@@ -89,7 +93,13 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 		}
 
 	}
-	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		s.m.dragMode = true
+		s.m.startDragX, _ = ebiten.CursorPosition()
+	}
+
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) && !s.m.dragMode {
+		//fmt.Println(inpututil.MouseButtonPressDuration(ebiten.MouseButtonLeft))
 		xCurInt, yCurInt := ebiten.CursorPosition()
 		xCur, yCur := float64(xCurInt), float64(yCurInt)
 
@@ -1086,6 +1096,45 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 
 }
 func (m *MainGameState) Update() error {
+<<<<<<< HEAD
+=======
+	dist := 0
+	if m.dragMode {
+		curX, _ := ebiten.CursorPosition()
+		dist = curX - m.startDragX
+
+	}
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		fmt.Println(inpututil.MouseButtonPressDuration(ebiten.MouseButtonLeft))
+		m.dragMode = false
+		for _, c := range m.cardInHand {
+			c.x += float64(dist)
+			c.x_drag = 0
+			// c.Update()
+		}
+	}
+	for _, c := range m.cardInHand {
+		c.x_drag = dist
+		c.Update()
+	}
+	for _, c := range m.cardsPlayed {
+		c.Update()
+	}
+
+	for _, c := range m.cardsInCenter {
+
+		c.Update()
+	}
+
+	newCardInLimbo := []*EbitenCard{}
+	for _, c := range m.cardsInLimbo {
+		c.Update()
+		if c.tx != c.x || c.ty != c.y {
+			newCardInLimbo = append(newCardInLimbo, c)
+		}
+	}
+	m.cardsInLimbo = newCardInLimbo
+>>>>>>> 5263e8f (add drag drop on hand)
 
 	return m.currentSubState.Update()
 }

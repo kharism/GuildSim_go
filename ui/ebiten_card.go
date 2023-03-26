@@ -21,6 +21,8 @@ type EbitenCard struct {
 	// target position if card moved
 	tx float64
 	ty float64
+	// translation on x axis due to dragging
+	x_drag int
 }
 
 func (e *EbitenCard) Draw(screen *ebiten.Image) {
@@ -30,6 +32,8 @@ func (e *EbitenCard) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(0, 0)
 	// op.GeoM.Translate(MAIN_DECK_X, MAIN_DECK_Y)
 	op.GeoM.Translate(float64(e.x), float64(e.y))
+
+	op.GeoM.Translate(float64(e.x_drag), 0)
 	// op.GeoM.Translate(float64(e.x), float64(e.y))
 	screen.DrawImage(e.image, op)
 }
