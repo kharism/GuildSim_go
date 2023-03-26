@@ -45,6 +45,7 @@ type MainGameState struct {
 	mainState       *mainMainState
 	detailState     *detailState
 	cardPicker      *cardPickState
+	boolPicker      *boolPickState
 	cardListState   *cardListState
 	gameoverState   *gameOverSubstate
 }
@@ -137,8 +138,13 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 		// 	cardPick := s.m.defaultGamestate.GetCardPicker().PickCardOptional(kk, "Card from hand")
 		// 	fmt.Println("DDDD", cardPick)
 		// }()
-		// s.m.currentSubState = s.m.cardPicker
-		s.m.defaultGamestate.Draw()
+		// s.m.currentSubState = s.m.boolPicker
+		go func() {
+			if s.m.boolPicker.PickBool("Draw a card?") {
+				s.m.defaultGamestate.Draw()
+			}
+		}()
+
 	}
 }
 
@@ -569,6 +575,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	mainState := &mainMainState{m: mgs}
 	detailState := &detailState{m: mgs}
 	cardpicker := &cardPickState{m: mgs, pickedCards: make(chan int)}
+	boolPicker := &boolPickState{m: mgs, pickedOption: make(chan bool)}
 	cardListState := &cardListState{m: mgs}
 	mgs.gameoverState = &gameOverSubstate{m: mgs}
 	mgs.currentSubState = mainState
@@ -576,6 +583,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	mgs.detailState = detailState
 	mgs.cardPicker = cardpicker
 	mgs.cardListState = cardListState
+	mgs.boolPicker = boolPicker
 	return mgs
 }
 
