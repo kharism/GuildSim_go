@@ -46,6 +46,9 @@ const (
 	CENTER_DECK_START_X = 30
 	CENTER_DECK_START_Y = 75
 
+	DISCARD_NA_SOURCE_X = 350 //600 - 450*3/4
+	DISCARD_NA_SOURCE_Y = 150 //300 - 300*3/4
+
 	CENTER_START_X = CENTER_DECK_START_X + HAND_DIST_X
 	CENTER_START_Y = CENTER_DECK_START_Y
 
@@ -147,10 +150,10 @@ func (g *Game) ChangeState(stateName string) {
 		mm.defaultGamestate = defaultGamestate.(*gamestate.DefaultGamestate)
 		mm.defaultGamestate.SetCardPicker(mm.cardPicker)
 		mm.defaultGamestate.TakeDamage(40)
-		// rookieMage := cards.NewWingedLion(mm.defaultGamestate)
-		// ll := append(mm.defaultGamestate.CardsInDeck.List()[:3], &rookieMage)
-		// rest := mm.defaultGamestate.CardsInDeck.List()[4:]
-		// mm.defaultGamestate.CardsInDeck.SetList(append(ll, rest...))
+		rookieMage := cards.NewLichMageMonster(mm.defaultGamestate)
+		ll := append(mm.defaultGamestate.CardsInCenterDeck.List()[:3], &rookieMage)
+		rest := mm.defaultGamestate.CardsInCenterDeck.List()[4:]
+		mm.defaultGamestate.CardsInCenterDeck.SetList(append(ll, rest...))
 		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &rookieMage)
 		// rookieCard := NewEbitenCardFromCard(&rookieMage)
 		// rookieCard.x = HAND_START_X
