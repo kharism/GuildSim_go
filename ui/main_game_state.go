@@ -267,6 +267,19 @@ func (p *onDiscardAction) DoAction(data map[string]interface{}) {
 		// newPlayed := []*EbitenCard{}
 		sourceCard = p.mainGameState.cardsPlayed
 		// p.mainGameState.cardsPlayed = newPlayed
+	} else if source == cards.DISCARD_SOURCE_NAN {
+		ebitenCard := NewEbitenCardFromCard(cardDiscarded)
+		ebitenCard.tx = DISCARD_START_X
+		ebitenCard.ty = DISCARD_START_Y
+		ebitenCard.x = DISCARD_NA_SOURCE_X
+		ebitenCard.y = DISCARD_NA_SOURCE_Y
+		vx := float64(ebitenCard.tx - ebitenCard.x)
+		vy := float64(ebitenCard.ty - ebitenCard.y)
+		speedVector := csg.NewVector(vx, vy, 0)
+		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+		ebitenCard.vx = speedVector.X
+		ebitenCard.vy = speedVector.Y
+		p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
 	}
 	movedIdx := -1
 	for i := 0; i < len(sourceCard); i++ {
