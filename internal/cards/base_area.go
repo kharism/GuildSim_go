@@ -19,6 +19,9 @@ func (a *BaseArea) GetCardType() CardType {
 func (a *BaseArea) Dispose(source string) {
 
 }
+func (a *BaseArea) OnAcquire() {
+
+}
 
 // when played from hand, do this
 func (a *BaseArea) OnPlay() {}

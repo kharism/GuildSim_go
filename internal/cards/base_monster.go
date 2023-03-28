@@ -31,6 +31,8 @@ func (m *BaseMonster) OnSlain() {}
 
 func (m *BaseMonster) Dispose(source string) {}
 
+func (m *BaseMonster) OnAcquire() {}
+
 // when discarded to cooldown pile, do this
 func (m *BaseMonster) OnDiscarded() {}
 

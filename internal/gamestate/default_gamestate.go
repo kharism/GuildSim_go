@@ -50,6 +50,7 @@ type DefaultGamestate struct {
 	HitPoint          int
 	CardsDiscarded    cards.Deck
 	CardsBanished     []cards.Card
+	ItemCards         []cards.Card
 	//ui stuff
 	cardPiker         cards.AbstractCardPicker
 	centerCardChanged bool
@@ -81,6 +82,7 @@ func NewDefaultGamestate() cards.AbstractGamestate {
 	d.CenterCards = []cards.Card{}
 	d.CardsInHand = []cards.Card{}
 	d.CardsBanished = []cards.Card{}
+	d.ItemCards = []cards.Card{}
 	// d.cardPiker = &TextCardPicker{}
 	d.HitPoint = 60
 	d.CardsDiscarded = cards.Deck{}
@@ -147,7 +149,14 @@ func (d *DefaultGamestate) RemoveListener(eventName string, l observer.Listener)
 	k := (d.TopicsListeners[eventName])
 	k.Detach(l)
 }
+func (d *DefaultGamestate) ListItems() []cards.Card {
+	return d.ItemCards
+}
+func (d *DefaultGamestate) RemoveItem(c cards.Card) {}
+func (d *DefaultGamestate) RemoveItemIndex(i int)   {}
+func (d *DefaultGamestate) ConsumeItem(c cards.Consumable) {
 
+}
 func (d *DefaultGamestate) GetCurrentHP() int {
 	return d.HitPoint
 }
@@ -215,6 +224,11 @@ func (d *DefaultGamestate) EndTurn() {
 			fmt.Println("Punish")
 			pun.OnPunish()
 		}
+	}
+	if _, ok := d.TopicsListeners[cards.EVENT_END_OF_TURN]; ok {
+		j := d.TopicsListeners[cards.EVENT_END_OF_TURN]
+		data := map[string]interface{}{}
+		j.Notify(data)
 	}
 
 }
@@ -336,6 +350,11 @@ func (d *DefaultGamestate) BeginTurn() {
 	d.centerCardChanged = false
 	for i := 0; i < 5; i++ {
 		d.Draw()
+	}
+	if _, ok := d.TopicsListeners[cards.EVENT_START_OF_TURN]; ok {
+		j := d.TopicsListeners[cards.EVENT_START_OF_TURN]
+		data := map[string]interface{}{}
+		j.Notify(data)
 	}
 }
 func (d *DefaultGamestate) Draw() {

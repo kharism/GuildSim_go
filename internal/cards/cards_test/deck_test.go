@@ -105,6 +105,7 @@ type DummyGamestate struct {
 	CardsPlayed       []cards.Card
 	CenterCards       []cards.Card
 	CardsBanished     []cards.Card
+	ItemCards         []cards.Card
 	CardsDiscarded    cards.DeterministicDeck
 	HitPoint          int
 	//ui stuff
@@ -117,7 +118,17 @@ func (d *DummyGamestate) PayResource(cost cards.Cost) {
 		d.currentResource.Detail[key] -= val
 	}
 }
-
+func (d *DummyGamestate) BeginTurn() {
+	//d.centerCardChanged = false
+	for i := 0; i < 5; i++ {
+		d.Draw()
+	}
+	if _, ok := d.TopicsListeners[cards.EVENT_START_OF_TURN]; ok {
+		j := d.TopicsListeners[cards.EVENT_START_OF_TURN]
+		data := map[string]interface{}{}
+		j.Notify(data)
+	}
+}
 func (d *DummyGamestate) AttachListener(eventName string, l observer.Listener) {
 	if _, ok := d.TopicsListeners[eventName]; !ok {
 		d.TopicsListeners[eventName] = &DummyEventListener{}
@@ -125,6 +136,14 @@ func (d *DummyGamestate) AttachListener(eventName string, l observer.Listener) {
 	k := (d.TopicsListeners[eventName])
 	k.Attach(l)
 	// fmt.Println("Attach Listener", len(d.TopicsListeners[eventName].Listeners))
+}
+func (d *DummyGamestate) ListItems() []cards.Card {
+	return d.ItemCards
+}
+func (d *DummyGamestate) RemoveItem(c cards.Card) {}
+func (d *DummyGamestate) RemoveItemIndex(i int)   {}
+func (d *DummyGamestate) ConsumeItem(c cards.Consumable) {
+
 }
 func (d *DummyGamestate) RemoveListener(eventName string, l observer.Listener) {
 	if _, ok := d.TopicsListeners[eventName]; !ok {
@@ -146,6 +165,7 @@ func NewDummyGamestate() cards.AbstractGamestate {
 	d.CardsInDeck = cards.DeterministicDeck{}
 	d.CardsDiscarded = cards.DeterministicDeck{}
 	d.CardsBanished = []cards.Card{}
+	d.ItemCards = []cards.Card{}
 
 	d.HitPoint = 60
 	return &d
@@ -216,7 +236,11 @@ func (d *DummyGamestate) EndTurn() {
 			pun.OnPunish()
 		}
 	}
-
+	if _, ok := d.TopicsListeners[cards.EVENT_END_OF_TURN]; ok {
+		j := d.TopicsListeners[cards.EVENT_END_OF_TURN]
+		data := map[string]interface{}{}
+		j.Notify(data)
+	}
 }
 func (d *DummyGamestate) AddCardToCenterDeck(source string, shuffle bool, c ...cards.Card) {
 	for _, cc := range c {

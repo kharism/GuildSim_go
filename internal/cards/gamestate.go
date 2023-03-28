@@ -15,6 +15,9 @@ var EVENT_CARD_BANISHED = "CardBanished"
 var EVENT_TAKE_DAMAGE = "TakeDamage"
 var EVENT_HEAL_DAMAGE = "HealDamage"
 
+var EVENT_START_OF_TURN = "BeginTurn"
+var EVENT_END_OF_TURN = "EndTurn"
+
 // this is the key of map[string]interface
 var EVENT_ATTR_CARD_PLAYED = "CardPlayed"
 var EVENT_ATTR_CARD_DRAWN = "CardDrawn"
@@ -57,9 +60,17 @@ type AbstractGamestate interface {
 	PlayCard(c Card)
 	Explore(c Card)
 
+	// item related stuff
+	ListItems() []Card
+	RemoveItem(c Card)
+	RemoveItemIndex(i int)
+	ConsumeItem(c Consumable)
+
 	// end turn, remove event listener attached by played cards, remove resources except money+reputation,
 	// take punishment etc
 	EndTurn()
+	// begin turn, draw 5 and THEN apply any eff that that need to be applied at the start of the turn
+	BeginTurn()
 
 	// damage
 	GetCurrentHP() int
