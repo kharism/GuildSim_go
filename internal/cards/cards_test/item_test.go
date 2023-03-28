@@ -2,58 +2,90 @@ package cards_test
 
 import (
 	"github/kharism/GuildSim_go/internal/cards"
+	"github/kharism/GuildSim_go/internal/cards/item"
+	"github/kharism/GuildSim_go/internal/factory"
 	"testing"
 )
 
-func TestHealingPotion(t *testing.T) {
+func TestPotions(t *testing.T) {
 	gamestate := NewDummyGamestate()
 	cardPicker := TestCardPicker{}
-
-	cardPicker.ChooseMethod = StaticCardPicker(1)
+	cardPicker.ChooseMethod = StaticCardPicker(0)
 
 	dumGamestate := gamestate.(*DummyGamestate)
+	gamestate.SetCardPicker(&cardPicker)
 
 	dumGamestate.CardsInDeck = cards.DeterministicDeck{}
-	dumGamestate.cardPiker = &cardPicker
-
-	k := cards.NewRookieMage(gamestate)
-	l := cards.NewStagShaman(gamestate)
-	dumGamestate.CardsInDeck.Push(&k)
-	dumGamestate.CardsInDeck.Push(&l)
-
-	for i := 0; i < 10; i++ {
-		j := cards.NewRookieAdventurer(gamestate)
-		dumGamestate.CardsInDeck.Push(&j)
-	}
-
-	for i := 0; i < 5; i++ {
-		gamestate.Draw()
-	}
-	cardsInHand := gamestate.GetCardInHand()
-	if len(cardsInHand) != 5 {
-		t.Log("Failed to draw")
+	startHp := gamestate.GetCurrentHP()
+	k := item.NewHealingPotion(gamestate)
+	gamestate.AddItem(&k)
+	gamestate.ConsumeItem(&k)
+	nowHp := gamestate.GetCurrentHP()
+	if nowHp != startHp+5 {
+		t.Log("Fail", startHp, nowHp)
 		t.FailNow()
 	}
-	gamestate.PlayCard(cardsInHand[0])
-	if len(cardsInHand) != 5 {
-		t.Log("Failed to draw")
+	if len(dumGamestate.ItemCards) > 0 {
+		t.Log("Fail to remove item")
 		t.FailNow()
 	}
-
-	if dumGamestate.CardsDiscarded.Size() != 1 {
-		t.Log("Failed to discard")
+	hh := item.NewCombatPotion(gamestate)
+	gamestate.AddItem(&hh)
+	gamestate.ConsumeItem(&hh)
+	if len(dumGamestate.ItemCards) > 0 {
+		t.Log("Fail to remove item")
 		t.FailNow()
 	}
-	cardPicker.ChooseMethod = StaticCardPicker(0)
-	gamestate.PlayCard(&l)
-
-	if dumGamestate.CardsDiscarded.Size() != 0 {
-		t.Log("Failed to banish from cooldown pile")
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_COMBAT] != 3 {
+		t.Log("Fail to generate resource")
 		t.FailNow()
 	}
-	if len(cardsInHand) != 5 {
-		t.Log("Failed to draw")
-		t.Fail()
+	gg := item.NewExplorePotion(gamestate)
+	gamestate.AddItem(&gg)
+	gamestate.ConsumeItem(&gg)
+	if len(dumGamestate.ItemCards) > 0 {
+		t.Log("Fail to remove item")
+		t.FailNow()
+	}
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_EXPLORATION] != 3 {
+		t.Log("Fail to generate resource")
+		t.FailNow()
+	}
+	baseHero := cards.NewRookieAdventurer(gamestate)
+	dumGamestate.CardsDiscarded.Push(&baseHero)
+	aa := item.NewBanishPotion(gamestate)
+	gamestate.AddItem(&aa)
+	gamestate.ConsumeItem(&aa)
+	if len(dumGamestate.ItemCards) > 0 {
+		t.Log("Fail to remove item")
+		t.FailNow()
+	}
+	if len(dumGamestate.ItemCards) > 0 {
+		t.Log("Fail to remove item")
+		t.FailNow()
+	}
+	if dumGamestate.CardsDiscarded.Size() > 0 {
+		t.Log("Fail to banish item")
+		t.FailNow()
+	}
+}
+func TestTalisman(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	combatTalistman := item.NewCombatTalisman(gamestate)
+	explorerBoots := item.NewExplorerBoots(gamestate)
+	gamestate.AddItem(&combatTalistman)
+	gamestate.AddItem(&explorerBoots)
+	gamestate.BeginTurn()
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_COMBAT] != 2 {
+		t.Log("failed to generate resource")
+		t.FailNow()
+	}
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_EXPLORATION] != 2 {
+		t.Log("failed to generate resource")
+		t.FailNow()
 	}
 
 }
