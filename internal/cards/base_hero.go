@@ -35,7 +35,9 @@ func (h *BaseHero) OnDiscarded() {}
 func (h *BaseHero) OnRecruit() {
 
 }
+func (h *BaseHero) OnAcquire() {
 
+}
 func (h *BaseHero) Dispose(source string) {
 
 }
