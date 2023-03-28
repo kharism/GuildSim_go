@@ -432,7 +432,32 @@ func (d *DummyGamestate) GetCurrentResource() cards.Resource {
 func (d *DummyGamestate) AddResource(name string, amount int) {
 	d.currentResource.AddResource(name, amount)
 }
-
+func (d *DummyGamestate) AddItem(c cards.Card) {
+	d.ItemCards = append(d.ItemCards, c)
+	c.OnAcquire()
+}
+func (d *DummyGamestate) ConsumeItem(c cards.Consumable) {
+	c.OnConsume()
+}
+func (d *DummyGamestate) ListItems() []cards.Card {
+	return d.ItemCards
+}
+func (d *DummyGamestate) RemoveItem(c cards.Card) {
+	idx := -1
+	for i := range d.ItemCards {
+		if d.ItemCards[i] == c {
+			idx = i
+			break
+		}
+	}
+	if idx != -1 {
+		d.RemoveItemIndex(idx)
+	}
+}
+func (d *DummyGamestate) RemoveItemIndex(i int) {
+	h := append(d.ItemCards[:i], d.ItemCards[i+1:]...)
+	d.ItemCards = h
+}
 func TestDeck(t *testing.T) {
 	deck := cards.Deck{}
 	gamestate := DummyGamestate{}
