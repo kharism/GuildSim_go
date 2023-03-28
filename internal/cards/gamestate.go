@@ -64,6 +64,7 @@ type AbstractGamestate interface {
 	ListItems() []Card
 	RemoveItem(c Card)
 	RemoveItemIndex(i int)
+	AddItem(c Card)
 	ConsumeItem(c Consumable)
 
 	// end turn, remove event listener attached by played cards, remove resources except money+reputation,

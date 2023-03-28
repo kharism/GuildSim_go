@@ -9,8 +9,12 @@ type HealingPotion struct {
 	state cards.AbstractGamestate
 }
 
-func (h *HealingPotion) Dispose(source string) {
+func NewHealingPotion(state cards.AbstractGamestate) HealingPotion {
+	return HealingPotion{state: state}
+}
 
+func (h *HealingPotion) Dispose(source string) {
+	h.state.BanishCard(h, source)
 }
 func (h *HealingPotion) GetName() string {
 	return "Healing Potion"
@@ -23,6 +27,8 @@ func (h *HealingPotion) GetCost() cards.Cost {
 	return cost
 }
 
-func (h *HealingPotion) OnConsume(source string) {
+func (h *HealingPotion) OnConsume() {
 	h.state.TakeDamage(-5)
+	h.state.RemoveItem(h)
+	h.Dispose(cards.DISCARD_SOURCE_NAN)
 }
