@@ -22,8 +22,11 @@ func (h *BaseItem) OnAddedToHand() {}
 // when played from hand, do this
 func (h *BaseItem) OnPlay() {}
 
+<<<<<<< HEAD
 func (h *BaseItem) OnAcquire() {}
 
+=======
+>>>>>>> 3ea1550 (add item related stuff.)
 // when explored, do this
 func (h *BaseItem) OnExplored() {}
 

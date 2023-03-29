@@ -137,32 +137,6 @@ func (d *DummyGamestate) AttachListener(eventName string, l observer.Listener) {
 	k.Attach(l)
 	// fmt.Println("Attach Listener", len(d.TopicsListeners[eventName].Listeners))
 }
-func (d *DummyGamestate) ListItems() []cards.Card {
-	return d.ItemCards
-}
-func (d *DummyGamestate) RemoveItem(c cards.Card) {
-	idx := -1
-	for i := range d.ItemCards {
-		if d.ItemCards[i] == c {
-			idx = i
-			break
-		}
-	}
-	if idx != -1 {
-		d.RemoveItemIndex(idx)
-	}
-}
-func (d *DummyGamestate) RemoveItemIndex(i int) {
-	h := append(d.ItemCards[:i], d.ItemCards[i+1:]...)
-	d.ItemCards = h
-}
-func (d *DummyGamestate) AddItem(c cards.Card) {
-	d.ItemCards = append(d.ItemCards, c)
-	c.OnAcquire()
-}
-func (d *DummyGamestate) ConsumeItem(c cards.Consumable) {
-	c.OnConsume()
-}
 func (d *DummyGamestate) RemoveListener(eventName string, l observer.Listener) {
 	if _, ok := d.TopicsListeners[eventName]; !ok {
 		return
