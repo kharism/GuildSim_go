@@ -271,6 +271,15 @@ func (d *DummyGamestate) AddCardToCenterDeck(source string, shuffle bool, c ...c
 	// fmt.Println("Done adding", d.CardsInCenterDeck.Size(), "To center deck")
 }
 
+func (d *DummyGamestate) StackCards(source string, cc ...cards.Card) {
+	for _, c := range cc {
+		d.CardsInDeck.Stack(c)
+	}
+}
+func (d *DummyGamestate) ShuffleMainDeck() {
+	d.CardsInDeck.Shuffle()
+}
+
 // just play card from no particular location and added it to list of played card
 // It will assume the card is played from hand and try to remove cards from hand if possible
 // the card will not automatically go to discard/cooldown pile

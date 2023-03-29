@@ -315,6 +315,14 @@ func (d *DefaultGamestate) CenterRowInit() {
 		d.CenterCards = append(d.CenterCards, f)
 	}
 }
+func (d *DefaultGamestate) StackCards(source string, cc ...cards.Card) {
+	for _, c := range cc {
+		d.CardsInDeck.Stack(c)
+	}
+}
+func (d *DefaultGamestate) ShuffleMainDeck() {
+	d.CardsInDeck.Shuffle()
+}
 func (d *DefaultGamestate) updateCenterCard(c cards.Card) {
 	replacementCard := d.ReplaceCenterCard()
 	newCenterCards := []cards.Card{}
