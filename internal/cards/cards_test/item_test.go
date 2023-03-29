@@ -69,6 +69,7 @@ func TestPotions(t *testing.T) {
 		t.FailNow()
 	}
 }
+<<<<<<< HEAD
 func TestRecursionPotion(t *testing.T) {
 	gamestate := NewDummyGamestate()
 	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
@@ -99,6 +100,8 @@ func TestRecursionPotion(t *testing.T) {
 		t.FailNow()
 	}
 }
+=======
+>>>>>>> 62b5ec0 (add rarer items)
 func TestRefreshPotion(t *testing.T) {
 	gamestate := NewDummyGamestate()
 	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
