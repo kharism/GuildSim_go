@@ -46,6 +46,9 @@ const (
 	CENTER_DECK_START_X = 30
 	CENTER_DECK_START_Y = 75
 
+	ITEM_ICON_START_X = 20
+	ITEM_ICON_START_Y = 0
+
 	DISCARD_NA_SOURCE_X = 350 //600 - 450*3/4
 	DISCARD_NA_SOURCE_Y = 150 //300 - 300*3/4
 
@@ -151,9 +154,11 @@ func (g *Game) ChangeState(stateName string) {
 		mm.defaultGamestate.SetCardPicker(mm.cardPicker)
 		mm.defaultGamestate.TakeDamage(40)
 		rookieMage := cards.NewLichMageMonster(mm.defaultGamestate)
+		// heal := item.NewHealingPotion(defaultGamestate)
 		ll := append(mm.defaultGamestate.CardsInCenterDeck.List()[:3], &rookieMage)
 		rest := mm.defaultGamestate.CardsInCenterDeck.List()[4:]
 		mm.defaultGamestate.CardsInCenterDeck.SetList(append(ll, rest...))
+		// mm.defaultGamestate.ItemCards = append(mm.defaultGamestate.ItemCards, &heal)
 		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &rookieMage)
 		// rookieCard := NewEbitenCardFromCard(&rookieMage)
 		// rookieCard.x = HAND_START_X

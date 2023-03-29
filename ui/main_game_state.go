@@ -29,6 +29,7 @@ type MainGameState struct {
 	MainDeck      *ebiten.Image
 	EndturnBtn    *ebiten.Image
 	GameOver      *ebiten.Image
+	ItemIcon      *ebiten.Image
 	cardsInCenter []*EbitenCard
 	cardInHand    []*EbitenCard
 	cardsPlayed   []*EbitenCard
@@ -121,6 +122,20 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 					//fmt.Println("cardIndex at", i)
 					break
 				}
+			}
+		} else {
+			if xCur > ITEM_ICON_START_X {
+				go func() {
+					items := s.m.defaultGamestate.ItemCards
+					pickedIndex := s.m.cardPicker.PickCardOptional(items, "Items")
+					if pickedIndex > -1 {
+						item := s.m.defaultGamestate.ItemCards[pickedIndex]
+						if _, ok := item.(cards.Consumable); ok {
+							s.m.defaultGamestate.RemoveItemIndex(pickedIndex)
+							s.m.defaultGamestate.ConsumeItem(item.(cards.Consumable))
+						}
+					}
+				}()
 			}
 		}
 	}
@@ -574,6 +589,10 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	if err != nil {
 		log.Fatal(err)
 	}
+	item_icon, _, err := ebitenutil.NewImageFromFile("img/misc/bag.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 	mutex := &sync.Mutex{}
 	// image1, _, err := ebitenutil.NewImageFromFile("img/RookieAdventurer.png")
 	// if err != nil {
@@ -584,6 +603,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger,
 		paperBg: paperBg, checkMark: checkmark, btn: btn, iconCombat: iconCombat, iconExplore: iconExplore, mutex: mutex,
 		cardsPlayed: cardsPlayed, DiscardPile: discardPile, MainDeck: mainDeck, EndturnBtn: EndturnBtn, GameOver: game_over,
+		ItemIcon: item_icon,
 	}
 	mainState := &mainMainState{m: mgs}
 	detailState := &detailState{m: mgs}
@@ -608,9 +628,14 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Translate(0, 0)
 	screen.DrawImage(m.bgImage, op)
+	op.GeoM.Reset()
+	op.GeoM.Scale(0.6, 0.6)
+	op.GeoM.Translate(ITEM_ICON_START_X, ITEM_ICON_START_Y)
+	screen.DrawImage(m.ItemIcon, op)
+
 	res := m.defaultGamestate.GetCurrentResource()
 	hp := m.defaultGamestate.GetCurrentHP()
-	text.Draw(screen, fmt.Sprintf("HP %d", hp), mplusResource, 80, 40, color.RGBA{255, 0, 0, 255})
+	text.Draw(screen, fmt.Sprintf("HP %d", hp), mplusResource, 150, 40, color.RGBA{255, 0, 0, 255})
 
 	op.GeoM.Reset()
 	op.GeoM.Scale(0.8, 0.8)
@@ -665,11 +690,11 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 
 	m.currentSubState.Draw(screen)
 
-	if len(m.cardsPlayed) > 0 {
-		msg := fmt.Sprintf("Card1Pos=(%d,%d)\nCard1Target=(%d,%d)\nCard1V=(%d,%d)", m.cardsPlayed[0].x, m.cardsPlayed[0].y,
-			m.cardsPlayed[0].tx, m.cardsPlayed[0].ty, m.cardsPlayed[0].vx, m.cardsPlayed[0].vy)
-		ebitenutil.DebugPrint(screen, msg)
-	}
+	// if len(m.cardsPlayed) > 0 {
+	// 	msg := fmt.Sprintf("Card1Pos=(%d,%d)\nCard1Target=(%d,%d)\nCard1V=(%d,%d)", m.cardsPlayed[0].x, m.cardsPlayed[0].y,
+	// 		m.cardsPlayed[0].tx, m.cardsPlayed[0].ty, m.cardsPlayed[0].vx, m.cardsPlayed[0].vy)
+	// 	ebitenutil.DebugPrint(screen, msg)
+	// }
 
 }
 func (m *MainGameState) Update() error {
