@@ -107,6 +107,11 @@ type AbstractGamestate interface {
 	// make center deck thicker
 	AddCardToCenterDeck(source string, shuffle bool, c ...Card)
 
+	// put cards to top of main deck, the order matter
+	// c[0] will be stacked first, then c[1], then c[2], etc
+	StackCards(source string, c ...Card)
+	ShuffleMainDeck()
+
 	AttachListener(eventName string, l observer.Listener)
 	RemoveListener(eventName string, l observer.Listener)
 	GetCurrentResource() Resource
