@@ -69,12 +69,43 @@ func TestPotions(t *testing.T) {
 		t.FailNow()
 	}
 }
+func TestRefreshPotion(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	gamestate.BeginTurn() // cards in hand should be 5
+	hand := gamestate.GetCardInHand()
+	gamestate.PlayCard(hand[0]) // now card in hand should be 4
+	rookieMage := cards.NewRookieMage(gamestate)
+	dumGamestate.CardsInDeck.Stack(&rookieMage)
+	handNew := gamestate.GetCardInHand()
+	if len(hand) == len(handNew) {
+		t.Log("Failed to remove cards")
+		t.FailNow()
+	}
+	firstName := handNew[0].GetName()
+	refre := item.NewRefreshPotion(gamestate)
+	gamestate.AddItem(&refre)
+	gamestate.ConsumeItem(&refre)
+	handNew2 := gamestate.GetCardInHand()
+	if len(handNew2) != len(handNew) {
+		t.Log("Failed to draw cards")
+		t.FailNow()
+	}
+	// t.Log(handNew2)
+
+	if firstName == handNew2[0].GetName() {
+		t.Log("fail to refresh")
+		t.FailNow()
+	}
+}
 func TestTalisman(t *testing.T) {
 	gamestate := NewDummyGamestate()
 	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
 	dumGamestate := gamestate.(*DummyGamestate)
 	dumGamestate.CardsInDeck.SetList(starterDeck)
-	combatTalistman := item.NewCombatTalisman(gamestate)
+	combatTalistman := item.NewCombatGauntlet(gamestate)
 	explorerBoots := item.NewExplorerBoots(gamestate)
 	gamestate.AddItem(&combatTalistman)
 	gamestate.AddItem(&explorerBoots)
