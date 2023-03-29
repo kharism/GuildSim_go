@@ -69,6 +69,36 @@ func TestPotions(t *testing.T) {
 		t.FailNow()
 	}
 }
+func TestRecursionPotion(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	gamestate.SetCardPicker(&cardPicker)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	recursionPotion := item.NewRecursionPotion(gamestate)
+	potofgreed := item.NewGreedPotion(gamestate)
+	rookMage := cards.NewRookieMage(gamestate)
+	gamestate.DiscardCard(&rookMage, cards.DISCARD_SOURCE_NAN)
+	gamestate.AddItem(&recursionPotion)
+	gamestate.AddItem(&potofgreed)
+	gamestate.ConsumeItem(&recursionPotion)
+	if dumGamestate.CardsDiscarded.Size() != 0 {
+		t.Log("Fail to move")
+		t.FailNow()
+	}
+	gamestate.ConsumeItem(&potofgreed)
+	hand := gamestate.GetCardInHand()
+	if len(hand) != 2 {
+		t.Log("Fail to draw")
+		t.FailNow()
+	}
+	if hand[0] != &rookMage {
+		t.Log("fail for recursion")
+		t.FailNow()
+	}
+}
 func TestRefreshPotion(t *testing.T) {
 	gamestate := NewDummyGamestate()
 	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
