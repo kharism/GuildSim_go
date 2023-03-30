@@ -1,10 +1,15 @@
 package factory
 
-import "github/kharism/GuildSim_go/internal/cards"
+import (
+	"github/kharism/GuildSim_go/internal/cards"
+	"github/kharism/GuildSim_go/internal/cards/item"
+)
 
 const SET_STARTER_DECK = "starter_deck"
 
 const SET_CENTER_DECK_1 = "center_deck"
+
+const SET_POTION_COMMON_RANDOM = "POT_COMMON_RAND"
 
 // generate list of cards. use public constant to pick which set of cards to generate
 // for future devs: add in more functions to create expansion set that just need to be slapped in without adding triggers/eventListeners
@@ -13,6 +18,8 @@ func CardFactory(setname string, gamestate cards.AbstractGamestate) []cards.Card
 	switch setname {
 	case SET_STARTER_DECK:
 		return createStarterDeck(gamestate)
+	case SET_POTION_COMMON_RANDOM:
+		item.CreatePotionRandom(gamestate, cards.RARITY_COMMON)
 	case SET_CENTER_DECK_1:
 	default:
 		return createStarterCenterDeck(gamestate)

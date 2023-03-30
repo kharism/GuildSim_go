@@ -3,6 +3,7 @@ package cards_test
 import (
 	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
+	"github/kharism/GuildSim_go/internal/cards/item"
 	"github/kharism/GuildSim_go/internal/observer"
 	"math/rand"
 	"testing"
@@ -181,6 +182,12 @@ func (d *DummyGamestate) TakeDamage(dmg int) {
 		}
 	}
 
+}
+func (d *DummyGamestate) GenerateRandomPotion(rarity int) cards.Card {
+	return item.CreatePotionRandom(d, rarity)
+}
+func (d *DummyGamestate) GenerateRandomRelic(rarity int) cards.Card {
+	return item.CreateRelicRandom(d, rarity)
 }
 func (d *DummyGamestate) GetCardPicker() cards.AbstractCardPicker {
 	return d.cardPiker

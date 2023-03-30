@@ -3,6 +3,7 @@ package gamestate
 import (
 	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
+	"github/kharism/GuildSim_go/internal/cards/item"
 	"github/kharism/GuildSim_go/internal/observer"
 )
 
@@ -164,11 +165,18 @@ func (d *DefaultGamestate) RemoveItem(c cards.Card) {
 		d.RemoveItemIndex(idx)
 	}
 }
+func (d *DefaultGamestate) GenerateRandomPotion(rarity int) cards.Card {
+	return item.CreatePotionRandom(d, rarity)
+}
+func (d *DefaultGamestate) GenerateRandomRelic(rarity int) cards.Card {
+	return item.CreateRelicRandom(d, rarity)
+}
 func (d *DefaultGamestate) RemoveItemIndex(i int) {
 	h := append(d.ItemCards[:i], d.ItemCards[i+1:]...)
 	d.ItemCards = h
 }
 func (d *DefaultGamestate) AddItem(c cards.Card) {
+	fmt.Print(c.GetName())
 	d.ItemCards = append(d.ItemCards, c)
 	c.OnAcquire()
 }

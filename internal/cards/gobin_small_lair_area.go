@@ -25,7 +25,9 @@ func (ed *GoblinSmallLairArea) GetCost() Cost {
 // when played on hand, to this
 func (ed *GoblinSmallLairArea) OnPlay() {}
 func (ed *GoblinSmallLairArea) OnExplored() {
-	ed.gamestate.AddResource(RESOURCE_NAME_MONEY, 100)
+	// ed.gamestate.AddResource(RESOURCE_NAME_MONEY, 100)
+	newPotion := ed.gamestate.GenerateRandomPotion(RARITY_COMMON)
+	ed.gamestate.AddItem(newPotion)
 	ed.gamestate.AddResource(RESOURCE_NAME_REPUTATION, 2)
 	wolfRaiders := []Card{}
 	for i := 0; i < 4; i++ {

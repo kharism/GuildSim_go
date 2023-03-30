@@ -43,6 +43,11 @@ const (
 	DISCARD_SOURCE_NAN      = "nan"
 	DISCARD_SOURCE_DISCARD  = "discard"
 )
+const (
+	RARITY_COMMON = 0b001
+	RARITY_RARE   = 0b010
+	RARITY_SRARE  = 0b100
+)
 
 type AbstractGamestate interface {
 	GetPlayedCards() []Card
@@ -59,6 +64,10 @@ type AbstractGamestate interface {
 	// otherwise remove the card accordingly
 	PlayCard(c Card)
 	Explore(c Card)
+
+	// rewardGeneratorFunctions
+	GenerateRandomPotion(rarity int) Card
+	GenerateRandomRelic(rarity int) Card
 
 	// item related stuff
 	ListItems() []Card

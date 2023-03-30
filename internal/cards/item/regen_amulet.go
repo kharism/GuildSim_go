@@ -15,7 +15,7 @@ func (h *RegenAmulet) Dispose(source string) {
 	h.state.BanishCard(h, source)
 }
 func (h *RegenAmulet) GetName() string {
-	return "Healing Potion"
+	return "Regen Amulet"
 }
 func (h *RegenAmulet) GetDescription() string {
 	return "Heal 1 HP each turn"

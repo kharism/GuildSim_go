@@ -153,11 +153,11 @@ func (g *Game) ChangeState(stateName string) {
 		mm.defaultGamestate = defaultGamestate.(*gamestate.DefaultGamestate)
 		mm.defaultGamestate.SetCardPicker(mm.cardPicker)
 		mm.defaultGamestate.TakeDamage(40)
-		rookieMage := cards.NewLichMageMonster(mm.defaultGamestate)
+		// rookieMage := cards.NewLichMageMonster(mm.defaultGamestate)
 		// heal := item.NewHealingPotion(defaultGamestate)
-		ll := append(mm.defaultGamestate.CardsInCenterDeck.List()[:3], &rookieMage)
-		rest := mm.defaultGamestate.CardsInCenterDeck.List()[4:]
-		mm.defaultGamestate.CardsInCenterDeck.SetList(append(ll, rest...))
+		// ll := append(mm.defaultGamestate.CardsInCenterDeck.List()[:3], &rookieMage)
+		// rest := mm.defaultGamestate.CardsInCenterDeck.List()[4:]
+		// mm.defaultGamestate.CardsInCenterDeck.SetList(append(ll, rest...))
 		// mm.defaultGamestate.ItemCards = append(mm.defaultGamestate.ItemCards, &heal)
 		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &rookieMage)
 		// rookieCard := NewEbitenCardFromCard(&rookieMage)
