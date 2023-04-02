@@ -22,7 +22,9 @@ jobs:
         go-version: 1.19
 
     - name: Build
-      run: go build -v ./ui/*.go
+      run: |
+        apt-get install libxinerama-dev
+        go build -v ./ui/*.go
 
     - name: Test
       run: go test -v ./internal/cards/cards_test/
