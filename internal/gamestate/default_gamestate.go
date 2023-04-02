@@ -45,6 +45,7 @@ type DefaultGamestate struct {
 	CardsInDeck       cards.Deck
 	CardsInCenterDeck cards.Deck
 	TopicsListeners   map[string]*DummyEventListener
+	RuleEnforcer      map[string]*cards.RuleEnforcer
 	CardsInHand       []cards.Card
 	CardsPlayed       []cards.Card
 	CenterCards       []cards.Card
@@ -56,6 +57,7 @@ type DefaultGamestate struct {
 	cardPiker         cards.AbstractCardPicker
 	centerCardChanged bool
 	boolPicker        cards.AbstractBoolPicker
+	cardViewer        cards.AbstractDetailViewer
 }
 
 // AddCardToCenterDeck implements cards.AbstractGamestate
@@ -80,6 +82,7 @@ func NewDefaultGamestate() cards.AbstractGamestate {
 	d.currentResource = cards.NewResource()
 	d.CardsPlayed = []cards.Card{}
 	d.TopicsListeners = map[string]*DummyEventListener{}
+	d.RuleEnforcer = map[string]*cards.RuleEnforcer{}
 	d.CenterCards = []cards.Card{}
 	d.CardsInHand = []cards.Card{}
 	d.CardsBanished = []cards.Card{}
@@ -91,7 +94,25 @@ func NewDefaultGamestate() cards.AbstractGamestate {
 	d.CardsInDeck = cards.Deck{}
 	return &d
 }
-
+func (d *DefaultGamestate) AttachLegalCheck(actionName string, lc cards.LegalChecker) {
+	if _, ok := d.RuleEnforcer[actionName]; !ok {
+		d.RuleEnforcer[actionName] = cards.NewRuleEnforcer()
+	}
+	d.RuleEnforcer[actionName].AttachRule(lc)
+}
+func (d *DefaultGamestate) DetachLegalCheck(actionName string, lc cards.LegalChecker) {
+	if _, ok := d.RuleEnforcer[actionName]; !ok {
+		return
+	}
+	d.RuleEnforcer[actionName].DetachRule(lc)
+}
+func (d *DefaultGamestate) LegalCheck(actionName string, data interface{}) bool {
+	j, ok := d.RuleEnforcer[actionName]
+	if !ok {
+		return true
+	}
+	return j.Check(data)
+}
 func (d *DefaultGamestate) PayResource(cost cards.Cost) {
 	for key, val := range cost.Detail {
 		d.currentResource.Detail[key] -= val
@@ -163,6 +184,8 @@ func (d *DefaultGamestate) RemoveItem(c cards.Card) {
 	}
 	if idx != -1 {
 		d.RemoveItemIndex(idx)
+		data := map[string]interface{}{cards.EVENT_ATTR_ITEM_REMOVED: c}
+		d.NotifyListener(cards.EVENT_ITEM_REMOVED, data)
 	}
 }
 func (d *DefaultGamestate) GenerateRandomPotion(rarity int) cards.Card {
@@ -179,6 +202,14 @@ func (d *DefaultGamestate) AddItem(c cards.Card) {
 	fmt.Print(c.GetName())
 	d.ItemCards = append(d.ItemCards, c)
 	c.OnAcquire()
+	data := map[string]interface{}{cards.EVENT_ATTR_ITEM_ADDED: c}
+	d.NotifyListener(cards.EVENT_ITEM_ADDED, data)
+}
+func (d *DefaultGamestate) NotifyListener(eventname string, data map[string]interface{}) {
+	if _, ok := d.TopicsListeners[eventname]; ok {
+		j := d.TopicsListeners[eventname]
+		j.Notify(data)
+	}
 }
 func (d *DefaultGamestate) ConsumeItem(c cards.Consumable) {
 	c.OnConsume()
@@ -187,11 +218,32 @@ func (d *DefaultGamestate) GetCurrentHP() int {
 	return d.HitPoint
 }
 func (d *DefaultGamestate) TakeDamage(dmg int) {
-	d.HitPoint -= dmg
-	l, ok := d.TopicsListeners[cards.EVENT_TAKE_DAMAGE]
-	takeDamageEvent := map[string]interface{}{cards.EVENT_TAKE_DAMAGE: dmg}
+	block, ok := d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK]
 	if ok {
-		l.Notify(takeDamageEvent)
+		if dmg <= block {
+			// d.PayResource()
+			d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] -= dmg
+			dmg = 0
+		} else {
+			dmg -= block
+			d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] = 0
+		}
+
+	}
+
+	d.HitPoint -= dmg
+	if dmg > 0 {
+		l, ok := d.TopicsListeners[cards.EVENT_TAKE_DAMAGE]
+		takeDamageEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT: dmg}
+		if ok {
+			l.Notify(takeDamageEvent)
+		}
+	} else {
+		l, ok := d.TopicsListeners[cards.EVENT_HEAL_DAMAGE]
+		takeDamageEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT: dmg}
+		if ok {
+			l.Notify(takeDamageEvent)
+		}
 	}
 }
 
@@ -208,14 +260,6 @@ func (d *DefaultGamestate) SetBoolPicker(a cards.AbstractBoolPicker) {
 	d.boolPicker = a
 }
 func (d *DefaultGamestate) EndTurn() {
-	// reset resource except money and reputation
-	curRes := d.GetCurrentResource().Detail
-	for k := range curRes {
-		if k == cards.RESOURCE_NAME_MONEY || k == cards.RESOURCE_NAME_REPUTATION {
-			continue
-		}
-		d.GetCurrentResource().Detail[k] = 0
-	}
 
 	// remove cards played
 	for _, c := range d.CardsPlayed {
@@ -233,14 +277,30 @@ func (d *DefaultGamestate) EndTurn() {
 			pun.OnPunish()
 		}
 	}
+	// reset resource except money and reputation
+	curRes := d.GetCurrentResource().Detail
+	for k := range curRes {
+		if k == cards.RESOURCE_NAME_MONEY || k == cards.RESOURCE_NAME_REPUTATION {
+			continue
+		}
+		d.GetCurrentResource().Detail[k] = 0
+	}
 	if !d.centerCardChanged {
+		cardsShuffledBack := 0
 		for i := len(d.CenterCards) - 1; i >= 0; i-- {
 			hh := d.CenterCards[i]
+			if _, ok := hh.(cards.Unshuffleable); ok {
+				continue
+			}
+			cardsShuffledBack++
 			d.RemoveCardFromCenterRowIdx(i)
 			d.AddCardToCenterDeck(cards.DISCARD_SOURCE_CENTER, false, hh)
 		}
 		d.CardsInCenterDeck.Shuffle()
-		d.CenterRowInit()
+		for i := 0; i < cardsShuffledBack; i++ {
+			f := d.ReplaceCenterCard()
+			d.CenterCards = append(d.CenterCards, f)
+		}
 	}
 	d.CardsInHand = []cards.Card{}
 	for _, c := range d.CenterCards {
@@ -282,6 +342,9 @@ func (d *DefaultGamestate) GetCenterCard() []cards.Card {
 	return d.CenterCards
 }
 func (d *DefaultGamestate) RecruitCard(c cards.Card) {
+	if !d.LegalCheck(cards.ACTION_RECRUIT, c) {
+		return
+	}
 	k := c.GetCost()
 	if k.IsEnough(d.currentResource) {
 		d.PayResource(k)
@@ -326,7 +389,13 @@ func (d *DefaultGamestate) CenterRowInit() {
 func (d *DefaultGamestate) StackCards(source string, cc ...cards.Card) {
 	for _, c := range cc {
 		d.CardsInDeck.Stack(c)
+		if _, ok := d.TopicsListeners[cards.EVENT_ATTR_CARD_STACKED]; ok {
+			j := d.TopicsListeners[cards.EVENT_ATTR_CARD_STACKED]
+			data := map[string]interface{}{cards.EVENT_ATTR_CARD_STACKED: c, cards.EVENT_ATTR_DISCARD_SOURCE: source}
+			j.Notify(data)
+		}
 	}
+
 }
 func (d *DefaultGamestate) ShuffleMainDeck() {
 	d.CardsInDeck.Shuffle()
@@ -370,6 +439,18 @@ func (d *DefaultGamestate) Explore(c cards.Card) {
 func (d *DefaultGamestate) AppendCenterCard(c cards.Card) {
 	d.CenterCards = append(d.CenterCards, c)
 }
+func (d *DefaultGamestate) SetDetailViewer(v cards.AbstractDetailViewer) {
+	d.cardViewer = v
+}
+func (d *DefaultGamestate) GetDetailViewer() cards.AbstractDetailViewer {
+	return d.cardViewer
+}
+func (d *DefaultGamestate) PeekCenterCard() cards.Card {
+	if len(d.CardsInCenterDeck.List()) == 0 {
+		return nil
+	}
+	return d.CardsInCenterDeck.List()[0]
+}
 func (d *DefaultGamestate) ReplaceCenterCard() cards.Card {
 	d.centerCardChanged = true
 	replacementCard := d.CardsInCenterDeck.Draw()
@@ -377,6 +458,18 @@ func (d *DefaultGamestate) ReplaceCenterCard() cards.Card {
 		evtDetails := map[string]interface{}{cards.EVENT_ATTR_CARD_DRAWN: replacementCard}
 		j := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]
 		j.Notify(evtDetails)
+	}
+	if _, ok := replacementCard.(cards.Trapper); ok {
+		j := replacementCard.(cards.Trapper)
+		if !j.IsDisarmed() {
+			j.Trap()
+		} else {
+			d.BanishCard(replacementCard, cards.DISCARD_SOURCE_CENTER)
+			replacementCard = d.CardsInCenterDeck.Draw()
+			evtDetails := map[string]interface{}{cards.EVENT_ATTR_CARD_DRAWN: replacementCard}
+			d.NotifyListener(cards.EVENT_CARD_DRAWN_CENTER, evtDetails)
+		}
+
 	}
 	return replacementCard
 }
@@ -392,6 +485,9 @@ func (d *DefaultGamestate) BeginTurn() {
 	}
 }
 func (d *DefaultGamestate) Draw() {
+	if !d.LegalCheck(cards.ACTION_DRAW, nil) {
+		return
+	}
 	if d.CardsInDeck.Size() == 0 {
 		// shuffle discard pile
 		d.CardsDiscarded.Shuffle()
@@ -416,7 +512,27 @@ func (d *DefaultGamestate) BanishCard(c cards.Card, source string) {
 	}
 	return
 }
+func (d *DefaultGamestate) Disarm(c cards.Card) {
+	f := c.GetCost()
+	res := d.currentResource
+	if (&f).IsEnough(res) {
+		d.PayResource(f)
+		c.OnSlain()
+		d.RemoveCardFromCenterRow(c)
+		// remove c from center cards
+		d.updateCenterCard(c)
+		// d.BanishCard(c, cards.DISCARD_SOURCE_CENTER)
+		c.Dispose(cards.DISCARD_SOURCE_CENTER)
+		trapRemovedEvent := map[string]interface{}{cards.EVENT_ATTR_TRAP_REMOVED: c}
+		d.NotifyListener(cards.EVENT_TRAP_REMOVED, trapRemovedEvent)
+
+	}
+	return
+}
 func (d *DefaultGamestate) DefeatCard(c cards.Card) {
+	if !d.LegalCheck(cards.ACTION_DEFEAT, c) {
+		return
+	}
 	f := c.GetCost()
 	res := d.currentResource
 	if (&f).IsEnough(res) {

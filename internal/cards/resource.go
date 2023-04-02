@@ -12,6 +12,7 @@ var RESOURCE_NAME_EXPLORATION = "Exploration"
 var RESOURCE_NAME_COMBAT = "Combat"
 var RESOURCE_NAME_MONEY = "Money"
 var RESOURCE_NAME_REPUTATION = "Reputation"
+var RESOURCE_NAME_BLOCK = "Block"
 
 // resource pool for the game
 type Resource struct {

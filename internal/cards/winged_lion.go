@@ -23,9 +23,17 @@ func (h *WingedLion) GetCost() Cost {
 }
 func (h *WingedLion) OnPlay() {
 	cardList := h.state.GetCenterCard()
+	shuffleableCard := []Card{}
+	for _, c := range cardList {
+		if _, ok := c.(Unshuffleable); ok {
+			continue
+		} else {
+			shuffleableCard = append(shuffleableCard, c)
+		}
+	}
 	cardPicker := h.state.GetCardPicker()
 
-	idx := cardPicker.PickCard(cardList, "Pick a card to shuffle to deck then draw")
+	idx := cardPicker.PickCard(shuffleableCard, "Pick a card to shuffle to deck then draw")
 	selectedCard := cardList[idx]
 	h.state.RemoveCardFromCenterRowIdx(idx)
 	topdeck := h.state.ReplaceCenterCard()

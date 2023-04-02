@@ -17,3 +17,7 @@ type AbstractBoolPicker interface {
 	// as yes/no question
 	BoolPick(message string) bool
 }
+
+type AbstractDetailViewer interface {
+	ShowDetail(Card)
+}

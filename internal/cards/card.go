@@ -11,7 +11,7 @@ const (
 	Hero CardType = iota
 	Area
 	Monster
-	Event
+	Trap
 	Curse
 	Item
 )
@@ -24,8 +24,8 @@ func (i CardType) String() string {
 		return "Area"
 	case Monster:
 		return "Mons"
-	case Event:
-		return "Event"
+	case Trap:
+		return "Trap"
 	case Curse:
 		return "Curse"
 	case Item:

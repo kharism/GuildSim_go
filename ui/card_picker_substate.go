@@ -216,7 +216,7 @@ type boolPickState struct {
 	pickedOption chan (bool)
 }
 
-func (c *boolPickState) PickBool(message string) bool {
+func (c *boolPickState) BoolPick(message string) bool {
 	c.msg = message
 	c.m.currentSubState = c
 

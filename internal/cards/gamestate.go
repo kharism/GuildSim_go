@@ -12,8 +12,12 @@ var EVENT_CARD_DEFEATED = "CardDefeated"
 var EVENT_CARD_RECRUITED = "CardRecruited"
 var EVENT_CARD_DISCARDED = "CardDiscarded"
 var EVENT_CARD_BANISHED = "CardBanished"
+var EVENT_CARD_STACKED = "CardStacked"
 var EVENT_TAKE_DAMAGE = "TakeDamage"
 var EVENT_HEAL_DAMAGE = "HealDamage"
+var EVENT_ITEM_ADDED = "ItemAdded"
+var EVENT_ITEM_REMOVED = "ItemRemoved"
+var EVENT_TRAP_REMOVED = "TrapRemoved"
 
 var EVENT_START_OF_TURN = "BeginTurn"
 var EVENT_END_OF_TURN = "EndTurn"
@@ -26,22 +30,38 @@ var EVENT_ATTR_CARD_DEFEATED = "CardDefeated"
 var EVENT_ATTR_CARD_RECRUITED = "CardRecruited"
 var EVENT_ATTR_CARD_DISCARDED = "CardDiscarded"
 var EVENT_ATTR_CARD_BANISHED = "CardBanished"
+var EVENT_ATTR_CARD_STACKED = "CardStacked"
 var EVENT_ATTR_CARD_GOTO_CENTER = "CardGotoCenter"
 var EVENT_ATTR_CARD_TAKE_DAMAGE = "CardTakeDamage"
 var EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT = "CardTakeDamageAmt"
 var EVENT_ATTR_CARD_HEAL_DAMAGE = "CardHealDamage"
+var EVENT_ATTR_ITEM_ADDED = "ItemAdded"
+var EVENT_ATTR_ITEM_REMOVED = "ItemRemoved"
+var EVENT_ATTR_TRAP_REMOVED = "TrapRemoved"
 
 var EVENT_ATTR_DAMAGE_AMMT = "DamageAmount"
 
 var EVENT_ATTR_DISCARD_SOURCE = "DiscardSource"
 
+var EVENT_MINIBOSS_DEFEATED = "MinibossDefeated"
+var EVENT_BOSS_DEFEATED = "MinibossDefeated"
+
 const (
-	DISCARD_SOURCE_HAND     = "hand"
-	DISCARD_SOURCE_PLAYED   = "played"
-	DISCARD_SOURCE_CENTER   = "center"
-	DISCARD_SOURCE_COOLDOWN = "cooldown"
-	DISCARD_SOURCE_NAN      = "nan"
-	DISCARD_SOURCE_DISCARD  = "discard"
+	ACTION_DRAW    = "Draw"
+	ACTION_DEFEAT  = "Defeat"
+	ACTION_EXPLORE = "Explore"
+	ACTION_RECRUIT = "Recruit"
+	ACTION_DISARM  = "Disarm"
+)
+
+const (
+	DISCARD_SOURCE_HAND        = "hand"
+	DISCARD_SOURCE_PLAYED      = "played"
+	DISCARD_SOURCE_CENTER      = "center"
+	DISCARD_SOURCE_CENTER_DECK = "centerDeck"
+	DISCARD_SOURCE_COOLDOWN    = "cooldown"
+	DISCARD_SOURCE_NAN         = "nan"
+	DISCARD_SOURCE_DISCARD     = "discard"
 )
 const (
 	RARITY_COMMON = 0b001
@@ -58,6 +78,9 @@ type AbstractGamestate interface {
 	DiscardCard(c Card, source string)
 	BanishCard(c Card, source string)
 	DefeatCard(c Card)
+
+	// thsi is method to call when remove trap in center row.
+	Disarm(c Card)
 	// just play card from no particular location and added it to list of played card
 	// It will assume the card is played from hand and try to remove cards from hand if possible
 	// the card will not automatically go to discard/cooldown pile
@@ -87,6 +110,9 @@ type AbstractGamestate interface {
 
 	// take damage, the parameter can also take negative damage which means heals
 	// it also trigger takeDamage or healDamage event
+	// since we added Block resource, deduce the damage to the block resource
+	// like if a monster call for TakeDamage(3) damage and you have 2 block, then
+	// player HP will be reduced by 1 and their block will be 0
 	TakeDamage(int)
 
 	// remove cards
@@ -99,6 +125,8 @@ type AbstractGamestate interface {
 
 	// return a card drawn from central deck
 	ReplaceCenterCard() Card
+	// peek what card at the top of the center deck
+	PeekCenterCard() Card
 	// init center row
 	CenterRowInit()
 	AppendCenterCard(c Card)
@@ -113,6 +141,9 @@ type AbstractGamestate interface {
 	GetBoolPicker() AbstractBoolPicker
 	SetBoolPicker(AbstractBoolPicker)
 
+	SetDetailViewer(AbstractDetailViewer)
+	GetDetailViewer() AbstractDetailViewer
+
 	// make center deck thicker
 	AddCardToCenterDeck(source string, shuffle bool, c ...Card)
 
@@ -123,6 +154,13 @@ type AbstractGamestate interface {
 
 	AttachListener(eventName string, l observer.Listener)
 	RemoveListener(eventName string, l observer.Listener)
+	NotifyListener(eventname string, data map[string]interface{})
+
+	// legalchecks. TODO: implement this on DefGamestate and Dummy
+	AttachLegalCheck(actionName string, lc LegalChecker)
+	DetachLegalCheck(actionName string, lc LegalChecker)
+	LegalCheck(actionName string, data interface{}) bool
+
 	GetCurrentResource() Resource
 	AddResource(name string, amount int)
 	PayResource(cost Cost)

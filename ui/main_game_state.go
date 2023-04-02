@@ -30,6 +30,7 @@ type MainGameState struct {
 	EndturnBtn    *ebiten.Image
 	GameOver      *ebiten.Image
 	ItemIcon      *ebiten.Image
+	Reputation    *ebiten.Image
 	cardsInCenter []*EbitenCard
 	cardInHand    []*EbitenCard
 	cardsPlayed   []*EbitenCard
@@ -116,6 +117,8 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 						go s.m.defaultGamestate.RecruitCard(clickedCard.card)
 					case cards.Monster:
 						go s.m.defaultGamestate.DefeatCard(clickedCard.card)
+					case cards.Trap:
+						go s.m.defaultGamestate.Disarm(clickedCard.card)
 					}
 					//go s.m.defaultGamestate.PlayCard(s.m.cardInHand[i].card)
 					//s.m.detailViewCard = s.m.cardInHand[i]
@@ -155,7 +158,7 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 		// }()
 		// s.m.currentSubState = s.m.boolPicker
 		go func() {
-			if s.m.boolPicker.PickBool("Draw a card?") {
+			if s.m.boolPicker.BoolPick("Draw a card?") {
 				s.m.defaultGamestate.Draw()
 			}
 		}()
@@ -166,8 +169,15 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 type detailState struct {
 	m            *MainGameState
 	prevSubState SubState
+	wait         chan bool
 }
 
+func (s *detailState) ShowDetail(c cards.Card) {
+	s.m.detailViewCard = NewEbitenCardFromCard(c)
+	s.prevSubState = s.m.currentSubState
+	s.m.currentSubState = s
+	// <-s.wait
+}
 func (s *detailState) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Translate(0, 0)
@@ -177,6 +187,7 @@ func (s *detailState) Draw(screen *ebiten.Image) {
 	screen.DrawImage(s.m.detailViewCard.image, op2)
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		s.m.currentSubState = s.prevSubState
+		// s.wait <- true
 		s.prevSubState = nil
 	}
 }
@@ -349,12 +360,25 @@ func (p *onCenterDrawAction) DoAction(data map[string]interface{}) {
 	drawnCards := data[cards.EVENT_ATTR_CARD_DRAWN].(cards.Card)
 	newEbitenCard := NewEbitenCardFromCard(drawnCards)
 	// fmt.Println("center Draw", drawnCards.GetName())
+	isDisarmedTrap := false
+	if _, ok := drawnCards.(cards.Trapper); ok {
+		j := drawnCards.(cards.Trapper)
+		if j.IsDisarmed() {
+			isDisarmedTrap = true
+		}
+	}
 	ll := mainGame.(*MainGameState)
 	indexCard := len(ll.defaultGamestate.CenterCards)
 	newEbitenCard.x = math.Floor(CENTER_DECK_START_X)
 	newEbitenCard.y = math.Floor(CENTER_DECK_START_Y)
-	newEbitenCard.tx = math.Floor(CENTER_START_X + float64(indexCard)*HAND_DIST_X)
-	newEbitenCard.ty = CENTER_START_Y
+	if isDisarmedTrap {
+		newEbitenCard.tx = BANISHED_START_X
+		newEbitenCard.ty = BANISHED_START_Y
+	} else {
+		newEbitenCard.tx = math.Floor(CENTER_START_X + float64(indexCard)*HAND_DIST_X)
+		newEbitenCard.ty = CENTER_START_Y
+	}
+
 	vx := float64(newEbitenCard.tx - newEbitenCard.x)
 	vy := float64(newEbitenCard.ty - newEbitenCard.y)
 	speedVector := csg.NewVector(vx, vy, 0)
@@ -363,7 +387,12 @@ func (p *onCenterDrawAction) DoAction(data map[string]interface{}) {
 	newEbitenCard.vy = speedVector.Y
 	// fmt.Println(newEbitenCard.x, newEbitenCard.y, newEbitenCard.tx, newEbitenCard.ty, newEbitenCard.vx, newEbitenCard.vy)
 	ll.mutex.Lock()
-	ll.cardsInCenter = append(ll.cardsInCenter, newEbitenCard)
+	if isDisarmedTrap {
+		ll.cardsInLimbo = append(ll.cardsInLimbo, newEbitenCard)
+	} else {
+		ll.cardsInCenter = append(ll.cardsInCenter, newEbitenCard)
+	}
+
 	ll.mutex.Unlock()
 
 	// if we draw the last card on center deck, trigger you win
@@ -421,6 +450,67 @@ type onDefeatAction struct {
 func (p *onDefeatAction) DoAction(data map[string]interface{}) {
 	fmt.Println("defeat")
 	exploredCard := data[cards.EVENT_ATTR_CARD_DEFEATED].(cards.Card)
+	newCenterCard := []*EbitenCard{}
+	defer p.mainGameState.mutex.Unlock()
+	p.mainGameState.mutex.Lock()
+	moveIndex := -1
+	for i := 0; i < len(p.mainGameState.cardsInCenter); i++ {
+		if p.mainGameState.cardsInCenter[i].card == exploredCard {
+			moveIndex = i
+			ebitenCard := p.mainGameState.cardsInCenter[i]
+			ebitenCard.tx = BANISHED_START_X
+			ebitenCard.ty = BANISHED_START_Y
+			vx := float64(ebitenCard.tx - ebitenCard.x)
+			vy := float64(ebitenCard.ty - ebitenCard.y)
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+			ebitenCard.vx = speedVector.X
+			ebitenCard.vy = speedVector.Y
+			p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+		} else {
+			newCenterCard = append(newCenterCard, p.mainGameState.cardsInCenter[i])
+		}
+	}
+	for i := moveIndex; i < len(newCenterCard); i++ {
+		newCenterCard[i].tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
+		newCenterCard[i].ty = CENTER_START_Y
+		vx := float64(newCenterCard[i].tx - newCenterCard[i].x)
+		vy := float64(newCenterCard[i].ty - newCenterCard[i].y)
+		speedVector := csg.NewVector(vx, vy, 0)
+		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+		newCenterCard[i].vx = speedVector.X
+		newCenterCard[i].vy = speedVector.Y
+	}
+	p.mainGameState.cardsInCenter = newCenterCard
+}
+
+type onItemAdd struct {
+	mainGameState *MainGameState
+}
+
+func (p *onItemAdd) DoAction(data map[string]interface{}) {
+	addedItem := data[cards.EVENT_ATTR_ITEM_ADDED].(cards.Card)
+	ebitenCard := NewEbitenCardFromCard(addedItem)
+	ebitenCard.x = DISCARD_NA_SOURCE_X
+	ebitenCard.y = DISCARD_NA_SOURCE_Y
+	ebitenCard.tx = ITEM_ICON_START_X
+	ebitenCard.ty = ITEM_ICON_START_Y
+	vx := float64(ebitenCard.tx - ebitenCard.x)
+	vy := float64(ebitenCard.ty - ebitenCard.y)
+	speedVector := csg.NewVector(vx, vy, 0)
+	speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+	ebitenCard.vx = speedVector.X
+	ebitenCard.vy = speedVector.Y
+	p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+}
+
+type onDisarmAction struct {
+	mainGameState *MainGameState
+}
+
+func (p *onDisarmAction) DoAction(data map[string]interface{}) {
+	// fmt.Println("defeat")
+	exploredCard := data[cards.EVENT_ATTR_TRAP_REMOVED].(cards.Card)
 	newCenterCard := []*EbitenCard{}
 	defer p.mainGameState.mutex.Unlock()
 	p.mainGameState.mutex.Lock()
@@ -541,6 +631,61 @@ func (p *onGotoCenterDeckAction) DoAction(data map[string]interface{}) {
 		}
 		p.mainGameState.cardsInCenter = newCenterCard
 
+	} else if source == cards.DISCARD_SOURCE_NAN {
+		ebitenCard := NewEbitenCardFromCard(returnedCard)
+		ebitenCard.x = DISCARD_NA_SOURCE_X
+		ebitenCard.y = DISCARD_NA_SOURCE_Y
+		ebitenCard.tx = CENTER_DECK_START_X
+		ebitenCard.ty = CENTER_DECK_START_Y
+		vx := float64(ebitenCard.tx - ebitenCard.x)
+		vy := float64(ebitenCard.ty - ebitenCard.y)
+		speedVector := csg.NewVector(vx, vy, 0)
+		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+		ebitenCard.vx = speedVector.X
+		ebitenCard.vy = speedVector.Y
+		p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+	}
+}
+
+type onCardStacked struct {
+	mainGameState *MainGameState
+}
+
+func (p *onCardStacked) DoAction(data map[string]interface{}) {
+	returnedCard := data[cards.EVENT_ATTR_CARD_STACKED].(cards.Card)
+	source := data[cards.EVENT_ATTR_DISCARD_SOURCE].(string)
+	if source == cards.DISCARD_SOURCE_HAND {
+		moveIndex := -1
+		newHandCard := []*EbitenCard{}
+		for i := 0; i < len(p.mainGameState.cardInHand); i++ {
+			if p.mainGameState.cardInHand[i].card == returnedCard {
+				moveIndex = i
+				ebitenCard := p.mainGameState.cardInHand[i]
+				ebitenCard.tx = CENTER_DECK_START_X
+				ebitenCard.ty = CENTER_DECK_START_Y
+				vx := float64(ebitenCard.tx - ebitenCard.x)
+				vy := float64(ebitenCard.ty - ebitenCard.y)
+				speedVector := csg.NewVector(vx, vy, 0)
+				speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+				ebitenCard.vx = speedVector.X
+				ebitenCard.vy = speedVector.Y
+				p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+			} else {
+				newHandCard = append(newHandCard, p.mainGameState.cardInHand[i])
+			}
+		}
+		for i := moveIndex; i < len(newHandCard); i++ {
+			newHandCard[i].tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
+			newHandCard[i].ty = CENTER_START_Y
+			vx := float64(newHandCard[i].tx - newHandCard[i].x)
+			vy := float64(newHandCard[i].ty - newHandCard[i].y)
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+			newHandCard[i].vx = speedVector.X
+			newHandCard[i].vy = speedVector.Y
+			// fmt.Sprintf("%d %f %f\n", i, newCenterCard[i].tx, newCenterCard[i].ty)
+		}
+		p.mainGameState.cardInHand = newHandCard
 	}
 }
 
@@ -570,6 +715,10 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 		log.Fatal(err)
 	}
 	iconCombat, _, err := ebitenutil.NewImageFromFile("img/misc/combat.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	iconReputation, _, err := ebitenutil.NewImageFromFile("img/misc/reputation.png")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -603,7 +752,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger,
 		paperBg: paperBg, checkMark: checkmark, btn: btn, iconCombat: iconCombat, iconExplore: iconExplore, mutex: mutex,
 		cardsPlayed: cardsPlayed, DiscardPile: discardPile, MainDeck: mainDeck, EndturnBtn: EndturnBtn, GameOver: game_over,
-		ItemIcon: item_icon,
+		ItemIcon: item_icon, Reputation: iconReputation,
 	}
 	mainState := &mainMainState{m: mgs}
 	detailState := &detailState{m: mgs}
@@ -656,6 +805,16 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 		explore = 0
 	}
 	text.Draw(screen, fmt.Sprintf("%d", explore), mplusResource, 670, 40, color.RGBA{0, 255, 0, 255})
+
+	op.GeoM.Reset()
+	op.GeoM.Scale(0.3, 0.3)
+	op.GeoM.Translate(750, -10)
+	screen.DrawImage(m.Reputation, op)
+	rep, ok := res.Detail[cards.RESOURCE_NAME_REPUTATION]
+	if !ok {
+		rep = 0
+	}
+	text.Draw(screen, fmt.Sprintf("%d", rep), mplusResource, 850, 40, color.RGBA{127, 127, 0, 255})
 
 	for _, c := range m.cardInHand {
 		c.Draw(screen)

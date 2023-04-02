@@ -133,9 +133,13 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 	onExplore := &onExplorationAction{mainGameState: mainGame.(*MainGameState)}
 	onDefeat := &onDefeatAction{mainGameState: mainGame.(*MainGameState)}
 	onRecruit := &onRecruitAction{mainGameState: mainGame.(*MainGameState)}
+	onDisarm := &onDisarmAction{mainGameState: mainGame.(*MainGameState)}
+	onItemAdd := &onItemAdd{mainGameState: mainGame.(*MainGameState)}
 	state.AttachListener(cards.EVENT_CARD_EXPLORED, onExplore)
 	state.AttachListener(cards.EVENT_CARD_RECRUITED, onRecruit)
 	state.AttachListener(cards.EVENT_CARD_DEFEATED, onDefeat)
+	state.AttachListener(cards.EVENT_TRAP_REMOVED, onDisarm)
+	state.AttachListener(cards.EVENT_ITEM_ADDED, onItemAdd)
 	return state
 }
 func (g *Game) ChangeState(stateName string) {
@@ -143,7 +147,7 @@ func (g *Game) ChangeState(stateName string) {
 	case STATE_MAIN_GAME:
 		starterDeckSet := []string{factory.SET_STARTER_DECK}
 		centerDeckSet := []string{factory.SET_CENTER_DECK_1}
-		decorators := []decorator.AbstractDecorator{decorator.AttachTombOfForgottenMonarch,
+		decorators := []decorator.AbstractDecorator{decorator.AttachTombOfForgottenMonarch, decorator.AttachProgressionCounter,
 			AttachGameOverListener, AttachDrawMainDeckListener, AttachCardPlayedListener,
 			AttachCardDiscardListener, AttachCenterCardDrawnListener, AttachCenterCardRecDefExp,
 			AttachReturnToCenterListener,
@@ -152,20 +156,26 @@ func (g *Game) ChangeState(stateName string) {
 		mm := mainGame.(*MainGameState)
 		mm.defaultGamestate = defaultGamestate.(*gamestate.DefaultGamestate)
 		mm.defaultGamestate.SetCardPicker(mm.cardPicker)
+		mm.defaultGamestate.SetDetailViewer(mm.detailState)
+		mm.defaultGamestate.SetBoolPicker(mm.boolPicker)
 		mm.defaultGamestate.TakeDamage(40)
-		// rookieMage := cards.NewLichMageMonster(mm.defaultGamestate)
+		// thief := cards.NewMonsterSlayer(mm.defaultGamestate)
+		// spikeFloor := cards.NewLichMageMonster(mm.defaultGamestate)
+		// lair := cards.NewGoblinSmallLairArea(mm.defaultGamestate)
 		// heal := item.NewHealingPotion(defaultGamestate)
-		// ll := append(mm.defaultGamestate.CardsInCenterDeck.List()[:3], &rookieMage)
+		// ll := append(mm.defaultGamestate.CardsInCenterDeck.List()[:3], &spikeFloor)
 		// rest := mm.defaultGamestate.CardsInCenterDeck.List()[4:]
 		// mm.defaultGamestate.CardsInCenterDeck.SetList(append(ll, rest...))
 		// mm.defaultGamestate.ItemCards = append(mm.defaultGamestate.ItemCards, &heal)
-		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &rookieMage)
+		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &thief)
+		// mm.defaultGamestate.CardsInDeck.Stack(&thief)
 		// rookieCard := NewEbitenCardFromCard(&rookieMage)
 		// rookieCard.x = HAND_START_X
 		// rookieCard.y = HAND_START_Y
 		// mm.cardInHand = append(mm.cardInHand, rookieCard)
 		currentState = mainGame
 		mm.defaultGamestate.CenterRowInit()
+		// mm.defaultGamestate.CardsInCenterDeck.Stack(&spikeFloor)
 		mm.defaultGamestate.BeginTurn()
 	case STATE_MAIN_MENU:
 		currentState = mainMenu

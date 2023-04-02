@@ -40,3 +40,10 @@ func (m *BaseMonster) OnDiscarded() {}
 type Punisher interface {
 	OnPunish()
 }
+
+// a hack. any card implement this interface will not be shuffled back on end of turn
+// when we can't defeat/explore/recruit cards on center row. They also cannot be returned
+// by card eff such as winged lion
+type Unshuffleable interface {
+	Unshuffleable()
+}
