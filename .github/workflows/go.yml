@@ -23,6 +23,7 @@ jobs:
 
     - name: Build
       run: |
+        sudo apt-get update
         sudo apt install libxinerama-dev libgl1-mesa-dev xorg-dev libxcursor-dev
         go build -v ./ui/*.go
 
