@@ -23,7 +23,7 @@ jobs:
 
     - name: Build
       run: |
-        apt-get install libxinerama-dev
+        sudo apt-get install libxinerama-dev
         go build -v ./ui/*.go
 
     - name: Test
