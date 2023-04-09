@@ -21,7 +21,7 @@ func (b *SpikeFloor) Dispose(source string) {
 
 func (b *SpikeFloor) GetCost() Cost {
 	cost := NewCost()
-	cost.AddResource(RESOURCE_NAME_EXPLORATION, 4)
+	cost.AddResource(RESOURCE_NAME_EXPLORATION, 2)
 	return cost
 }
 
@@ -35,4 +35,7 @@ func (b *SpikeFloor) IsDisarmed() bool {
 }
 func (b *SpikeFloor) Disarm() {
 	b.isDisarmed = true
+}
+func (b *SpikeFloor) OnDisarm() {
+
 }

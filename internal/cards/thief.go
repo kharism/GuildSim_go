@@ -17,7 +17,7 @@ func (r *Thief) GetName() string {
 	return "Thief"
 }
 func (r *Thief) GetDescription() string {
-	return "gain 2 Exploration or peek top of center deck, if it is has a trap, disarm it"
+	return "gain 2 Exploration or peek top of center deck, if it is has a trap, disarm it. If it's not gain 1 exploration"
 }
 func (r *Thief) GetCost() Cost {
 	cost := NewCost()
@@ -34,6 +34,8 @@ func (r *Thief) OnPlay() {
 		if _, ok := topCenter.(Trapper); ok {
 			j := topCenter.(Trapper)
 			j.Disarm()
+		} else {
+			r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 1)
 		}
 
 	}

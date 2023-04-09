@@ -6,6 +6,7 @@ import (
 	"github/kharism/GuildSim_go/internal/cards/item"
 	"github/kharism/GuildSim_go/internal/observer"
 	"math/rand"
+	"sync"
 	"testing"
 )
 
@@ -113,12 +114,19 @@ type DummyGamestate struct {
 	ItemCards         []cards.Card
 	CardsDiscarded    cards.DeterministicDeck
 	HitPoint          int
+	mutex             sync.Mutex
 	//ui stuff
 	cardPiker  cards.AbstractCardPicker
 	boolPiker  cards.AbstractBoolPicker
 	cardViewer cards.AbstractDetailViewer
 }
 
+func (d *DummyGamestate) MutexLock() {
+	d.mutex.Lock()
+}
+func (d *DummyGamestate) MutexUnlock() {
+	d.mutex.Unlock()
+}
 func (d *DummyGamestate) PayResource(cost cards.Cost) {
 	for key, val := range cost.Detail {
 		d.currentResource.Detail[key] -= val
@@ -165,7 +173,7 @@ func NewDummyGamestate() cards.AbstractGamestate {
 	d.CardsBanished = []cards.Card{}
 	d.ItemCards = []cards.Card{}
 	d.RuleEnforcer = map[string]*cards.RuleEnforcer{}
-
+	d.mutex = sync.Mutex{}
 	d.HitPoint = 60
 	return &d
 }

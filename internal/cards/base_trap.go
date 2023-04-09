@@ -53,4 +53,5 @@ type Trapper interface {
 	Trap()
 	IsDisarmed() bool
 	Disarm()
+	OnDisarm()
 }

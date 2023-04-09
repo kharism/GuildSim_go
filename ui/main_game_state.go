@@ -41,6 +41,7 @@ type MainGameState struct {
 	detailViewCard   *EbitenCard
 	mutex            *sync.Mutex
 	defaultGamestate *gamestate.DefaultGamestate
+	limiter          string
 
 	// sub-states
 	currentSubState SubState
@@ -53,6 +54,7 @@ type MainGameState struct {
 }
 type SubState interface {
 	Draw(screen *ebiten.Image)
+	Update() error
 }
 type mainMainState struct {
 	m *MainGameState
@@ -166,6 +168,27 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 	}
 }
 
+func (s *mainMainState) Update() error {
+	for _, c := range s.m.cardInHand {
+		c.Update()
+	}
+	for _, c := range s.m.cardsPlayed {
+		c.Update()
+	}
+	for _, c := range s.m.cardsInCenter {
+		c.Update()
+	}
+	newCardInLimbo := []*EbitenCard{}
+	for _, c := range s.m.cardsInLimbo {
+		c.Update()
+		if c.tx != c.x || c.ty != c.y {
+			newCardInLimbo = append(newCardInLimbo, c)
+		}
+	}
+	s.m.cardsInLimbo = newCardInLimbo
+	return nil
+}
+
 type detailState struct {
 	m            *MainGameState
 	prevSubState SubState
@@ -190,6 +213,9 @@ func (s *detailState) Draw(screen *ebiten.Image) {
 		// s.wait <- true
 		s.prevSubState = nil
 	}
+}
+func (s *detailState) Update() error {
+	return nil
 }
 
 type OnDrawAction struct {
@@ -273,6 +299,69 @@ func (p *OnPlayAction) DoAction(data map[string]interface{}) {
 	// fmt.Println(mm.cardInHand)
 }
 
+type onBanishAction struct {
+	mainGameState *MainGameState
+}
+
+func (p *onBanishAction) DoAction(data map[string]interface{}) {
+	cardDiscarded := data[cards.EVENT_ATTR_CARD_BANISHED].(cards.Card)
+	source := data[cards.EVENT_ATTR_DISCARD_SOURCE].(string)
+	fmt.Println("Discard card", cardDiscarded.GetName())
+	defer p.mainGameState.mutex.Unlock()
+	p.mainGameState.mutex.Lock()
+	sourceCard := []*EbitenCard{}
+	newSource := []*EbitenCard{}
+	if source == cards.DISCARD_SOURCE_HAND {
+		sourceCard = p.mainGameState.cardInHand
+	} else if source == cards.DISCARD_SOURCE_PLAYED {
+		// newPlayed := []*EbitenCard{}
+		sourceCard = p.mainGameState.cardsPlayed
+		// p.mainGameState.cardsPlayed = newPlayed
+	}
+
+	movedIdx := -1
+	for i := 0; i < len(sourceCard); i++ {
+		if sourceCard[i].card == cardDiscarded {
+			movedIdx = i
+			ebitenCard := sourceCard[i]
+			ebitenCard.tx = BANISHED_START_X
+			ebitenCard.ty = BANISHED_START_Y
+			vx := float64(ebitenCard.tx - ebitenCard.x)
+			vy := float64(ebitenCard.ty - ebitenCard.y)
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+			ebitenCard.vx = speedVector.X
+			ebitenCard.vy = speedVector.Y
+			// fmt.Println("DetectDiscarded", cardDiscarded.GetName(), source, ebitenCard.vx, ebitenCard.vy)
+			p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+		} else {
+			newSource = append(newSource, sourceCard[i])
+		}
+	}
+	if source == cards.DISCARD_SOURCE_HAND {
+		p.mainGameState.cardInHand = newSource
+		// move cards on the right side to left
+		if len(p.mainGameState.cardInHand) > 0 {
+			for i := movedIdx; i < len(p.mainGameState.cardInHand); i++ {
+				ebitenCard := sourceCard[i]
+				ebitenCard.tx -= HAND_DIST_X
+				vx := float64(ebitenCard.tx - ebitenCard.x)
+				vy := float64(ebitenCard.ty - ebitenCard.y)
+				speedVector := csg.NewVector(vx, vy, 0)
+				speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+				ebitenCard.vx = speedVector.X
+				ebitenCard.vy = speedVector.Y
+				sourceCard[i] = ebitenCard
+			}
+		}
+		// sourceCard = p.mainGameState.cardInHand
+	} else if source == cards.DISCARD_SOURCE_PLAYED {
+		// newPlayed := []*EbitenCard{}
+		// sourceCard = p.mainGameState.cardsPlayed
+		p.mainGameState.cardsPlayed = newSource
+	}
+}
+
 type onDiscardAction struct {
 	mainGameState *MainGameState
 }
@@ -308,6 +397,7 @@ func (p *onDiscardAction) DoAction(data map[string]interface{}) {
 		p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
 	}
 	movedIdx := -1
+	fmt.Println("SourceCard", len(sourceCard))
 	for i := 0; i < len(sourceCard); i++ {
 		if sourceCard[i].card == cardDiscarded {
 			movedIdx = i
@@ -359,10 +449,12 @@ func (p *onCenterDrawAction) DoAction(data map[string]interface{}) {
 
 	drawnCards := data[cards.EVENT_ATTR_CARD_DRAWN].(cards.Card)
 	newEbitenCard := NewEbitenCardFromCard(drawnCards)
-	// fmt.Println("center Draw", drawnCards.GetName())
+	fmt.Println("center Draw", drawnCards.GetName())
 	isDisarmedTrap := false
+	isATrap := false
 	if _, ok := drawnCards.(cards.Trapper); ok {
 		j := drawnCards.(cards.Trapper)
+		isATrap = true
 		if j.IsDisarmed() {
 			isDisarmedTrap = true
 		}
@@ -385,21 +477,27 @@ func (p *onCenterDrawAction) DoAction(data map[string]interface{}) {
 	speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
 	newEbitenCard.vx = speedVector.X
 	newEbitenCard.vy = speedVector.Y
-	// fmt.Println(newEbitenCard.x, newEbitenCard.y, newEbitenCard.tx, newEbitenCard.ty, newEbitenCard.vx, newEbitenCard.vy)
+	if isATrap {
+		fmt.Println(newEbitenCard.x, newEbitenCard.y, newEbitenCard.tx, newEbitenCard.ty, newEbitenCard.vx, newEbitenCard.vy)
+	}
+
 	ll.mutex.Lock()
 	if isDisarmedTrap {
+		fmt.Println("Append disarmed trap in limbo")
 		ll.cardsInLimbo = append(ll.cardsInLimbo, newEbitenCard)
 	} else {
+		fmt.Println("append", drawnCards.GetName())
 		ll.cardsInCenter = append(ll.cardsInCenter, newEbitenCard)
+		fmt.Println("====", len(ll.cardsInCenter))
 	}
 
 	ll.mutex.Unlock()
 
 	// if we draw the last card on center deck, trigger you win
 	// TODO: add alternative win condition
-	if ll.defaultGamestate.CardsInCenterDeck.Size() == 0 {
-		ll.currentSubState = ll.gameoverState
-	}
+	// if ll.defaultGamestate.CardsInCenterDeck.Size() == 0 {
+	// 	ll.currentSubState = ll.gameoverState
+	// }
 }
 
 type onExplorationAction struct {
@@ -661,8 +759,8 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 			if p.mainGameState.cardInHand[i].card == returnedCard {
 				moveIndex = i
 				ebitenCard := p.mainGameState.cardInHand[i]
-				ebitenCard.tx = CENTER_DECK_START_X
-				ebitenCard.ty = CENTER_DECK_START_Y
+				ebitenCard.tx = MAIN_DECK_X
+				ebitenCard.ty = MAIN_DECK_Y
 				vx := float64(ebitenCard.tx - ebitenCard.x)
 				vy := float64(ebitenCard.ty - ebitenCard.y)
 				speedVector := csg.NewVector(vx, vy, 0)
@@ -674,9 +772,13 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 				newHandCard = append(newHandCard, p.mainGameState.cardInHand[i])
 			}
 		}
+		fmt.Println("Move index", moveIndex)
+		if moveIndex == -1 {
+			return
+		}
 		for i := moveIndex; i < len(newHandCard); i++ {
-			newHandCard[i].tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
-			newHandCard[i].ty = CENTER_START_Y
+			newHandCard[i].tx = math.Floor(HAND_START_X + float64(i)*HAND_DIST_X)
+			newHandCard[i].ty = MAIN_DECK_Y
 			vx := float64(newHandCard[i].tx - newHandCard[i].x)
 			vy := float64(newHandCard[i].ty - newHandCard[i].y)
 			speedVector := csg.NewVector(vx, vy, 0)
@@ -686,9 +788,39 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 			// fmt.Sprintf("%d %f %f\n", i, newCenterCard[i].tx, newCenterCard[i].ty)
 		}
 		p.mainGameState.cardInHand = newHandCard
+
 	}
 }
 
+type onLimiterAttach struct {
+	mainGameState *MainGameState
+}
+
+func (p *onLimiterAttach) DoAction(data map[string]interface{}) {
+	fmt.Println("Attach Limiter")
+	limiter := data[cards.EVENT_ATTR_LIMITER].(cards.LegalChecker)
+	if _, ok := limiter.(fmt.Stringer); ok {
+		j := limiter.(fmt.Stringer)
+		p.mainGameState.limiter = j.String()
+	} else {
+		fmt.Println("NOK")
+	}
+}
+
+type onLimiterDetach struct {
+	mainGameState *MainGameState
+}
+
+func (p *onLimiterDetach) DoAction(data map[string]interface{}) {
+	fmt.Println("Detach Limiter")
+	limiter := data[cards.EVENT_ATTR_LIMITER].(cards.LegalChecker)
+	if _, ok := limiter.(fmt.Stringer); ok {
+		// j := limiter.(fmt.Stringer)
+		p.mainGameState.limiter = ""
+	} else {
+		fmt.Println("NOK")
+	}
+}
 func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	background, _, err := ebitenutil.NewImageFromFile("img/background.png")
 	if err != nil {
@@ -773,6 +905,7 @@ var ShowCardDetail = false
 var ShowCardPicker = false
 
 func (m *MainGameState) Draw(screen *ebiten.Image) {
+
 	// ebitenutil.DebugPrint(screen, "Hello, World!")
 	op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Translate(0, 0)
@@ -785,6 +918,9 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	res := m.defaultGamestate.GetCurrentResource()
 	hp := m.defaultGamestate.GetCurrentHP()
 	text.Draw(screen, fmt.Sprintf("HP %d", hp), mplusResource, 150, 40, color.RGBA{255, 0, 0, 255})
+	if m.limiter != "" {
+		ebitenutil.DebugPrint(screen, m.limiter)
+	}
 
 	op.GeoM.Reset()
 	op.GeoM.Scale(0.8, 0.8)
@@ -857,23 +993,6 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 
 }
 func (m *MainGameState) Update() error {
-	for _, c := range m.cardInHand {
-		c.Update()
-	}
-	for _, c := range m.cardsPlayed {
-		c.Update()
-	}
-	for _, c := range m.cardsInCenter {
-		c.Update()
-	}
-	newCardInLimbo := []*EbitenCard{}
-	for _, c := range m.cardsInLimbo {
-		c.Update()
-		if c.tx != c.x || c.ty != c.y {
-			newCardInLimbo = append(newCardInLimbo, c)
-		}
-	}
-	m.cardsInLimbo = newCardInLimbo
 
-	return nil
+	return m.currentSubState.Update()
 }

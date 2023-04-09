@@ -29,10 +29,14 @@ func (m *LichMageMonster) OnSlain() {
 	// add next area to the center deck
 	hh := NewTombMonarchCC(m.state)
 	newCards := []Card{&hh}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 2; i++ {
 		jj := NewSpikeFloor(m.state)
 		kk := NewBoulderTrap(m.state)
 		newCards = append(newCards, &jj, &kk)
+	}
+	for i := 0; i < 1; i++ {
+		slimeRoom := NewSlimeRoom(m.state)
+		newCards = append(newCards, &slimeRoom)
 	}
 
 	m.state.AddCardToCenterDeck(DISCARD_SOURCE_NAN, true, newCards...)

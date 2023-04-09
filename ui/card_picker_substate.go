@@ -26,23 +26,35 @@ type cardPickState struct {
 	optional      bool
 	selectedIndex int
 	pickedCards   chan (int)
+	message       string
 }
 type cardListState struct {
 	m     *MainGameState
 	cards []cards.Card
 }
 
+func (c *cardPickState) Update() error {
+	return nil
+}
 func (c *cardPickState) PickCard(list []cards.Card, message string) int {
 	c.cards = list
+	c.message = message
 	// fmt.Println("Tunggu hasil")
 	c.optional = false
 	c.m.currentSubState = c
+	for i := range c.m.cardsInCenter {
+		fmt.Println(c.m.cardsInCenter[i].card.GetName(), c.m.cardsInCenter[i].x, c.m.cardsInCenter[i].y, c.m.cardsInCenter[i].tx, c.m.cardsInCenter[i].ty)
+	}
 	pickedCards := <-c.pickedCards
+	for i := range c.m.cardsInCenter {
+		fmt.Println(c.m.cardsInCenter[i].card.GetName(), c.m.cardsInCenter[i].x, c.m.cardsInCenter[i].y, c.m.cardsInCenter[i].tx, c.m.cardsInCenter[i].ty)
+	}
 	// fmt.Println("Dapat hasil", pickedCards)
 	return pickedCards
 }
 func (c *cardPickState) PickCardOptional(list []cards.Card, message string) int {
 	c.cards = list
+	c.message = message
 	c.optional = true
 	c.m.currentSubState = c
 	// fmt.Println("Tunggu hasil")
@@ -60,6 +72,7 @@ func (c *cardPickState) Draw(screen *ebiten.Image) {
 	op2.GeoM.Translate(120, 0)
 	screen.DrawImage(c.m.paperBg, op2)
 	op3 := &ebiten.DrawImageOptions{}
+	text.Draw(screen, c.message, mplusNormalFont, CARDPICKER_START_X, 40, color.RGBA{255, 255, 255, 255})
 	colPerRow := 7
 	cardList := []*EbitenCard{}
 	for idx, cc := range c.cards {
@@ -151,6 +164,9 @@ func (c *cardPickState) Draw(screen *ebiten.Image) {
 	}
 	// fmt.Println("===")
 }
+func (c *cardListState) Update() error {
+	return nil
+}
 func (c *cardListState) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Translate(0, 0)
@@ -216,6 +232,9 @@ type boolPickState struct {
 	pickedOption chan (bool)
 }
 
+func (c *boolPickState) Update() error {
+	return nil
+}
 func (c *boolPickState) BoolPick(message string) bool {
 	c.msg = message
 	c.m.currentSubState = c

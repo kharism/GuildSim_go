@@ -9,7 +9,7 @@ func NewDamageEndturnCurse(state AbstractGamestate) DamageEndturnCurse {
 	return DamageEndturnCurse{state: state}
 }
 func (d *DamageEndturnCurse) GetName() string {
-	return "Damage Endturn Curse"
+	return "EndturnBurn"
 }
 func (d *DamageEndturnCurse) GetDescription() string {
 	return "on end of turn, inflict 2 damage then banish this card"

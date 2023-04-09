@@ -116,7 +116,9 @@ func AttachCardPlayedListener(state cards.AbstractGamestate) cards.AbstractGames
 }
 func AttachCardDiscardListener(state cards.AbstractGamestate) cards.AbstractGamestate {
 	onDiscardAction := &onDiscardAction{mainGameState: mainGame.(*MainGameState)}
+	onBanishAction := &onBanishAction{mainGameState: mainGame.(*MainGameState)}
 	state.AttachListener(cards.EVENT_ATTR_CARD_DISCARDED, onDiscardAction)
+	state.AttachListener(cards.EVENT_ATTR_CARD_BANISHED, onBanishAction)
 	return state
 }
 func AttachReturnToCenterListener(state cards.AbstractGamestate) cards.AbstractGamestate {
@@ -135,11 +137,17 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 	onRecruit := &onRecruitAction{mainGameState: mainGame.(*MainGameState)}
 	onDisarm := &onDisarmAction{mainGameState: mainGame.(*MainGameState)}
 	onItemAdd := &onItemAdd{mainGameState: mainGame.(*MainGameState)}
+	onCardStacked := &onCardStacked{mainGameState: mainGame.(*MainGameState)}
+	ff := &onLimiterAttach{mainGameState: mainGame.(*MainGameState)}
+	fg := &onLimiterDetach{mainGameState: mainGame.(*MainGameState)}
 	state.AttachListener(cards.EVENT_CARD_EXPLORED, onExplore)
 	state.AttachListener(cards.EVENT_CARD_RECRUITED, onRecruit)
 	state.AttachListener(cards.EVENT_CARD_DEFEATED, onDefeat)
 	state.AttachListener(cards.EVENT_TRAP_REMOVED, onDisarm)
 	state.AttachListener(cards.EVENT_ITEM_ADDED, onItemAdd)
+	state.AttachListener(cards.EVENT_CARD_STACKED, onCardStacked)
+	state.AttachListener(cards.EVENT_ATTACH_LIMITER, ff)
+	state.AttachListener(cards.EVENT_DETACH_LIMITER, fg)
 	return state
 }
 func (g *Game) ChangeState(stateName string) {
@@ -159,23 +167,28 @@ func (g *Game) ChangeState(stateName string) {
 		mm.defaultGamestate.SetDetailViewer(mm.detailState)
 		mm.defaultGamestate.SetBoolPicker(mm.boolPicker)
 		mm.defaultGamestate.TakeDamage(40)
-		// thief := cards.NewMonsterSlayer(mm.defaultGamestate)
-		// spikeFloor := cards.NewLichMageMonster(mm.defaultGamestate)
+		// wl := cards.NewThief(mm.defaultGamestate) //cards.NewWingedLion(mm.defaultGamestate)
+		// slimeRoom := cards.NewSlimeRoom(mm.defaultGamestate)
+		// boulder := cards.NewBoulderTrap(mm.defaultGamestate)
+		// spikeFloor := cards.NewDamageEndturnCurse(mm.defaultGamestate) //cards.NewSpikeFloor(mm.defaultGamestate)
 		// lair := cards.NewGoblinSmallLairArea(mm.defaultGamestate)
 		// heal := item.NewHealingPotion(defaultGamestate)
 		// ll := append(mm.defaultGamestate.CardsInCenterDeck.List()[:3], &spikeFloor)
 		// rest := mm.defaultGamestate.CardsInCenterDeck.List()[4:]
 		// mm.defaultGamestate.CardsInCenterDeck.SetList(append(ll, rest...))
 		// mm.defaultGamestate.ItemCards = append(mm.defaultGamestate.ItemCards, &heal)
-		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &thief)
-		// mm.defaultGamestate.CardsInDeck.Stack(&thief)
-		// rookieCard := NewEbitenCardFromCard(&rookieMage)
+		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &spikeFloor)
+		// mm.defaultGamestate.CardsInDeck.Stack(&spikeFloor)
+		// newDeck := []cards.Card{&boulder}
+		// rookieCard := NewEbitenCardFromCard(&spikeFloor)
 		// rookieCard.x = HAND_START_X
 		// rookieCard.y = HAND_START_Y
 		// mm.cardInHand = append(mm.cardInHand, rookieCard)
 		currentState = mainGame
 		mm.defaultGamestate.CenterRowInit()
-		// mm.defaultGamestate.CardsInCenterDeck.Stack(&spikeFloor)
+		// mm.defaultGamestate.CardsInCenterDeck.SetList(newDeck)
+		// mm.defaultGamestate.CardsInCenterDeck.Stack(&boulder)
+		// mm.defaultGamestate.CardsInCenterDeck.Stack(&slimeRoom)
 		mm.defaultGamestate.BeginTurn()
 	case STATE_MAIN_MENU:
 		currentState = mainMenu

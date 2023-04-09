@@ -10,7 +10,7 @@ import (
 // starterDeckSets and centerDecksets refers to string const in factory.
 // decorators is from decorator package
 func CustomizedDefaultGamestate(starterDeckSets, centerDeckSets []string, decorators []decorator.AbstractDecorator) cards.AbstractGamestate {
-	defGameState := DefaultGamestate{}
+	defGameState := NewDefaultGamestate().(*DefaultGamestate)
 	defGameState.cardPiker = nil
 	defGameState.currentResource = cards.NewResource()
 	defGameState.CardsPlayed = []cards.Card{}
@@ -23,14 +23,14 @@ func CustomizedDefaultGamestate(starterDeckSets, centerDeckSets []string, decora
 	defGameState.CardsInCenterDeck = cards.Deck{}
 	centerDeck := []cards.Card{}
 	for _, setName := range centerDeckSets {
-		newCards := factory.CardFactory(setName, &defGameState)
+		newCards := factory.CardFactory(setName, defGameState)
 		centerDeck = append(centerDeck, newCards...)
 	}
 	defGameState.CardsInCenterDeck.SetList(centerDeck)
 	defGameState.CardsInDeck = cards.Deck{}
 	starterDeck := []cards.Card{}
 	for _, setName := range starterDeckSets {
-		newCards := factory.CardFactory(setName, &defGameState)
+		newCards := factory.CardFactory(setName, defGameState)
 		starterDeck = append(starterDeck, newCards...)
 	}
 	defGameState.CardsInDeck.SetList(starterDeck)
@@ -39,10 +39,10 @@ func CustomizedDefaultGamestate(starterDeckSets, centerDeckSets []string, decora
 	var j cards.AbstractGamestate
 	// j := decorators[0](&defGameState)
 	for _, k := range decorators {
-		j = k(&defGameState)
+		j = k(defGameState)
 	}
 	if j == nil {
-		return &defGameState
+		return defGameState
 	} else {
 		return j
 	}

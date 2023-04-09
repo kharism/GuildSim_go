@@ -20,7 +20,7 @@ func (r *NobleKnight) GetDescription() string {
 }
 func (r *NobleKnight) GetCost() Cost {
 	cost := NewCost()
-	cost.AddResource(RESOURCE_NAME_COMBAT, 5)
+	cost.AddResource(RESOURCE_NAME_COMBAT, 4)
 	return cost
 }
 func (r *NobleKnight) OnPlay() {

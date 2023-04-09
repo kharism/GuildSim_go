@@ -9,7 +9,7 @@ func (b *Direwolf) GetName() string {
 	return "Direwolf"
 }
 func (b *Direwolf) GetDescription() string {
-	return "on punish: 3 damage on end of turn. Reward: banish 1 card from your hand and if you do coodown 1 Wolfmaster"
+	return "on punish: 3 damage on end of turn. Reward: banish 1 card from your hand and if you do cooldown 1 MonsterMaser"
 }
 
 func (b *Direwolf) Dispose(source string) {

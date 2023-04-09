@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
 	"github/kharism/GuildSim_go/internal/cards/item"
+	"github/kharism/GuildSim_go/internal/factory"
 	"github/kharism/GuildSim_go/internal/observer"
+	"sync"
 )
 
 type DummyEventListener struct {
@@ -58,6 +60,14 @@ type DefaultGamestate struct {
 	centerCardChanged bool
 	boolPicker        cards.AbstractBoolPicker
 	cardViewer        cards.AbstractDetailViewer
+	mutex             sync.Mutex
+}
+
+func (d *DefaultGamestate) MutexLock() {
+	d.mutex.Lock()
+}
+func (d *DefaultGamestate) MutexUnlock() {
+	d.mutex.Unlock()
 }
 
 // AddCardToCenterDeck implements cards.AbstractGamestate
@@ -99,12 +109,17 @@ func (d *DefaultGamestate) AttachLegalCheck(actionName string, lc cards.LegalChe
 		d.RuleEnforcer[actionName] = cards.NewRuleEnforcer()
 	}
 	d.RuleEnforcer[actionName].AttachRule(lc)
+	data := map[string]interface{}{cards.EVENT_ATTR_LIMITER: lc, cards.EVENT_ATTR_LIMITER_ACTION: actionName}
+	fmt.Println("attach RuleCheck")
+	d.NotifyListener(cards.EVENT_ATTACH_LIMITER, data)
 }
 func (d *DefaultGamestate) DetachLegalCheck(actionName string, lc cards.LegalChecker) {
 	if _, ok := d.RuleEnforcer[actionName]; !ok {
 		return
 	}
 	d.RuleEnforcer[actionName].DetachRule(lc)
+	data := map[string]interface{}{cards.EVENT_ATTR_LIMITER: lc, cards.EVENT_ATTR_LIMITER_ACTION: actionName}
+	d.NotifyListener(cards.EVENT_DETACH_LIMITER, data)
 }
 func (d *DefaultGamestate) LegalCheck(actionName string, data interface{}) bool {
 	j, ok := d.RuleEnforcer[actionName]
@@ -262,7 +277,8 @@ func (d *DefaultGamestate) SetBoolPicker(a cards.AbstractBoolPicker) {
 func (d *DefaultGamestate) EndTurn() {
 
 	// remove cards played
-	for _, c := range d.CardsPlayed {
+	for i := len(d.CardsPlayed) - 1; i >= 0; i-- {
+		c := d.CardsPlayed[i]
 		c.Dispose(cards.DISCARD_SOURCE_PLAYED)
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
@@ -271,11 +287,13 @@ func (d *DefaultGamestate) EndTurn() {
 	d.CardsPlayed = []cards.Card{}
 
 	// remove cards in hand
-	for _, c := range d.CardsInHand {
+	for i := len(d.CardsInHand) - 1; i >= 0; i-- {
+		c := d.CardsInHand[i]
 		c.Dispose(cards.DISCARD_SOURCE_HAND)
 		if pun, ok := c.(cards.Punisher); ok {
 			pun.OnPunish()
 		}
+		d.RemoveCardFromHand(c)
 	}
 	// reset resource except money and reputation
 	curRes := d.GetCurrentResource().Detail
@@ -389,8 +407,8 @@ func (d *DefaultGamestate) CenterRowInit() {
 func (d *DefaultGamestate) StackCards(source string, cc ...cards.Card) {
 	for _, c := range cc {
 		d.CardsInDeck.Stack(c)
-		if _, ok := d.TopicsListeners[cards.EVENT_ATTR_CARD_STACKED]; ok {
-			j := d.TopicsListeners[cards.EVENT_ATTR_CARD_STACKED]
+		if _, ok := d.TopicsListeners[cards.EVENT_CARD_STACKED]; ok {
+			j := d.TopicsListeners[cards.EVENT_CARD_STACKED]
 			data := map[string]interface{}{cards.EVENT_ATTR_CARD_STACKED: c, cards.EVENT_ATTR_DISCARD_SOURCE: source}
 			j.Notify(data)
 		}
@@ -402,6 +420,10 @@ func (d *DefaultGamestate) ShuffleMainDeck() {
 }
 func (d *DefaultGamestate) updateCenterCard(c cards.Card) {
 	replacementCard := d.ReplaceCenterCard()
+	if d.CardsInCenterDeck.Size() == 0 {
+		filler := factory.CardFactory(factory.SET_FILLER_CARDS, d)
+		d.CardsInCenterDeck.SetList(filler)
+	}
 	newCenterCards := []cards.Card{}
 	fmt.Println("Replace", c.GetName(), "with", replacementCard.GetName())
 	for _, v := range d.CenterCards {
@@ -462,6 +484,7 @@ func (d *DefaultGamestate) ReplaceCenterCard() cards.Card {
 	if _, ok := replacementCard.(cards.Trapper); ok {
 		j := replacementCard.(cards.Trapper)
 		if !j.IsDisarmed() {
+			fmt.Println("Invoke Trap")
 			j.Trap()
 		} else {
 			d.BanishCard(replacementCard, cards.DISCARD_SOURCE_CENTER)
@@ -486,6 +509,7 @@ func (d *DefaultGamestate) BeginTurn() {
 }
 func (d *DefaultGamestate) Draw() {
 	if !d.LegalCheck(cards.ACTION_DRAW, nil) {
+		fmt.Println("Illegal to draw")
 		return
 	}
 	if d.CardsInDeck.Size() == 0 {

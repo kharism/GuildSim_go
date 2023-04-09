@@ -1,5 +1,7 @@
 package cards
 
+import "fmt"
+
 type LegalChecker interface {
 	Check(interface{}) bool
 }
@@ -11,6 +13,7 @@ func NewRuleEnforcer() *RuleEnforcer {
 	return &RuleEnforcer{rules: []LegalChecker{}}
 }
 func (l *RuleEnforcer) Check(data interface{}) bool {
+	fmt.Println("Check RuleEnforcer", len(l.rules))
 	if len(l.rules) == 0 {
 		return true
 	}
@@ -21,10 +24,12 @@ func (l *RuleEnforcer) Check(data interface{}) bool {
 	return output
 }
 func (l *RuleEnforcer) AttachRule(k LegalChecker) {
+	fmt.Println("Attach Rule")
 	l.rules = append(l.rules, k)
 }
 func (l *RuleEnforcer) DetachRule(k LegalChecker) {
 	//l.rules = append(l.rules, k)
+	fmt.Println("Detach Rule")
 	idx := -1
 	for i := 0; i < len(l.rules); i++ {
 		if l.rules[i] == k {

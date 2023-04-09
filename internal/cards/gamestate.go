@@ -18,6 +18,8 @@ var EVENT_HEAL_DAMAGE = "HealDamage"
 var EVENT_ITEM_ADDED = "ItemAdded"
 var EVENT_ITEM_REMOVED = "ItemRemoved"
 var EVENT_TRAP_REMOVED = "TrapRemoved"
+var EVENT_ATTACH_LIMITER = "AttachLimiter"
+var EVENT_DETACH_LIMITER = "DetachLimiter"
 
 var EVENT_START_OF_TURN = "BeginTurn"
 var EVENT_END_OF_TURN = "EndTurn"
@@ -38,6 +40,9 @@ var EVENT_ATTR_CARD_HEAL_DAMAGE = "CardHealDamage"
 var EVENT_ATTR_ITEM_ADDED = "ItemAdded"
 var EVENT_ATTR_ITEM_REMOVED = "ItemRemoved"
 var EVENT_ATTR_TRAP_REMOVED = "TrapRemoved"
+
+var EVENT_ATTR_LIMITER = "Limiter"
+var EVENT_ATTR_LIMITER_ACTION = "LimiterAction"
 
 var EVENT_ATTR_DAMAGE_AMMT = "DamageAmount"
 
@@ -87,6 +92,9 @@ type AbstractGamestate interface {
 	// otherwise remove the card accordingly
 	PlayCard(c Card)
 	Explore(c Card)
+
+	MutexLock()
+	MutexUnlock()
 
 	// rewardGeneratorFunctions
 	GenerateRandomPotion(rarity int) Card

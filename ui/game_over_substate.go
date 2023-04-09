@@ -13,6 +13,9 @@ type gameOverSubstate struct {
 	selectedCard *EbitenCard
 }
 
+func (c gameOverSubstate) Update() error {
+	return nil
+}
 func (c gameOverSubstate) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Translate(0, 0)

@@ -14,7 +14,7 @@ func (m *SlimeLarge) GetName() string {
 	return "Slime(L)"
 }
 func (m *SlimeLarge) GetDescription() string {
-	return "deals 3 damage, Also cooldown 1 stun every 2 turns.on defeat, gains 2 reputation and stack 3 Slime(M) to center deck"
+	return "deals 3 damage, Also cooldown 1 stun every 2 turns.on defeat, gains 2 reputation and stack 2 Slime(M) to center deck"
 }
 func (m *SlimeLarge) GetCost() Cost {
 	cost := NewCost()
@@ -33,7 +33,7 @@ func (m *SlimeLarge) OnSlain() {
 	// m.state.AddResource(RESOURCE_NAME_EXPLORATION, 1)
 	m.state.AddResource(RESOURCE_NAME_REPUTATION, 2)
 	h := []Card{}
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		midSlime := NewSlimeMid(m.state)
 		h = append(h, &midSlime)
 	}

@@ -32,7 +32,15 @@ func (s *ProgressListener) DoAction(data map[string]interface{}) {
 			h := cards.NewNobleKnight(s.state)
 			deck = append(deck, &h)
 		}
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 2; i++ {
+			h := cards.NewIceWyvern(s.state)
+			deck = append(deck, &h)
+		}
+		for i := 0; i < 4; i++ {
+			h := cards.NewTorchtail(s.state)
+			deck = append(deck, &h)
+		}
+		for i := 0; i < 2; i++ {
 			h := cards.NewSlimeLarge(s.state)
 			deck = append(deck, &h)
 		}

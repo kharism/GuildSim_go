@@ -18,7 +18,7 @@ func (m *SlimeSmall) GetDescription() string {
 }
 func (m *SlimeSmall) GetCost() Cost {
 	cost := NewCost()
-	cost.AddResource(RESOURCE_NAME_COMBAT, 2)
+	cost.AddResource(RESOURCE_NAME_COMBAT, 1)
 	return cost
 }
 func (m *SlimeSmall) OnPunish() {

@@ -1,6 +1,9 @@
 package cards
 
-import "github/kharism/GuildSim_go/internal/observer"
+import (
+	"fmt"
+	"github/kharism/GuildSim_go/internal/observer"
+)
 
 type LimitDraw struct {
 	state           AbstractGamestate
@@ -22,9 +25,14 @@ func (i *LimitDraw) AttachLimitDraw(state AbstractGamestate) AbstractGamestate {
 	return state
 }
 func (i *LimitDraw) DetachLimitDraw(state AbstractGamestate) AbstractGamestate {
+	fmt.Println("Reset LimitDraw")
 	state.RemoveListener(EVENT_START_OF_TURN, i.beginTurnAction)
 	state.RemoveListener(EVENT_END_OF_TURN, i.endTurnAction)
+	state.DetachLegalCheck(ACTION_DRAW, i)
 	return state
+}
+func (i *LimitDraw) String() string {
+	return "LimitDraw"
 }
 
 // set limit after we draw for turn
@@ -34,7 +42,7 @@ type LimitAction struct {
 
 func (i *LimitAction) DoAction(data map[string]interface{}) {
 	// i.parent.drawCount = 0
-	// fmt.Println("Begin turn attach limiter")
+	fmt.Println("Begin turn attach limiter")
 	i.parent.state.AttachLegalCheck(ACTION_DRAW, i.parent)
 }
 
@@ -45,6 +53,7 @@ type ReleaseLimitAction struct {
 
 func (i *ReleaseLimitAction) DoAction(data map[string]interface{}) {
 	i.parent.drawCount = 0
+	fmt.Println("End turn reset limiter")
 	i.parent.state.DetachLegalCheck(ACTION_DRAW, i.parent)
 }
 func (i *LimitDraw) DoAction(data map[string]interface{}) {
