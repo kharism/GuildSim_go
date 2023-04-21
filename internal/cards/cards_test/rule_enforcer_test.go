@@ -16,6 +16,34 @@ var (
 	NO = IllegalAction{}
 )
 
+func TestShockCurse(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return false }
+	gamestate.SetBoolPicker(&cardPicker)
+	gamestate.SetCardPicker(&cardPicker)
+	gamestate.SetDetailViewer(&cardPicker)
+	shockCurse := cards.NewShockCurse(gamestate)
+
+	dumGamestate.StackCards("NA", &shockCurse)
+	t.Log(dumGamestate.RuleEnforcer[cards.ACTION_DRAW])
+	dumGamestate.BeginTurn()
+	if dumGamestate.RuleEnforcer[cards.ACTION_DRAW].Len() != 1 {
+		t.Log("Failed to attach enforcer")
+		t.Fail()
+	}
+	dumGamestate.StackCards(cards.DISCARD_SOURCE_HAND, &shockCurse)
+	if dumGamestate.RuleEnforcer[cards.ACTION_DRAW].Len() != 0 {
+		t.Log("Failed to detach enforcer", dumGamestate.RuleEnforcer[cards.ACTION_DRAW].Len())
+		t.Fail()
+	}
+}
 func TestRuleEnforcer(t *testing.T) {
 	gamestate := NewDummyGamestate()
 	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)

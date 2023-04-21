@@ -1,7 +1,6 @@
 package item
 
 import (
-	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
 	"math/rand"
 )
@@ -63,8 +62,8 @@ func CreatePotionRandom(state cards.AbstractGamestate, rarity int) cards.Card {
 		allList = append(allList, rareList...)
 	}
 	picked := rand.Int() % len(allList)
-	fmt.Println("ALLLIST", allList, allList[picked])
+	// fmt.Println("ALLLIST", allList, allList[picked])
 	newPotion := CreatePotion(allList[picked], state)
-	fmt.Println(newPotion)
+	// fmt.Println(newPotion)
 	return newPotion
 }

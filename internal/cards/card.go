@@ -54,6 +54,9 @@ type Card interface {
 	// when discarded to cooldown pile, do this
 	OnDiscarded()
 
+	OnBanished()
+	OnReturnToDeck()
+
 	// when added to hand do this
 	OnAddedToHand()
 

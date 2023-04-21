@@ -54,4 +54,5 @@ func (b *SlimeRoom) IsDisarmed() bool {
 }
 func (b *SlimeRoom) Disarm() {
 	b.isDisarmed = true
+	b.OnDisarm()
 }

@@ -13,7 +13,7 @@ func (a *TombMonarchCC) GetName() string {
 	return "TombMonarchCC"
 }
 func (a *TombMonarchCC) GetDescription() string {
-	return "Rewards: 1 Rare relic"
+	return "Rewards: 1 Rare relic, release guardians, defeat these monsters to "
 }
 func (a *TombMonarchCC) GetCost() Cost {
 	cost := NewCost()
@@ -25,5 +25,18 @@ func (a *TombMonarchCC) OnExplored() {
 	relic := a.state.GenerateRandomRelic(RARITY_RARE)
 	a.state.AddItem(relic)
 
-	//
+	thunderGolem := NewThunderGolem(a.state)
+	rottingGolem := NewRottingGolem(a.state)
+
+	cardFilter := &CardFilter{Key: FILTER_NAME, Op: In, Value: []string{thunderGolem.GetName(), rottingGolem.GetName()}}
+
+	cardsAdded := []Card{&thunderGolem, &rottingGolem}
+	pushCenterDeckAction := NewPushCenterDeckAction(a.state, cardsAdded, true)
+	removeEventListenerAction := NewRemoveEventListenerAction(a.state, EVENT_CARD_DEFEATED, nil)
+	compositeAction := NewCompositeAction(a.state, pushCenterDeckAction, removeEventListenerAction)
+	countDownAction := NewCountDownAction(len(cardsAdded), 1, compositeAction)
+	guardiansDefeatedListener := NewCardDefeatedListener(cardFilter, countDownAction)
+	removeEventListenerAction.(*RemoveEventListenerAction).listener = guardiansDefeatedListener
+
+	a.state.AddCardToCenterDeck(DISCARD_SOURCE_NAN, true, cardsAdded...)
 }

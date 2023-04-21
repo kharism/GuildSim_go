@@ -348,7 +348,7 @@ func TestAggroDjinn(t *testing.T) {
 	dumGamestate.CardsInHand = append(dumGamestate.CardsInHand, &aggroDjinn)
 	dumGamestate.CenterCards = append(dumGamestate.CenterCards, &anotherAggroDjinn)
 	gamestate.PlayCard(&aggroDjinn)
-	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_COMBAT] != 3 {
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_COMBAT] != 5 {
 		t.Log("Failed to gain resource, djinn")
 		t.FailNow()
 	}
@@ -389,6 +389,54 @@ func TestDeadWeight(t *testing.T) {
 		t.Log("fail to generate explore")
 		t.FailNow()
 	}
+}
+func TestCarcassSlime(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return false }
+	gamestate.SetBoolPicker(&cardPicker)
+	gamestate.SetCardPicker(&cardPicker)
+	gamestate.SetDetailViewer(&cardPicker)
+	carcassSlime := cards.NewCarcassSlimeCurse(gamestate)
+	dumGamestate.CardsInHand = append(dumGamestate.CardsInHand, &carcassSlime)
+	HPStart := gamestate.GetCurrentHP()
+	gamestate.EndTurn()
+	HPNow := gamestate.GetCurrentHP()
+	if HPNow == HPStart {
+		t.FailNow()
+	}
+	if HPStart-HPNow != 13 {
+		t.Log("Damage is not 13")
+		t.FailNow()
+	}
+	HPStart = HPNow
+	dumGamestate.CardsInHand = append(dumGamestate.CardsInHand, &carcassSlime)
+	dumGamestate.Draw()
+	gamestate.PlayCard(&carcassSlime)
+	if len(dumGamestate.CardsInHand) != 0 {
+		t.FailNow()
+	}
+	gamestate.EndTurn()
+	HPNow = gamestate.GetCurrentHP()
+	if (HPStart - HPNow) != 8 {
+		t.Log("Damage is not 8")
+		t.FailNow()
+	}
+	HPStart = HPNow
+	dumGamestate.CardsInHand = append([]cards.Card{}, &carcassSlime)
+	pyroKnight := cards.NewPyroKnight(gamestate)
+	gamestate.PlayCard(&pyroKnight)
+	t.Log(len(dumGamestate.CardsInHand))
+	if len(dumGamestate.CardsInHand) != 0 {
+		t.FailNow()
+	}
+
 }
 func TestJester(t *testing.T) {
 	gamestate := NewDummyGamestate()

@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"math/rand"
 	"sync"
 
 	csg "github.com/kharism/golang-csg/core"
@@ -31,6 +32,7 @@ type MainGameState struct {
 	GameOver      *ebiten.Image
 	ItemIcon      *ebiten.Image
 	Reputation    *ebiten.Image
+	Block         *ebiten.Image
 	cardsInCenter []*EbitenCard
 	cardInHand    []*EbitenCard
 	cardsPlayed   []*EbitenCard
@@ -81,8 +83,11 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 				break
 			}
 		}
-		s.m.detailState.prevSubState = s
-		s.m.currentSubState = s.m.detailState
+		if s.m.detailViewCard != nil {
+			s.m.detailState.prevSubState = s
+			s.m.currentSubState = s.m.detailState
+		}
+
 	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		xCurInt, yCurInt := ebiten.CursorPosition()
@@ -97,7 +102,7 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 				s.m.defaultGamestate.EndTurn()
 				s.m.defaultGamestate.BeginTurn()
 			}()
-		} else if yCur > HAND_START_Y && xCur < DISCARD_START_X {
+		} else if yCur > HAND_START_Y && xCur < DISCARD_START_X && xCur >= HAND_START_X {
 			// left click on hand
 			for i := len(s.m.cardInHand) - 1; i >= 0; i-- {
 				if s.m.cardInHand[i].x < xCur {
@@ -107,6 +112,18 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 					break
 				}
 			}
+		} else if yCur > HAND_START_Y && xCur < HAND_START_X {
+			fmt.Println("Clicked deck")
+			// left click on main deck, look at the content of main deck
+			s.m.cardListState.cards = []cards.Card{}
+			cardInDeck := s.m.defaultGamestate.CardsInDeck.List()
+			for _, v := range cardInDeck {
+				s.m.cardListState.cards = append(s.m.cardListState.cards, v)
+			}
+			rand.Shuffle(len(s.m.cardListState.cards), func(i, j int) {
+				s.m.cardListState.cards[i], s.m.cardListState.cards[j] = s.m.cardListState.cards[j], s.m.cardListState.cards[i]
+			})
+			s.m.currentSubState = s.m.cardListState
 		} else if yCur > CENTER_START_Y {
 			// recruite/explore/defeat card from center row
 			for i := len(s.m.cardsInCenter) - 1; i >= 0; i-- {
@@ -118,7 +135,20 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 					case cards.Hero:
 						go s.m.defaultGamestate.RecruitCard(clickedCard.card)
 					case cards.Monster:
-						go s.m.defaultGamestate.DefeatCard(clickedCard.card)
+						if _, ok := clickedCard.card.(cards.Recruitable); ok {
+							go func() {
+								recruit := s.m.defaultGamestate.GetBoolPicker().BoolPick("Recruit " + clickedCard.card.GetName() + " ?")
+								if recruit {
+									s.m.defaultGamestate.RecruitCard((clickedCard.card))
+								} else {
+									s.m.defaultGamestate.DefeatCard(clickedCard.card)
+								}
+							}()
+						} else {
+							fmt.Println("Unrecruitable")
+							go s.m.defaultGamestate.DefeatCard(clickedCard.card)
+						}
+
 					case cards.Trap:
 						go s.m.defaultGamestate.Disarm(clickedCard.card)
 					}
@@ -789,6 +819,19 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 		}
 		p.mainGameState.cardInHand = newHandCard
 
+	} else if source == cards.DISCARD_SOURCE_NAN {
+		ebitenCard := NewEbitenCardFromCard(returnedCard)
+		ebitenCard.x = DISCARD_NA_SOURCE_X
+		ebitenCard.y = DISCARD_NA_SOURCE_Y
+		ebitenCard.tx = MAIN_DECK_X
+		ebitenCard.ty = MAIN_DECK_Y
+		vx := float64(ebitenCard.tx - ebitenCard.x)
+		vy := float64(ebitenCard.ty - ebitenCard.y)
+		speedVector := csg.NewVector(vx, vy, 0)
+		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+		ebitenCard.vx = speedVector.X
+		ebitenCard.vy = speedVector.Y
+		p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
 	}
 }
 
@@ -854,6 +897,10 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	if err != nil {
 		log.Fatal(err)
 	}
+	iconBlock, _, err := ebitenutil.NewImageFromFile("img/misc/shield.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 	mainDeck, _, err := ebitenutil.NewImageFromFile("img/misc/main_deck.png")
 	if err != nil {
 		log.Fatal(err)
@@ -884,7 +931,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger,
 		paperBg: paperBg, checkMark: checkmark, btn: btn, iconCombat: iconCombat, iconExplore: iconExplore, mutex: mutex,
 		cardsPlayed: cardsPlayed, DiscardPile: discardPile, MainDeck: mainDeck, EndturnBtn: EndturnBtn, GameOver: game_over,
-		ItemIcon: item_icon, Reputation: iconReputation,
+		ItemIcon: item_icon, Reputation: iconReputation, Block: iconBlock,
 	}
 	mainState := &mainMainState{m: mgs}
 	detailState := &detailState{m: mgs}
@@ -951,6 +998,15 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 		rep = 0
 	}
 	text.Draw(screen, fmt.Sprintf("%d", rep), mplusResource, 850, 40, color.RGBA{127, 127, 0, 255})
+	op.GeoM.Reset()
+	op.GeoM.Scale(0.09, 0.09)
+	op.GeoM.Translate(900, -10)
+	screen.DrawImage(m.Block, op)
+	block, ok := res.Detail[cards.RESOURCE_NAME_BLOCK]
+	if !ok {
+		block = 0
+	}
+	text.Draw(screen, fmt.Sprintf("%d", block), mplusResource, 960, 40, color.RGBA{127, 127, 0, 255})
 
 	for _, c := range m.cardInHand {
 		c.Draw(screen)

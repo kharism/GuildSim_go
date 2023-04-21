@@ -167,7 +167,8 @@ func (g *Game) ChangeState(stateName string) {
 		mm.defaultGamestate.SetDetailViewer(mm.detailState)
 		mm.defaultGamestate.SetBoolPicker(mm.boolPicker)
 		mm.defaultGamestate.TakeDamage(40)
-		// wl := cards.NewThief(mm.defaultGamestate) //cards.NewWingedLion(mm.defaultGamestate)
+		// wl := cards.NewDeadweight(mm.defaultGamestate) //cards.NewWingedLion(mm.defaultGamestate)
+		// kk := cards.NewPyroKnight(mm.defaultGamestate)
 		// slimeRoom := cards.NewSlimeRoom(mm.defaultGamestate)
 		// boulder := cards.NewBoulderTrap(mm.defaultGamestate)
 		// spikeFloor := cards.NewDamageEndturnCurse(mm.defaultGamestate) //cards.NewSpikeFloor(mm.defaultGamestate)
@@ -178,7 +179,8 @@ func (g *Game) ChangeState(stateName string) {
 		// mm.defaultGamestate.CardsInCenterDeck.SetList(append(ll, rest...))
 		// mm.defaultGamestate.ItemCards = append(mm.defaultGamestate.ItemCards, &heal)
 		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &spikeFloor)
-		// mm.defaultGamestate.CardsInDeck.Stack(&spikeFloor)
+		// mm.defaultGamestate.CardsInDeck.Stack(&wl)
+		// mm.defaultGamestate.CardsInDeck.Stack(&kk)
 		// newDeck := []cards.Card{&boulder}
 		// rookieCard := NewEbitenCardFromCard(&spikeFloor)
 		// rookieCard.x = HAND_START_X

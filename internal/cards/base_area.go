@@ -22,6 +22,8 @@ func (a *BaseArea) Dispose(source string) {
 func (a *BaseArea) OnAcquire() {
 
 }
+func (a *BaseArea) OnBanished()     {}
+func (a *BaseArea) OnReturnToDeck() {}
 
 // when played from hand, do this
 func (a *BaseArea) OnPlay() {}

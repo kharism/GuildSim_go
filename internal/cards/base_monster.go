@@ -26,6 +26,9 @@ func (m *BaseMonster) OnExplored() {}
 
 func (m *BaseMonster) OnAddedToHand() {}
 
+func (a *BaseMonster) OnBanished()     {}
+func (a *BaseMonster) OnReturnToDeck() {}
+
 // when slain, do this
 func (m *BaseMonster) OnSlain() {}
 

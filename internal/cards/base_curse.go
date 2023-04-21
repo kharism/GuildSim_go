@@ -12,6 +12,8 @@ func (h *BaseCurse) GetCost() Cost {
 	cost := NewCost()
 	return cost
 }
+func (a *BaseCurse) OnBanished()     {}
+func (a *BaseCurse) OnReturnToDeck() {}
 
 // return Hero,Area,Monster,Event etc
 func (h *BaseCurse) GetCardType() CardType {

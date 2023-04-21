@@ -48,7 +48,7 @@ func (a *TombForgottenMonarchEntrance) OnExplored() {
 	pushCenterDeckAction := NewPushCenterDeckAction(a.state, cardsAdded, false)
 	removeEventListenerAction := NewRemoveEventListenerAction(a.state, EVENT_CARD_DEFEATED, nil)
 	compositeAction := NewCompositeAction(a.state, pushCenterDeckAction, removeEventListenerAction)
-	countDownAction := NewCountDownAction(skeletonGuardCount, 1, compositeAction)
+	countDownAction := NewCountDownAction(skeletonGuardCount-2, 1, compositeAction)
 	skeletonGuardDefeatedListener := NewCardDefeatedListener(cardFilter, countDownAction)
 	removeEventListenerAction.(*RemoveEventListenerAction).listener = skeletonGuardDefeatedListener
 	a.state.AttachListener(EVENT_CARD_DEFEATED, skeletonGuardDefeatedListener)

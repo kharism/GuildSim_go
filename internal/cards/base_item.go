@@ -36,6 +36,8 @@ func (h *BaseItem) OnDiscarded() {}
 func (h *BaseItem) Dispose(source string) {
 
 }
+func (a *BaseItem) OnBanished()     {}
+func (a *BaseItem) OnReturnToDeck() {}
 
 // specific type of item. implement this if you want to implement 'usable' item
 // that is not provide passive buff/debuff

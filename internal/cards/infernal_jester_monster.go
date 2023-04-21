@@ -26,6 +26,12 @@ func (r *InfernalJester) GetCost() Cost {
 func (r *InfernalJester) OnSlain() {
 	r.gamestate.AddResource(RESOURCE_NAME_REPUTATION, 6)
 }
+func (m *InfernalJester) OnRecruit() {
+
+}
+func (m *InfernalJester) OnPunish() {
+	m.gamestate.TakeDamage(1)
+}
 func (r *InfernalJester) OnPlay() {
 	cardInHand := r.gamestate.GetCardInHand()
 	if len(cardInHand) > 0 {

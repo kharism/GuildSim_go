@@ -18,7 +18,7 @@ func (r *AggroDjinn) GetName() string {
 	return "AggroDjinn"
 }
 func (r *AggroDjinn) GetDescription() string {
-	return "recruitable. onslain: gain 3 reputation. on play: gain 3 combat then add a copy of AggroDjinn to cooldown pile"
+	return "recruitable. onslain: gain 3 reputation. on play: gain 5 combat then add a copy of AggroDjinn to cooldown pile"
 }
 func (r *AggroDjinn) GetCost() Cost {
 	cost := NewCost()
@@ -29,7 +29,7 @@ func (r *AggroDjinn) OnSlain() {
 	r.gamestate.AddResource(RESOURCE_NAME_REPUTATION, 3)
 }
 func (r *AggroDjinn) OnPlay() {
-	r.gamestate.AddResource(RESOURCE_NAME_COMBAT, 3)
+	r.gamestate.AddResource(RESOURCE_NAME_COMBAT, 5)
 	newAggroDjinn := NewAggroDjinn(r.gamestate)
 	r.gamestate.DiscardCard(&newAggroDjinn, DISCARD_SOURCE_NAN)
 

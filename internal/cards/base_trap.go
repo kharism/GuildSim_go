@@ -34,6 +34,9 @@ func (b *BaseTrap) OnSlain() {}
 // when discarded to cooldown pile, do this
 func (b *BaseTrap) OnDiscarded() {}
 
+func (a *BaseTrap) OnBanished()     {}
+func (a *BaseTrap) OnReturnToDeck() {}
+
 // when added to hand do this
 func (b *BaseTrap) OnAddedToHand() {}
 

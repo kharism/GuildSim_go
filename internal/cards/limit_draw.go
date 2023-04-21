@@ -31,9 +31,10 @@ func (i *LimitDraw) DetachLimitDraw(state AbstractGamestate) AbstractGamestate {
 	state.DetachLegalCheck(ACTION_DRAW, i)
 	return state
 }
-func (i *LimitDraw) String() string {
-	return "LimitDraw"
-}
+
+// func (i *LimitDraw) String() string {
+// 	return "LimitDraw"
+// }
 
 // set limit after we draw for turn
 type LimitAction struct {

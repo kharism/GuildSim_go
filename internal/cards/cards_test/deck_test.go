@@ -181,17 +181,19 @@ func (d *DummyGamestate) GetCurrentHP() int {
 	return d.HitPoint
 }
 func (d *DummyGamestate) TakeDamage(dmg int) {
-	block, ok := d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK]
-	if ok {
-		if dmg <= block {
-			// d.PayResource()
-			d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] -= dmg
-			dmg = 0
-		} else {
-			dmg -= block
-			d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] = 0
-		}
+	if dmg > 0 {
+		block, ok := d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK]
+		if ok {
+			if dmg <= block {
+				// d.PayResource()
+				d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] -= dmg
+				dmg = 0
+			} else {
+				dmg -= block
+				d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] = 0
+			}
 
+		}
 	}
 	d.HitPoint -= dmg
 	if dmg > 0 {
@@ -249,7 +251,7 @@ func (d *DummyGamestate) EndTurn() {
 	// reset resource except money and reputation
 	curRes := d.GetCurrentResource().Detail
 	for k := range curRes {
-		if k == cards.RESOURCE_NAME_MONEY || k == cards.RESOURCE_NAME_REPUTATION {
+		if k == cards.RESOURCE_NAME_MONEY || k == cards.RESOURCE_NAME_REPUTATION || k == cards.RESOURCE_NAME_BLOCK {
 			continue
 		}
 		d.GetCurrentResource().Detail[k] = 0
@@ -279,6 +281,7 @@ func (d *DummyGamestate) EndTurn() {
 			pun.OnPunish()
 		}
 	}
+	d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] = 0
 	if _, ok := d.TopicsListeners[cards.EVENT_END_OF_TURN]; ok {
 		j := d.TopicsListeners[cards.EVENT_END_OF_TURN]
 		data := map[string]interface{}{}
@@ -299,6 +302,7 @@ func (d *DummyGamestate) AddCardToCenterDeck(source string, shuffle bool, c ...c
 func (d *DummyGamestate) StackCards(source string, cc ...cards.Card) {
 	for _, c := range cc {
 		d.CardsInDeck.Stack(c)
+		c.OnReturnToDeck()
 		if _, ok := d.TopicsListeners[cards.EVENT_ATTR_CARD_STACKED]; ok {
 			j := d.TopicsListeners[cards.EVENT_ATTR_CARD_STACKED]
 			data := map[string]interface{}{cards.EVENT_ATTR_CARD_STACKED: c}
@@ -519,6 +523,7 @@ func (d *DummyGamestate) Draw() {
 }
 func (d *DummyGamestate) BanishCard(c cards.Card, source string) {
 	d.CardsBanished = append(d.CardsBanished, c)
+	c.OnBanished()
 	if _, ok := d.TopicsListeners[cards.EVENT_CARD_BANISHED]; ok {
 		notification := map[string]interface{}{cards.EVENT_ATTR_CARD_BANISHED: c, cards.EVENT_ATTR_DISCARD_SOURCE: source}
 		d.TopicsListeners[cards.EVENT_CARD_BANISHED].Notify(notification)
@@ -529,6 +534,7 @@ func (d *DummyGamestate) DefeatCard(c cards.Card) {
 	if !d.LegalCheck(cards.ACTION_DEFEAT, c) {
 		return
 	}
+	fmt.Println("Trying to defeat")
 	f := c.GetCost()
 	res := d.currentResource
 	if (&f).IsEnough(res) {

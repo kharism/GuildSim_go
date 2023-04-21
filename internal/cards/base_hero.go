@@ -27,7 +27,9 @@ func (h *BaseHero) OnPlay() {}
 func (h *BaseHero) OnExplored() {}
 
 // when slain, do this
-func (h *BaseHero) OnSlain() {}
+func (h *BaseHero) OnSlain()        {}
+func (a *BaseHero) OnBanished()     {}
+func (a *BaseHero) OnReturnToDeck() {}
 
 // when discarded to cooldown pile, do this
 func (h *BaseHero) OnDiscarded() {}

@@ -73,47 +73,30 @@ func TestTombEntrance(t *testing.T) {
 	// PrintCardList(dumGamestate.CenterCards, t)
 	t.Log(len(dumGamestate.CenterCards), dumGamestate.CenterCards[0].GetName())
 	gamestate.DefeatCard(dumGamestate.CenterCards[0])
-	if dumGamestate.CardsInCenterDeck.Size() != 1 {
+	if dumGamestate.CardsInCenterDeck.Size() != 2 {
 		t.Log("failed to defeat and replace")
 		t.FailNow()
 	}
 	gamestate.EndTurn()
 	t.Log("===END===")
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 8; i++ {
 		gamestate.Draw()
 	}
+	PrintCardList(dumGamestate.CenterCards, t)
 	PrintCardList(dumGamestate.CardsInHand, t)
 	cardInHand = dumGamestate.CardsInHand
+	gamestate.PlayCard(cardInHand[6])
+	gamestate.PlayCard(cardInHand[4])
 	gamestate.PlayCard(cardInHand[3])
 	gamestate.PlayCard(cardInHand[2])
 	gamestate.PlayCard(cardInHand[1])
+	cardPicker := TestCardPicker{ChooseMethod: StaticCardPicker(0)}
+	gamestate.SetCardPicker(&cardPicker)
 	gamestate.DefeatCard(dumGamestate.CenterCards[0])
-	if dumGamestate.CardsInCenterDeck.Size() != 0 {
+	if dumGamestate.CardsInCenterDeck.Size() != 7 {
+		PrintCardList(dumGamestate.CardsInCenterDeck.List(), t)
 		t.Log("failed to defeat and replace")
 		t.FailNow()
 	}
-	gamestate.EndTurn()
-	t.Log("===END===")
-	for i := 0; i < 6; i++ {
-		gamestate.Draw()
-	}
-	PrintCardList(dumGamestate.CardsInHand, t)
-	cardInHand = dumGamestate.CardsInHand
-	gamestate.PlayCard(cardInHand[5])
-	gamestate.PlayCard(cardInHand[1])
-	gamestate.PlayCard(cardInHand[0])
-	gamestate.DefeatCard(dumGamestate.CenterCards[0])
-	PrintCardList(dumGamestate.CenterCards, t)
-	gamestate.EndTurn()
-	PrintCardList(dumGamestate.CardsDiscarded.List(), t)
-	t.Log("===END===")
-	for i := 0; i < 6; i++ {
-		gamestate.Draw()
-	}
-	PrintCardList(dumGamestate.CardsInHand, t)
-	// cardInHand = dumGamestate.CardsInHand
-	t.Log(gamestate.GetCurrentHP())
-	t.Log("Discarded Pile")
 
-	PrintCardList(dumGamestate.CardsDiscarded.List(), t)
 }

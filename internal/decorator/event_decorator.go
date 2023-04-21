@@ -24,6 +24,10 @@ func (s *ProgressListener) DoAction(data map[string]interface{}) {
 			h := cards.NewStagShaman(s.state)
 			deck = append(deck, &h)
 		}
+		for i := 0; i < 4; i++ {
+			h := cards.NewDeadweight(s.state)
+			deck = append(deck, &h)
+		}
 		for i := 0; i < 3; i++ {
 			h := cards.NewThief(s.state)
 			deck = append(deck, &h)
@@ -44,9 +48,25 @@ func (s *ProgressListener) DoAction(data map[string]interface{}) {
 			h := cards.NewSlimeLarge(s.state)
 			deck = append(deck, &h)
 		}
+		for i := 0; i < 2; i++ {
+			h := cards.NewFirelake(s.state)
+			deck = append(deck, &h)
+		}
 		s.state.AddCardToCenterDeck(cards.DISCARD_SOURCE_NAN, true, deck...)
 		// add more difficult location to explore
+
 		return
+	} else if s.MinibossDefeated == 2 {
+		deck := []cards.Card{}
+		for i := 0; i < 3; i++ {
+			ll := cards.NewBulwark(s.state)
+			deck = append(deck, &ll)
+		}
+		for i := 0; i < 4; i++ {
+			h := cards.NewIceWyvern(s.state)
+			deck = append(deck, &h)
+		}
+		s.state.AddCardToCenterDeck(cards.DISCARD_SOURCE_NAN, true, deck...)
 	}
 }
 
