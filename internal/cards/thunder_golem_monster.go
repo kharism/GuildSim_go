@@ -9,6 +9,17 @@ type ThunderGolem struct {
 func NewThunderGolem(a AbstractGamestate) ThunderGolem {
 	return ThunderGolem{state: a}
 }
+
+type CrystalKey struct {
+	BaseItem
+}
+
+func (h *CrystalKey) GetName() string {
+	return "CrystalKey"
+}
+func (h *CrystalKey) GetDescription() string {
+	return "Open path to forgotten monarch"
+}
 func (t *ThunderGolem) GetName() string {
 	return "ThunderGolem"
 }
@@ -25,13 +36,16 @@ func (m *ThunderGolem) OnPunish() {
 	m.turnCounter++
 	if m.turnCounter%2 == 0 {
 		for i := 0; i < 2; i++ {
-			curse1 := NewStunCurse(m.state)
+			curse1 := NewShockCurse(m.state)
 			m.state.DiscardCard(&curse1, DISCARD_SOURCE_NAN)
 		}
 	}
 
 }
-
+func (m *ThunderGolem) Unshuffleable() {}
+func (m *ThunderGolem) Unbanishable()  {}
 func (m *ThunderGolem) OnSlain() {
 	m.state.AddResource(RESOURCE_NAME_REPUTATION, 3)
+	crystalKey := CrystalKey{}
+	m.state.AddItem(&crystalKey)
 }

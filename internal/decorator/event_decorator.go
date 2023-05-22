@@ -1,6 +1,9 @@
 package decorator
 
-import "github/kharism/GuildSim_go/internal/cards"
+import (
+	"github/kharism/GuildSim_go/internal/cards"
+	mrand "math/rand"
+)
 
 // abstract function to attach customizable event listener
 type AbstractDecorator func(cards.AbstractGamestate) cards.AbstractGamestate
@@ -15,21 +18,29 @@ func (s *ProgressListener) DoAction(data map[string]interface{}) {
 	if s.MinibossDefeated == 1 {
 		// add in stronger hero in center deck
 		deck := []cards.Card{}
-		for i := 0; i < 2; i++ {
+		count := mrand.Int() % 2
+		for i := 0; i < count; i++ {
 			h := cards.NewMonsterSlayer(s.state)
 			deck = append(deck, &h)
 
 		}
-		for i := 0; i < 2; i++ {
+		count = mrand.Int() % 2
+		for i := 0; i < count; i++ {
 			h := cards.NewStagShaman(s.state)
 			deck = append(deck, &h)
 		}
-		for i := 0; i < 4; i++ {
+		count = mrand.Int() % 3
+		for i := 0; i < count; i++ {
 			h := cards.NewDeadweight(s.state)
 			deck = append(deck, &h)
 		}
 		for i := 0; i < 3; i++ {
 			h := cards.NewThief(s.state)
+			deck = append(deck, &h)
+		}
+		count = mrand.Int() % 5
+		for i := 0; i < 4; i++ {
+			h := cards.NewCleric(s.state)
 			deck = append(deck, &h)
 		}
 		for i := 0; i < 3; i++ {

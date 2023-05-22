@@ -435,6 +435,9 @@ func (d *DummyGamestate) RemoveCardFromCooldownIdx(i int) {
 	j := append(cooldownList[:i], cooldownList[i+1:]...)
 	d.CardsDiscarded.SetList(j)
 }
+func (d *DummyGamestate) UpdateCenterCard(c cards.Card) {
+	d.updateCenterCard(c)
+}
 func (d *DummyGamestate) updateCenterCard(c cards.Card) {
 	replacementCard := d.ReplaceCenterCard()
 	newCenterCards := []cards.Card{}

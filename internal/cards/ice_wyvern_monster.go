@@ -13,7 +13,7 @@ func (m *IceWyvern) GetName() string {
 	return "IceWyvern"
 }
 func (m *IceWyvern) GetDescription() string {
-	return "deals 1 damage, Also stack 1 stun. On defeat: gains 2 reputation and draw 2 cards"
+	return "deals 1 damage, Also stack 1 freeze curse. On defeat: gains 2 reputation and draw 2 cards"
 }
 func (m *IceWyvern) GetCost() Cost {
 	cost := NewCost()
@@ -22,7 +22,7 @@ func (m *IceWyvern) GetCost() Cost {
 }
 func (m *IceWyvern) OnPunish() {
 	m.state.TakeDamage(1)
-	curse1 := NewStunCurse(m.state)
+	curse1 := NewFreezeCurse(m.state)
 	m.state.StackCards(DISCARD_SOURCE_NAN, &curse1)
 }
 func (m *IceWyvern) OnSlain() {

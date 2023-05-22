@@ -42,6 +42,7 @@ func (m *LichMageMonster) OnSlain() {
 	m.state.AddCardToCenterDeck(DISCARD_SOURCE_NAN, true, newCards...)
 }
 func (m *LichMageMonster) Unshuffleable() {}
+func (m *LichMageMonster) Unbanishable()  {}
 func (m *LichMageMonster) OnPunish() {
 	m.turnCounter += 1
 	curse1 := NewStunCurse(m.state)

@@ -531,6 +531,44 @@ func TestRogueTrap(t *testing.T) {
 		t.FailNow()
 	}
 }
+func TestCleric(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return false }
+	gamestate.SetBoolPicker(&cardPicker)
+	gamestate.SetCardPicker(&cardPicker)
+	gamestate.SetDetailViewer(&cardPicker)
+	cleric := cards.NewCleric(gamestate)
+	pyroKnight := cards.NewPyroKnight(gamestate)
+	dumGamestate.CardsInCenterDeck.Stack(&pyroKnight)
+	for i := 0; i < 5; i++ {
+		gamestate.CenterRowInit()
+	}
+
+	// centerCards2 := gamestate.GetCenterCard()
+	// for _, i := range centerCards2 {
+	// 	t.Log(i.GetName(), i.GetCardType())
+	// }
+	gamestate.PlayCard(&cleric)
+	if len(dumGamestate.CardsBanished) == 0 {
+		t.Log("Failed to banish")
+		t.FailNow()
+	}
+	// check if pyroKnight is still in center row
+	centerCards2 := gamestate.GetCenterCard()
+	for _, i := range centerCards2 {
+		if i == &pyroKnight {
+			t.Log("Fail to replace")
+			t.FailNow()
+		}
+	}
+}
 func TestThiefTrap(t *testing.T) {
 	gamestate := NewDummyGamestate()
 	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)

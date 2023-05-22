@@ -149,6 +149,7 @@ func (d *DefaultGamestate) RemoveCardFromCenterRow(c cards.Card) {
 	for idx, c2 := range d.CenterCards {
 		if c2 == c {
 			d.RemoveCardFromCenterRowIdx(idx)
+
 			return
 		}
 	}
@@ -156,6 +157,7 @@ func (d *DefaultGamestate) RemoveCardFromCenterRow(c cards.Card) {
 func (d *DefaultGamestate) RemoveCardFromCenterRowIdx(i int) {
 	j := append(d.CenterCards[:i], d.CenterCards[i+1:]...)
 	d.CenterCards = j
+
 }
 func (d *DefaultGamestate) RemoveCardFromCooldown(c cards.Card) {
 	for idx, c2 := range d.CardsDiscarded.List() {
@@ -421,6 +423,9 @@ func (d *DefaultGamestate) StackCards(source string, cc ...cards.Card) {
 }
 func (d *DefaultGamestate) ShuffleMainDeck() {
 	d.CardsInDeck.Shuffle()
+}
+func (d *DefaultGamestate) UpdateCenterCard(c cards.Card) {
+	d.updateCenterCard(c)
 }
 func (d *DefaultGamestate) updateCenterCard(c cards.Card) {
 	replacementCard := d.ReplaceCenterCard()

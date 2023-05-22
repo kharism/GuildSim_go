@@ -313,18 +313,24 @@ func (p *OnPlayAction) DoAction(data map[string]interface{}) {
 		fmt.Printf("%s old (%f,%f) Target (%f,%f)\n", val.card.GetName(), txOld, tyOld, val.tx, val.ty)
 
 	}
-	// move any card on the right of our picked cards
-	for i := moveIndex; i < len(newHand); i++ {
-		newHand[i].tx = math.Floor(HAND_START_X + float64(i)*HAND_DIST_X)
-		newHand[i].ty = HAND_START_Y
-		vx := float64(newHand[i].tx - newHand[i].x)
-		vy := float64(newHand[i].ty - newHand[i].y)
-		speedVector := csg.NewVector(vx, vy, 0)
-		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-		newHand[i].vx = speedVector.X
-		newHand[i].vy = speedVector.Y
+	if moveIndex == -1 {
+		fmt.Println(playedCards, playedCards.GetName())
 	}
-	mm.cardInHand = newHand
+	// move any card on the right of our picked cards
+	if moveIndex > -1 {
+		for i := moveIndex; i < len(newHand); i++ {
+			newHand[i].tx = math.Floor(HAND_START_X + float64(i)*HAND_DIST_X)
+			newHand[i].ty = HAND_START_Y
+			vx := float64(newHand[i].tx - newHand[i].x)
+			vy := float64(newHand[i].ty - newHand[i].y)
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+			newHand[i].vx = speedVector.X
+			newHand[i].vy = speedVector.Y
+		}
+		mm.cardInHand = newHand
+	}
+
 	mm.mutex.Unlock()
 	// fmt.Println(mm.cardInHand)
 }
@@ -347,6 +353,8 @@ func (p *onBanishAction) DoAction(data map[string]interface{}) {
 		// newPlayed := []*EbitenCard{}
 		sourceCard = p.mainGameState.cardsPlayed
 		// p.mainGameState.cardsPlayed = newPlayed
+	} else if source == cards.DISCARD_SOURCE_CENTER {
+		sourceCard = p.mainGameState.cardsInCenter
 	}
 
 	movedIdx := -1
@@ -385,6 +393,21 @@ func (p *onBanishAction) DoAction(data map[string]interface{}) {
 			}
 		}
 		// sourceCard = p.mainGameState.cardInHand
+	} else if source == cards.DISCARD_SOURCE_CENTER {
+		p.mainGameState.cardsInCenter = newSource
+		if len(p.mainGameState.cardsInCenter) > 0 && movedIdx != -1 {
+			for i := movedIdx; i < len(p.mainGameState.cardsInCenter); i++ {
+				ebitenCard := sourceCard[i]
+				ebitenCard.tx -= HAND_DIST_X
+				vx := float64(ebitenCard.tx - ebitenCard.x)
+				vy := float64(ebitenCard.ty - ebitenCard.y)
+				speedVector := csg.NewVector(vx, vy, 0)
+				speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+				ebitenCard.vx = speedVector.X
+				ebitenCard.vy = speedVector.Y
+				sourceCard[i] = ebitenCard
+			}
+		}
 	} else if source == cards.DISCARD_SOURCE_PLAYED {
 		// newPlayed := []*EbitenCard{}
 		// sourceCard = p.mainGameState.cardsPlayed
@@ -449,6 +472,11 @@ func (p *onDiscardAction) DoAction(data map[string]interface{}) {
 	if source == cards.DISCARD_SOURCE_HAND {
 		p.mainGameState.cardInHand = newSource
 		// move cards on the right side to left
+		if movedIdx == -1 {
+			// debug this crap
+			fmt.Println("Card Not found", cardDiscarded.GetName())
+
+		}
 		if len(p.mainGameState.cardInHand) > 0 {
 			for i := movedIdx; i < len(p.mainGameState.cardInHand); i++ {
 				ebitenCard := sourceCard[i]
@@ -558,16 +586,19 @@ func (p *onExplorationAction) DoAction(data map[string]interface{}) {
 			newCenterCard = append(newCenterCard, p.mainGameState.cardsInCenter[i])
 		}
 	}
-	for i := moveIndex; i < len(newCenterCard); i++ {
-		newCenterCard[i].tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
-		newCenterCard[i].ty = CENTER_START_Y
-		vx := float64(newCenterCard[i].tx - newCenterCard[i].x)
-		vy := float64(newCenterCard[i].ty - newCenterCard[i].y)
-		speedVector := csg.NewVector(vx, vy, 0)
-		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-		newCenterCard[i].vx = speedVector.X
-		newCenterCard[i].vy = speedVector.Y
+	if moveIndex != -1 {
+		for i := moveIndex; i < len(newCenterCard); i++ {
+			newCenterCard[i].tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
+			newCenterCard[i].ty = CENTER_START_Y
+			vx := float64(newCenterCard[i].tx - newCenterCard[i].x)
+			vy := float64(newCenterCard[i].ty - newCenterCard[i].y)
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+			newCenterCard[i].vx = speedVector.X
+			newCenterCard[i].vy = speedVector.Y
+		}
 	}
+
 	p.mainGameState.cardsInCenter = newCenterCard
 }
 
@@ -599,16 +630,19 @@ func (p *onDefeatAction) DoAction(data map[string]interface{}) {
 			newCenterCard = append(newCenterCard, p.mainGameState.cardsInCenter[i])
 		}
 	}
-	for i := moveIndex; i < len(newCenterCard); i++ {
-		newCenterCard[i].tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
-		newCenterCard[i].ty = CENTER_START_Y
-		vx := float64(newCenterCard[i].tx - newCenterCard[i].x)
-		vy := float64(newCenterCard[i].ty - newCenterCard[i].y)
-		speedVector := csg.NewVector(vx, vy, 0)
-		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-		newCenterCard[i].vx = speedVector.X
-		newCenterCard[i].vy = speedVector.Y
+	if moveIndex != -1 {
+		for i := moveIndex; i < len(newCenterCard); i++ {
+			newCenterCard[i].tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
+			newCenterCard[i].ty = CENTER_START_Y
+			vx := float64(newCenterCard[i].tx - newCenterCard[i].x)
+			vy := float64(newCenterCard[i].ty - newCenterCard[i].y)
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+			newCenterCard[i].vx = speedVector.X
+			newCenterCard[i].vy = speedVector.Y
+		}
 	}
+
 	p.mainGameState.cardsInCenter = newCenterCard
 }
 
@@ -660,16 +694,19 @@ func (p *onDisarmAction) DoAction(data map[string]interface{}) {
 			newCenterCard = append(newCenterCard, p.mainGameState.cardsInCenter[i])
 		}
 	}
-	for i := moveIndex; i < len(newCenterCard); i++ {
-		newCenterCard[i].tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
-		newCenterCard[i].ty = CENTER_START_Y
-		vx := float64(newCenterCard[i].tx - newCenterCard[i].x)
-		vy := float64(newCenterCard[i].ty - newCenterCard[i].y)
-		speedVector := csg.NewVector(vx, vy, 0)
-		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-		newCenterCard[i].vx = speedVector.X
-		newCenterCard[i].vy = speedVector.Y
+	if moveIndex != -1 {
+		for i := moveIndex; i < len(newCenterCard); i++ {
+			newCenterCard[i].tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
+			newCenterCard[i].ty = CENTER_START_Y
+			vx := float64(newCenterCard[i].tx - newCenterCard[i].x)
+			vy := float64(newCenterCard[i].ty - newCenterCard[i].y)
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+			newCenterCard[i].vx = speedVector.X
+			newCenterCard[i].vy = speedVector.Y
+		}
 	}
+
 	p.mainGameState.cardsInCenter = newCenterCard
 }
 

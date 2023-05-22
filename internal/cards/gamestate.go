@@ -128,6 +128,7 @@ type AbstractGamestate interface {
 	RemoveCardFromHandIdx(i int)
 	RemoveCardFromCenterRow(c Card)
 	RemoveCardFromCenterRowIdx(i int)
+	UpdateCenterCard(c Card)
 	RemoveCardFromCooldown(c Card)
 	RemoveCardFromCooldownIdx(i int)
 

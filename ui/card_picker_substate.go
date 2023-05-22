@@ -269,7 +269,8 @@ func (c *boolPickState) Draw(screen *ebiten.Image) {
 	// detect click
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		curX, curY := ebiten.CursorPosition()
-		if curY > 400 && curY < 530 {
+		fmt.Println("cursors bool pick", curX, curY)
+		if curY > 400 && curY < 450 {
 			if curX > 900 {
 				c.pickedOption <- false
 			} else if curX > 700 {

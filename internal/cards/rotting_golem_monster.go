@@ -4,6 +4,16 @@ type RottingGolem struct {
 	BaseMonster
 	state AbstractGamestate
 }
+type BoneKey struct {
+	BaseItem
+}
+
+func (h *BoneKey) GetName() string {
+	return "BoneKey"
+}
+func (h *BoneKey) GetDescription() string {
+	return "Open path to forgotten monarch"
+}
 
 func NewRottingGolem(a AbstractGamestate) RottingGolem {
 	return RottingGolem{state: a}
@@ -19,6 +29,12 @@ func (m *RottingGolem) GetCost() Cost {
 	cost.AddResource(RESOURCE_NAME_COMBAT, 7)
 	return cost
 }
+func (d *RottingGolem) OnSlain() {
+	boneKey := BoneKey{}
+	d.state.AddItem(&boneKey)
+}
+func (d *RottingGolem) Unshuffleable() {}
+func (d *RottingGolem) Unbanishable()  {}
 func (d *RottingGolem) OnPunish() {
 	//d.state.TakeDamage(8)
 	curse := NewCarcassSlimeCurse(d.state)

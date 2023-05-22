@@ -49,6 +49,7 @@ func (b *SlimeRoom) Trap() {
 	b.state.AttachLegalCheck(ACTION_DRAW, b.limitDraw)
 }
 func (b *SlimeRoom) Unshuffleable() {}
+func (b *SlimeRoom) Unbanishable()  {}
 func (b *SlimeRoom) IsDisarmed() bool {
 	return b.isDisarmed
 }

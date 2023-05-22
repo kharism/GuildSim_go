@@ -16,7 +16,7 @@ func (r *NobleKnight) GetName() string {
 	return "NobleKnight"
 }
 func (r *NobleKnight) GetDescription() string {
-	return "If you have 40 or less reputation, gain combat equal to quarter of your reputation, otherwise gain combat equal to half of your reputation"
+	return "If you have 40 or less reputation, gain combat equal to quarter of your reputation"
 }
 func (r *NobleKnight) GetCost() Cost {
 	cost := NewCost()
@@ -25,10 +25,6 @@ func (r *NobleKnight) GetCost() Cost {
 }
 func (r *NobleKnight) OnPlay() {
 	rep := r.gamestate.GetCurrentResource().Detail[RESOURCE_NAME_REPUTATION]
-	if rep <= 40 {
-		r.gamestate.AddResource(RESOURCE_NAME_COMBAT, rep/4)
-	} else {
-		r.gamestate.AddResource(RESOURCE_NAME_COMBAT, rep/2)
-	}
+	r.gamestate.AddResource(RESOURCE_NAME_COMBAT, rep/4)
 
 }
