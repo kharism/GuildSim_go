@@ -6,10 +6,9 @@
 6. Add Hero that can scale for late game
    - add class for hero (spelluser, warrior, animal, unearthly being, etc)
    - Hero that generate more combat with how much monsters in your deck + recruitable monsters that add copies of itself
-7. Add mechanic/debuff that limit/prevents player from drawing too much
-8. Implement Items:
+7. Implement Items:
    - relic extra draw (super rare)
-9. add more cards
+8. add more cards
    - monster realm location
      - unlock by defeating 1 miniboxx
      - on explored, shuffle infernal jester, aggro djinn, and other hellish creature.
@@ -17,10 +16,10 @@
    - trap hole : have continuous eff to prevents player to recruit hero/defeat monster until it is disarmed
    - add drake/wyvern monsters that take 4 or more combat point. Gives them decent rewards like extra draw or something
    - 
+9. finish the tomb of forgotten monarch.
+   - scrap the labyrinth area. It is sucks/tedious
+   - add item combination gimmick. Has 3 or more boss monsters drop item the player must use when certain cards is on the central row to unlock new area
 
-
-Bug:
-   - bouldertrap on end turn shuffle cause negative index
 
 DONE
 1. Decouple game logic and UI logic
@@ -50,3 +49,4 @@ DONE
    - noble knight
    - rogue infiltrator
    - spike floor trap
+8. Add mechanic/debuff that limit/prevents player from drawing too much
