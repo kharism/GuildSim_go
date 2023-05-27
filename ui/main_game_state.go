@@ -102,8 +102,11 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 		//fmt.Println(inpututil.MouseButtonPressDuration(ebiten.MouseButtonLeft))
 		xCurInt, yCurInt := ebiten.CursorPosition()
 		xCur, yCur := float64(xCurInt), float64(yCurInt)
+		if xCur != float64(s.m.startDragX) {
+			// it basically release from drag mode and not picking card
+			// if the first/leftmost card in hand is on the right of HAND_START, move all hand card to their ori position
 
-		if xCur > DISCARD_START_X && xCur < DISCARD_START_X+HAND_SCALE*ORI_CARD_WIDTH {
+		} else if xCur > DISCARD_START_X && xCur < DISCARD_START_X+HAND_SCALE*ORI_CARD_WIDTH {
 			s.m.cardListState.cards = s.m.defaultGamestate.CardsDiscarded.List()
 			s.m.currentSubState = s.m.cardListState
 		} else if xCur > ENDTURN_START_X {
@@ -275,7 +278,7 @@ func (d *OnDrawAction) DoAction(data map[string]interface{}) {
 	newEbitenCard := NewEbitenCardFromCard(drawnCards)
 	ll := mainGame.(*MainGameState)
 	indexCard := len(ll.defaultGamestate.CardsInHand) - 1
-	fmt.Println("Draw card", drawnCards.GetName(), indexCard)
+	// fmt.Println("Draw card", drawnCards.GetName(), indexCard)
 	newEbitenCard.x = math.Floor(MAIN_DECK_X)
 	newEbitenCard.y = math.Floor(MAIN_DECK_Y)
 	newEbitenCard.tx = math.Floor(HAND_START_X + float64(indexCard)*HAND_DIST_X)
@@ -286,7 +289,7 @@ func (d *OnDrawAction) DoAction(data map[string]interface{}) {
 	speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
 	newEbitenCard.vx = speedVector.X
 	newEbitenCard.vy = speedVector.Y
-	// fmt.Println(newEbitenCard.x, newEbitenCard.y, newEbitenCard.tx, newEbitenCard.ty)
+	fmt.Println("Draw card", drawnCards.GetName(), newEbitenCard.x, newEbitenCard.y, newEbitenCard.tx, newEbitenCard.ty)
 	ll.mutex.Lock()
 	ll.cardInHand = append(ll.cardInHand, newEbitenCard)
 	ll.mutex.Unlock()
@@ -330,15 +333,37 @@ func (p *OnPlayAction) DoAction(data map[string]interface{}) {
 	}
 	// move any card on the right of our picked cards
 	if moveIndex > -1 {
-		for i := moveIndex; i < len(newHand); i++ {
-			newHand[i].tx = math.Floor(HAND_START_X + float64(i)*HAND_DIST_X)
+		fmt.Println("MoveIds Play", moveIndex)
+		newStartHand := HAND_START_X //float64(0.0)
+		if len(newHand) > 0 {
+			if moveIndex > 0 {
+				newStartHand = newHand[0].x
+			} else {
+
+			}
+		}
+		fmt.Println("hand after played")
+		for idx, c := range newHand {
+			fmt.Println(idx, c.card.GetName(), c.x, c.tx)
+		}
+		for i := 0; i < len(newHand); i++ {
+			fmt.Println("idx", i, newStartHand, HAND_DIST_X)
+			newHand[i].tx = newStartHand + float64(i)*HAND_DIST_X //math.Floor(HAND_START_X + float64(i)*HAND_DIST_X)
+			fmt.Println("idx", i, newHand[i].card.GetName(), newHand[i].tx, newHand[i].x)
 			newHand[i].ty = HAND_START_Y
 			vx := float64(newHand[i].tx - newHand[i].x)
 			vy := float64(newHand[i].ty - newHand[i].y)
-			speedVector := csg.NewVector(vx, vy, 0)
-			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-			newHand[i].vx = speedVector.X
-			newHand[i].vy = speedVector.Y
+			if vx == 0 && vy == 0 {
+				newHand[i].vx = 0
+				newHand[i].vy = 0
+			} else {
+				speedVector := csg.NewVector(vx, vy, 0)
+				speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+
+				newHand[i].vx = speedVector.X
+				newHand[i].vy = speedVector.Y
+			}
+
 		}
 		mm.cardInHand = newHand
 	}
@@ -490,9 +515,10 @@ func (p *onDiscardAction) DoAction(data map[string]interface{}) {
 
 		}
 		if len(p.mainGameState.cardInHand) > 0 {
-			for i := movedIdx; i < len(p.mainGameState.cardInHand); i++ {
+			fmt.Println("Discard from hand", movedIdx)
+			for i := movedIdx + 1; i < len(p.mainGameState.cardInHand); i++ {
 				ebitenCard := sourceCard[i]
-				ebitenCard.tx -= HAND_DIST_X
+				ebitenCard.tx = ebitenCard.x - HAND_DIST_X
 				vx := float64(ebitenCard.tx - ebitenCard.x)
 				vy := float64(ebitenCard.ty - ebitenCard.y)
 				speedVector := csg.NewVector(vx, vy, 0)
@@ -501,6 +527,10 @@ func (p *onDiscardAction) DoAction(data map[string]interface{}) {
 				ebitenCard.vy = speedVector.Y
 				sourceCard[i] = ebitenCard
 			}
+		}
+		fmt.Println("Done Discarding")
+		for idx, c := range sourceCard {
+			fmt.Println(idx, c.card.GetName(), c.x, c.tx)
 		}
 		// sourceCard = p.mainGameState.cardInHand
 	} else if source == cards.DISCARD_SOURCE_PLAYED {
@@ -1098,8 +1128,6 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 
 }
 func (m *MainGameState) Update() error {
-<<<<<<< HEAD
-=======
 	dist := 0
 	if m.dragMode {
 		curX, _ := ebiten.CursorPosition()
@@ -1107,18 +1135,31 @@ func (m *MainGameState) Update() error {
 
 	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
-		fmt.Println(inpututil.MouseButtonPressDuration(ebiten.MouseButtonLeft))
+		// fmt.Println(inpututil.MouseButtonPressDuration(ebiten.MouseButtonLeft))
 		m.dragMode = false
+		if len(m.cardInHand) > 0 && m.cardInHand[0].x+float64(dist) > HAND_START_X {
+			fmt.Println("terlalu ke kanan")
+			dist = 0
+			for indexCard, c := range m.cardInHand {
+				c.x = math.Floor(HAND_START_X + float64(indexCard)*HAND_DIST_X)
+			}
+			// for idx, _ := range m.cardInHand {
+			// 	m.cardInHand[idx].x_drag = 0
+			// }
+		}
 		for _, c := range m.cardInHand {
 			c.x += float64(dist)
 			c.x_drag = 0
 			// c.Update()
 		}
 	}
+	// if m.dragMode {
 	for _, c := range m.cardInHand {
 		c.x_drag = dist
 		c.Update()
 	}
+	// }
+
 	for _, c := range m.cardsPlayed {
 		c.Update()
 	}
@@ -1136,7 +1177,6 @@ func (m *MainGameState) Update() error {
 		}
 	}
 	m.cardsInLimbo = newCardInLimbo
->>>>>>> 5263e8f (add drag drop on hand)
 
 	return m.currentSubState.Update()
 }
