@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	csg "github.com/kharism/golang-csg/core"
 )
 
 type EbitenCard struct {
@@ -23,6 +24,10 @@ type EbitenCard struct {
 	ty float64
 	// translation on x axis due to dragging
 	x_drag int
+
+	// animation stuff
+	CurrMove       *MoveAnimation
+	AnimationQueue []*MoveAnimation
 }
 
 func (e *EbitenCard) Draw(screen *ebiten.Image) {
@@ -42,9 +47,27 @@ func (e *EbitenCard) Update() {
 	e.y += e.vy
 	// fmt.Println(e.x, e.y)
 	if math.Abs(float64(e.tx-e.x))+math.Abs(float64(e.ty-e.y)) < 15 {
-		e.x = e.tx
-		e.y = e.ty
-		e.vx = 0
-		e.vy = 0
+		if e.CurrMove != nil && e.CurrMove.DoneFunc != nil {
+			e.CurrMove.DoneFunc()
+		}
+		if len(e.AnimationQueue) == 0 {
+			e.x = e.tx
+			e.y = e.ty
+			e.vx = 0
+			e.vy = 0
+			e.CurrMove = nil
+		} else {
+			e.CurrMove = e.AnimationQueue[0]
+			e.AnimationQueue = e.AnimationQueue[1:]
+			e.tx = e.CurrMove.tx
+			e.ty = e.CurrMove.ty
+			vx := float64(e.tx - e.x)
+			vy := float64(e.ty - e.y)
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(e.CurrMove.Speed)
+			e.vx = speedVector.X
+			e.vy = speedVector.Y
+		}
+
 	}
 }

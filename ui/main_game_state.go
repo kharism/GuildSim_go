@@ -9,7 +9,6 @@ import (
 	"math"
 	"math/rand"
 	"sync"
-	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -66,6 +65,12 @@ type mainMainState struct {
 	mutex *sync.Mutex // mutex to allows some order of animation
 }
 
+func CreateDoneFunc(c *EbitenCard, wg *sync.WaitGroup) func() {
+	return func() {
+		fmt.Println("Sending done signal", c.card.GetName())
+		wg.Done()
+	}
+}
 func (s *mainMainState) Draw(screen *ebiten.Image) {
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
 		xCurInt, yCurInt := ebiten.CursorPosition()
@@ -113,7 +118,26 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 			fmt.Println("Endturn")
 			go func() {
 				s.m.defaultGamestate.EndTurn()
-				time.Sleep(1 * time.Second)
+				// animate punish here
+				// mutex2 := &sync.Mutex{}
+				for _, c := range s.m.cardsInCenter {
+					if _, ok := c.card.(cards.Punisher); !ok {
+						continue
+					}
+					moveBack := &MoveAnimation{tx: c.x, ty: c.y - 20, Speed: 1}
+					moveAtk := &MoveAnimation{tx: c.x, ty: c.y + 270, Speed: 10}
+					moveReturn := &MoveAnimation{tx: c.x, ty: c.y, Speed: 5}
+					// cc := make(chan string)
+					wg := &sync.WaitGroup{}
+					wg.Add(1)
+					moveReturn.DoneFunc = CreateDoneFunc(c, wg)
+					moveQ := []*MoveAnimation{moveBack, moveAtk, moveReturn}
+					c.AnimationQueue = append(c.AnimationQueue, moveQ...)
+					// mutex2.Lock()
+					wg.Wait()
+					// waitName := <-cc
+					// fmt.Println("receiving done signal", waitName)
+				}
 				s.m.defaultGamestate.BeginTurn()
 			}()
 		} else if yCur > HAND_START_Y && xCur < DISCARD_START_X && xCur >= HAND_START_X {
