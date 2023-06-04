@@ -98,7 +98,7 @@ func NewDefaultGamestate() cards.AbstractGamestate {
 	d.CardsBanished = []cards.Card{}
 	d.ItemCards = []cards.Card{}
 	// d.cardPiker = &TextCardPicker{}
-	d.HitPoint = 20
+	d.HitPoint = 60
 	d.CardsDiscarded = cards.Deck{}
 	d.CardsInCenterDeck = cards.Deck{}
 	d.CardsInDeck = cards.Deck{}
@@ -321,6 +321,7 @@ func (d *DefaultGamestate) EndTurn() {
 		d.CardsInCenterDeck.Shuffle()
 		for i := 0; i < cardsShuffledBack; i++ {
 			f := d.ReplaceCenterCard()
+			fmt.Println("Replace center card with", f.GetName())
 			d.CenterCards = append(d.CenterCards, f)
 		}
 	}
@@ -410,7 +411,7 @@ func (d *DefaultGamestate) DiscardCard(c cards.Card, source string) {
 	return
 }
 func (d *DefaultGamestate) CenterRowInit() {
-	d.CardsInCenterDeck.Shuffle()
+	// d.CardsInCenterDeck.Shuffle()
 	for i := 0; i < 5; i++ {
 		f := d.ReplaceCenterCard()
 		d.CenterCards = append(d.CenterCards, f)

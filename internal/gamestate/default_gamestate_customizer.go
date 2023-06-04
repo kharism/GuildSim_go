@@ -18,7 +18,7 @@ func CustomizedDefaultGamestate(starterDeckSets, centerDeckSets []string, decora
 	defGameState.CenterCards = []cards.Card{}
 	defGameState.CardsInHand = []cards.Card{}
 	// d.cardPiker = &TextCardPicker{}
-	defGameState.HitPoint = 60
+	defGameState.HitPoint = 20
 	defGameState.CardsDiscarded = cards.Deck{}
 	defGameState.CardsInCenterDeck = cards.Deck{}
 	centerDeck := []cards.Card{}

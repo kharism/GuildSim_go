@@ -25,14 +25,16 @@ func (d *OnDrawAction) DoAction(data map[string]interface{}) {
 	// fmt.Println("Draw card", drawnCards.GetName(), indexCard)
 	newEbitenCard.x = math.Floor(MAIN_DECK_X)
 	newEbitenCard.y = math.Floor(MAIN_DECK_Y)
-	newEbitenCard.tx = math.Floor(HAND_START_X + float64(indexCard)*HAND_DIST_X)
-	newEbitenCard.ty = HAND_START_Y
-	vx := float64(newEbitenCard.tx - newEbitenCard.x)
-	vy := float64(newEbitenCard.ty - newEbitenCard.y)
-	speedVector := csg.NewVector(vx, vy, 0)
-	speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-	newEbitenCard.vx = speedVector.X
-	newEbitenCard.vy = speedVector.Y
+	newAnim := &MoveAnimation{tx: HAND_START_X + float64(indexCard)*HAND_DIST_X, ty: HAND_START_Y, Speed: CARD_MOVE_SPEED}
+	newEbitenCard.AnimationQueue = append(newEbitenCard.AnimationQueue, newAnim)
+	// newEbitenCard.tx = math.Floor(HAND_START_X + float64(indexCard)*HAND_DIST_X)
+	// newEbitenCard.ty = HAND_START_Y
+	// vx := float64(newEbitenCard.tx - newEbitenCard.x)
+	// vy := float64(newEbitenCard.ty - newEbitenCard.y)
+	// speedVector := csg.NewVector(vx, vy, 0)
+	// speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+	// newEbitenCard.vx = speedVector.X
+	// newEbitenCard.vy = speedVector.Y
 	fmt.Println("Draw card", drawnCards.GetName(), newEbitenCard.x, newEbitenCard.y, newEbitenCard.tx, newEbitenCard.ty)
 	ll.mutex.Lock()
 	ll.cardInHand = append(ll.cardInHand, newEbitenCard)
@@ -325,20 +327,21 @@ func (p *onCenterDrawAction) DoAction(data map[string]interface{}) {
 	indexCard := len(ll.defaultGamestate.CenterCards)
 	newEbitenCard.x = math.Floor(CENTER_DECK_START_X)
 	newEbitenCard.y = math.Floor(CENTER_DECK_START_Y)
+	newAnim := &MoveAnimation{Speed: CARD_MOVE_SPEED}
 	if isDisarmedTrap {
-		newEbitenCard.tx = BANISHED_START_X
-		newEbitenCard.ty = BANISHED_START_Y
+		newAnim.tx = BANISHED_START_X
+		newAnim.ty = BANISHED_START_Y
 	} else {
-		newEbitenCard.tx = math.Floor(CENTER_START_X + float64(indexCard)*HAND_DIST_X)
-		newEbitenCard.ty = CENTER_START_Y
+		newAnim.tx = math.Floor(CENTER_START_X + float64(indexCard)*HAND_DIST_X)
+		newAnim.ty = CENTER_START_Y
 	}
-
-	vx := float64(newEbitenCard.tx - newEbitenCard.x)
-	vy := float64(newEbitenCard.ty - newEbitenCard.y)
-	speedVector := csg.NewVector(vx, vy, 0)
-	speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-	newEbitenCard.vx = speedVector.X
-	newEbitenCard.vy = speedVector.Y
+	newEbitenCard.AnimationQueue = append(newEbitenCard.AnimationQueue, newAnim)
+	// vx := float64(newEbitenCard.tx - newEbitenCard.x)
+	// vy := float64(newEbitenCard.ty - newEbitenCard.y)
+	// speedVector := csg.NewVector(vx, vy, 0)
+	// speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+	// newEbitenCard.vx = speedVector.X
+	// newEbitenCard.vy = speedVector.Y
 	if isATrap {
 		fmt.Println(newEbitenCard.x, newEbitenCard.y, newEbitenCard.tx, newEbitenCard.ty, newEbitenCard.vx, newEbitenCard.vy)
 	}
@@ -650,9 +653,16 @@ func (p *onPrePunish) DoAction(data map[string]interface{}) {
 			break
 		}
 	}
-	moveBack := &MoveAnimation{tx: animatedCard.x, ty: animatedCard.y - 20, Speed: 1}
-	moveAtk := &MoveAnimation{tx: animatedCard.x, ty: animatedCard.y + 270, Speed: 10}
-	moveReturn := &MoveAnimation{tx: animatedCard.x, ty: animatedCard.y, Speed: 5}
+	base_x := animatedCard.tx
+	base_y := animatedCard.ty
+	if len(animatedCard.AnimationQueue) > 0 {
+		lastAnim := animatedCard.AnimationQueue[len(animatedCard.AnimationQueue)-1]
+		base_x = lastAnim.tx
+		base_y = lastAnim.ty
+	}
+	moveBack := &MoveAnimation{tx: base_x, ty: base_y - 20, Speed: 1}
+	moveAtk := &MoveAnimation{tx: base_x, ty: base_y + 270, Speed: 10}
+	moveReturn := &MoveAnimation{tx: base_x, ty: base_y, Speed: 5}
 	// cc := make(chan string)
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
