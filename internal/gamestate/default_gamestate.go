@@ -98,7 +98,7 @@ func NewDefaultGamestate() cards.AbstractGamestate {
 	d.CardsBanished = []cards.Card{}
 	d.ItemCards = []cards.Card{}
 	// d.cardPiker = &TextCardPicker{}
-	d.HitPoint = 60
+	d.HitPoint = 20
 	d.CardsDiscarded = cards.Deck{}
 	d.CardsInCenterDeck = cards.Deck{}
 	d.CardsInDeck = cards.Deck{}
@@ -330,6 +330,13 @@ func (d *DefaultGamestate) EndTurn() {
 		fmt.Println("Check Punish", c.GetName())
 		if pun, ok := c.(cards.Punisher); ok {
 			fmt.Println("Punish")
+			// TODO: add pre-punish animation
+			if _, ok := d.TopicsListeners[cards.EVENT_BEFORE_PUNISH]; ok {
+				j := d.TopicsListeners[cards.EVENT_BEFORE_PUNISH]
+				data := map[string]interface{}{}
+				data[cards.EVENT_ATTR_BEFORE_PUNISH_CARD] = c
+				j.Notify(data)
+			}
 			pun.OnPunish()
 		}
 	}

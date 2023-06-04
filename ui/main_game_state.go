@@ -9,11 +9,14 @@ import (
 	"math"
 	"math/rand"
 	"sync"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text"
+	csg "github.com/kharism/golang-csg/core"
+	"golang.org/x/image/font"
 )
 
 type MainGameState struct {
@@ -41,6 +44,7 @@ type MainGameState struct {
 	// cards in limbo meaning cards that is moving into cooldownpile or banished pile
 	// they have still visible until they reach those position
 	cardsInLimbo     []*EbitenCard
+	textInLimbo      []*EbitenText
 	stateChanger     AbstractStateChanger
 	detailViewCard   *EbitenCard
 	mutex            *sync.Mutex
@@ -67,7 +71,7 @@ type mainMainState struct {
 
 func CreateDoneFunc(c *EbitenCard, wg *sync.WaitGroup) func() {
 	return func() {
-		fmt.Println("Sending done signal", c.card.GetName())
+		//fmt.Println("Sending done signal", c.card.GetName())
 		wg.Done()
 	}
 }
@@ -118,26 +122,7 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 			fmt.Println("Endturn")
 			go func() {
 				s.m.defaultGamestate.EndTurn()
-				// animate punish here
-				// mutex2 := &sync.Mutex{}
-				for _, c := range s.m.cardsInCenter {
-					if _, ok := c.card.(cards.Punisher); !ok {
-						continue
-					}
-					moveBack := &MoveAnimation{tx: c.x, ty: c.y - 20, Speed: 1}
-					moveAtk := &MoveAnimation{tx: c.x, ty: c.y + 270, Speed: 10}
-					moveReturn := &MoveAnimation{tx: c.x, ty: c.y, Speed: 5}
-					// cc := make(chan string)
-					wg := &sync.WaitGroup{}
-					wg.Add(1)
-					moveReturn.DoneFunc = CreateDoneFunc(c, wg)
-					moveQ := []*MoveAnimation{moveBack, moveAtk, moveReturn}
-					c.AnimationQueue = append(c.AnimationQueue, moveQ...)
-					// mutex2.Lock()
-					wg.Wait()
-					// waitName := <-cc
-					// fmt.Println("receiving done signal", waitName)
-				}
+
 				s.m.defaultGamestate.BeginTurn()
 			}()
 		} else if yCur > HAND_START_Y && xCur < DISCARD_START_X && xCur >= HAND_START_X {
@@ -408,6 +393,76 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 var ShowCardDetail = false
 var ShowCardPicker = false
 
+type EbitenText struct {
+	text string
+	face font.Face
+	// current position
+	x float64
+	y float64
+	// velocity of card movement
+	vx float64
+	vy float64
+	// target position if card moved
+	tx             float64
+	ty             float64
+	color          color.RGBA
+	CurrMove       *MoveAnimation
+	AnimationQueue []*MoveAnimation
+}
+
+func (m *EbitenText) Draw(screen *ebiten.Image) {
+	text.Draw(screen, m.text, mplusResource, int(m.x), int(m.y), m.color)
+}
+func (e *EbitenText) Update() {
+	if e.CurrMove == nil && len(e.AnimationQueue) > 0 {
+		e.CurrMove = e.AnimationQueue[0]
+		e.AnimationQueue = e.AnimationQueue[1:]
+		if e.CurrMove.SleepPre != 0 {
+			time.Sleep(e.CurrMove.SleepPre)
+		}
+		e.tx = e.CurrMove.tx
+		e.ty = e.CurrMove.ty
+		vx := float64(e.tx - e.x)
+		vy := float64(e.ty - e.y)
+		speedVector := csg.NewVector(vx, vy, 0)
+		speedVector = speedVector.Normalize().MultiplyScalar(e.CurrMove.Speed)
+		e.vx = speedVector.X
+		e.vy = speedVector.Y
+	}
+	e.x += e.vx
+	e.y += e.vy
+	if math.Abs(float64(e.tx-e.x))+math.Abs(float64(e.ty-e.y)) < 15 {
+		if e.CurrMove != nil && e.CurrMove.DoneFunc != nil {
+			if e.CurrMove.SleepPost != 0 {
+				//time.Sleep(e.CurrMove.SleepPost)
+			}
+			e.CurrMove.DoneFunc()
+		}
+		if len(e.AnimationQueue) == 0 {
+			e.x = e.tx
+			e.y = e.ty
+			e.vx = 0
+			e.vy = 0
+			e.CurrMove = nil
+		} else {
+			e.CurrMove = e.AnimationQueue[0]
+			e.AnimationQueue = e.AnimationQueue[1:]
+			if e.CurrMove.SleepPre != 0 {
+				//time.Sleep(e.CurrMove.SleepPre)
+			}
+			e.tx = e.CurrMove.tx
+			e.ty = e.CurrMove.ty
+			vx := float64(e.tx - e.x)
+			vy := float64(e.ty - e.y)
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(e.CurrMove.Speed)
+			e.vx = speedVector.X
+			e.vy = speedVector.Y
+		}
+
+	}
+}
+
 func (m *MainGameState) Draw(screen *ebiten.Image) {
 
 	// ebitenutil.DebugPrint(screen, "Hello, World!")
@@ -471,9 +526,7 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	for _, c := range m.cardsPlayed {
 		c.Draw(screen)
 	}
-	for _, c := range m.cardsInLimbo {
-		c.Draw(screen)
-	}
+
 	// fmt.Println(len(m.cardsInCenter))
 	for _, c := range m.cardsInCenter {
 		c.Draw(screen)
@@ -497,6 +550,13 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	screen.DrawImage(m.EndturnBtn, op)
 
 	m.currentSubState.Draw(screen)
+
+	for _, c := range m.cardsInLimbo {
+		c.Draw(screen)
+	}
+	for _, c := range m.textInLimbo {
+		c.Draw(screen)
+	}
 
 	// if len(m.cardsPlayed) > 0 {
 	// 	msg := fmt.Sprintf("Card1Pos=(%d,%d)\nCard1Target=(%d,%d)\nCard1V=(%d,%d)", m.cardsPlayed[0].x, m.cardsPlayed[0].y,
@@ -555,6 +615,14 @@ func (m *MainGameState) Update() error {
 		}
 	}
 	m.cardsInLimbo = newCardInLimbo
+	newTextInLimbo := []*EbitenText{}
+	for _, c := range m.textInLimbo {
+		c.Update()
+		if c.tx != c.x || c.ty != c.y {
+			newTextInLimbo = append(newTextInLimbo, c)
+		}
+	}
+	m.textInLimbo = newTextInLimbo
 
 	return m.currentSubState.Update()
 }

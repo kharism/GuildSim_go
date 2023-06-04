@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
+	"image/color"
 	"math"
+	"sync"
+	"time"
 
 	csg "github.com/kharism/golang-csg/core"
 )
@@ -352,11 +355,6 @@ func (p *onCenterDrawAction) DoAction(data map[string]interface{}) {
 
 	ll.mutex.Unlock()
 
-	// if we draw the last card on center deck, trigger you win
-	// TODO: add alternative win condition
-	// if ll.defaultGamestate.CardsInCenterDeck.Size() == 0 {
-	// 	ll.currentSubState = ll.gameoverState
-	// }
 }
 
 type onExplorationAction struct {
@@ -456,14 +454,16 @@ func (p *onItemAdd) DoAction(data map[string]interface{}) {
 	ebitenCard := NewEbitenCardFromCard(addedItem)
 	ebitenCard.x = DISCARD_NA_SOURCE_X
 	ebitenCard.y = DISCARD_NA_SOURCE_Y
-	ebitenCard.tx = ITEM_ICON_START_X
-	ebitenCard.ty = ITEM_ICON_START_Y
-	vx := float64(ebitenCard.tx - ebitenCard.x)
-	vy := float64(ebitenCard.ty - ebitenCard.y)
-	speedVector := csg.NewVector(vx, vy, 0)
-	speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-	ebitenCard.vx = speedVector.X
-	ebitenCard.vy = speedVector.Y
+	newAnim := &MoveAnimation{tx: ITEM_ICON_START_X, ty: ITEM_ICON_START_Y, Speed: CARD_MOVE_SPEED, SleepPre: 500 * time.Millisecond}
+	ebitenCard.AnimationQueue = append(ebitenCard.AnimationQueue, newAnim)
+	// ebitenCard.tx = ITEM_ICON_START_X
+	// ebitenCard.ty = ITEM_ICON_START_Y
+	// vx := float64(ebitenCard.tx - ebitenCard.x)
+	// vy := float64(ebitenCard.ty - ebitenCard.y)
+	// speedVector := csg.NewVector(vx, vy, 0)
+	// speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+	// ebitenCard.vx = speedVector.X
+	// ebitenCard.vy = speedVector.Y
 	p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
 }
 
@@ -613,6 +613,56 @@ func (p *onGotoCenterDeckAction) DoAction(data map[string]interface{}) {
 	}
 }
 
+type onTakeDamage struct {
+	mainGameState *MainGameState
+}
+
+func (p *onTakeDamage) DoAction(data map[string]interface{}) {
+	damageAmount := data[cards.EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT].(int)
+	// TODO: add take damage/heal animation
+	damageText := &EbitenText{text: fmt.Sprintf("%d", damageAmount), face: mplusResource, x: DMG_START_X, y: DMG_START_Y}
+	if damageAmount > 0 {
+		damageText.color = color.RGBA{255, 0, 0, 255}
+	} else {
+		damageText.color = color.RGBA{0, 255, 0, 255}
+	}
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	moveUp := &MoveAnimation{tx: damageText.x, ty: damageText.y - 50, Speed: 1}
+	moveUp.DoneFunc = CreateDoneFunc(nil, wg)
+	damageText.AnimationQueue = append(damageText.AnimationQueue, moveUp)
+	p.mainGameState.textInLimbo = append(p.mainGameState.textInLimbo, damageText)
+	wg.Wait()
+}
+
+type onPrePunish struct {
+	mainGameState *MainGameState
+}
+
+func (p *onPrePunish) DoAction(data map[string]interface{}) {
+	punishingCard := data[cards.EVENT_ATTR_BEFORE_PUNISH_CARD].(cards.Card)
+	fmt.Println("Punishing cards", punishingCard.GetName())
+	var animatedCard *EbitenCard
+	for _, c := range p.mainGameState.cardsInCenter {
+		if c.card == punishingCard {
+			animatedCard = c
+			break
+		}
+	}
+	moveBack := &MoveAnimation{tx: animatedCard.x, ty: animatedCard.y - 20, Speed: 1}
+	moveAtk := &MoveAnimation{tx: animatedCard.x, ty: animatedCard.y + 270, Speed: 10}
+	moveReturn := &MoveAnimation{tx: animatedCard.x, ty: animatedCard.y, Speed: 5}
+	// cc := make(chan string)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	moveReturn.DoneFunc = CreateDoneFunc(animatedCard, wg)
+	moveQ := []*MoveAnimation{moveBack, moveAtk, moveReturn}
+	animatedCard.AnimationQueue = append(animatedCard.AnimationQueue, moveQ...)
+	// mutex2.Lock()
+	wg.Wait()
+}
+
 type onCardStacked struct {
 	mainGameState *MainGameState
 }
@@ -628,14 +678,8 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 			if p.mainGameState.cardInHand[i].card == returnedCard {
 				moveIndex = i
 				ebitenCard := p.mainGameState.cardInHand[i]
-				ebitenCard.tx = MAIN_DECK_X
-				ebitenCard.ty = MAIN_DECK_Y
-				vx := float64(ebitenCard.tx - ebitenCard.x)
-				vy := float64(ebitenCard.ty - ebitenCard.y)
-				speedVector := csg.NewVector(vx, vy, 0)
-				speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-				ebitenCard.vx = speedVector.X
-				ebitenCard.vy = speedVector.Y
+				newAnim := &MoveAnimation{tx: MAIN_DECK_X, ty: MAIN_DECK_Y, Speed: CARD_MOVE_SPEED}
+				ebitenCard.AnimationQueue = append(ebitenCard.AnimationQueue, newAnim)
 				p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
 			} else {
 				newHandCard = append(newHandCard, p.mainGameState.cardInHand[i])
@@ -646,15 +690,8 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 			return
 		}
 		for i := moveIndex; i < len(newHandCard); i++ {
-			newHandCard[i].tx = math.Floor(HAND_START_X + float64(i)*HAND_DIST_X)
-			newHandCard[i].ty = MAIN_DECK_Y
-			vx := float64(newHandCard[i].tx - newHandCard[i].x)
-			vy := float64(newHandCard[i].ty - newHandCard[i].y)
-			speedVector := csg.NewVector(vx, vy, 0)
-			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-			newHandCard[i].vx = speedVector.X
-			newHandCard[i].vy = speedVector.Y
-			// fmt.Sprintf("%d %f %f\n", i, newCenterCard[i].tx, newCenterCard[i].ty)
+			newAnim := &MoveAnimation{tx: math.Floor(HAND_START_X + float64(i)*HAND_DIST_X), ty: MAIN_DECK_Y, Speed: CARD_MOVE_SPEED}
+			newHandCard[i].AnimationQueue = append(newHandCard[i].AnimationQueue, newAnim)
 		}
 		p.mainGameState.cardInHand = newHandCard
 
@@ -662,14 +699,8 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 		ebitenCard := NewEbitenCardFromCard(returnedCard)
 		ebitenCard.x = DISCARD_NA_SOURCE_X
 		ebitenCard.y = DISCARD_NA_SOURCE_Y
-		ebitenCard.tx = MAIN_DECK_X
-		ebitenCard.ty = MAIN_DECK_Y
-		vx := float64(ebitenCard.tx - ebitenCard.x)
-		vy := float64(ebitenCard.ty - ebitenCard.y)
-		speedVector := csg.NewVector(vx, vy, 0)
-		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-		ebitenCard.vx = speedVector.X
-		ebitenCard.vy = speedVector.Y
+		newAnim := &MoveAnimation{tx: MAIN_DECK_X, ty: MAIN_DECK_Y, Speed: CARD_MOVE_SPEED, SleepPre: 750 * time.Millisecond}
+		ebitenCard.AnimationQueue = append(ebitenCard.AnimationQueue, newAnim)
 		p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
 	}
 }

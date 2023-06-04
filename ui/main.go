@@ -63,6 +63,9 @@ const (
 
 	ENDTURN_START_X = 1100
 	ENDTURN_START_Y = MAIN_DECK_Y
+
+	DMG_START_X = 500
+	DMG_START_Y = 600*0.75 + 50
 )
 
 var mainMenu AbstractEbitenState
@@ -99,7 +102,9 @@ func (e *exitAction) DoAction() {
 func AttachGameOverListener(state cards.AbstractGamestate) cards.AbstractGamestate {
 	quit := exitAction{}
 	gameoverlistener := cards.NewStillAliveListener(state, &quit)
+	onTakeDamage := &onTakeDamage{mainGameState: mainGame.(*MainGameState)}
 	state.AttachListener(cards.EVENT_TAKE_DAMAGE, gameoverlistener)
+	state.AttachListener(cards.EVENT_TAKE_DAMAGE, onTakeDamage)
 	return state
 }
 
@@ -138,6 +143,7 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 	onDisarm := &onDisarmAction{mainGameState: mainGame.(*MainGameState)}
 	onItemAdd := &onItemAdd{mainGameState: mainGame.(*MainGameState)}
 	onCardStacked := &onCardStacked{mainGameState: mainGame.(*MainGameState)}
+	onPrePunish := &onPrePunish{mainGameState: mainGame.(*MainGameState)}
 	ff := &onLimiterAttach{mainGameState: mainGame.(*MainGameState)}
 	fg := &onLimiterDetach{mainGameState: mainGame.(*MainGameState)}
 	state.AttachListener(cards.EVENT_CARD_EXPLORED, onExplore)
@@ -148,6 +154,7 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 	state.AttachListener(cards.EVENT_CARD_STACKED, onCardStacked)
 	state.AttachListener(cards.EVENT_ATTACH_LIMITER, ff)
 	state.AttachListener(cards.EVENT_DETACH_LIMITER, fg)
+	state.AttachListener(cards.EVENT_BEFORE_PUNISH, onPrePunish)
 	return state
 }
 func (g *Game) ChangeState(stateName string) {
@@ -166,7 +173,7 @@ func (g *Game) ChangeState(stateName string) {
 		mm.defaultGamestate.SetCardPicker(mm.cardPicker)
 		mm.defaultGamestate.SetDetailViewer(mm.detailState)
 		mm.defaultGamestate.SetBoolPicker(mm.boolPicker)
-		mm.defaultGamestate.TakeDamage(40)
+		// mm.defaultGamestate.TakeDamage(40)
 		// wl := cards.NewRookieMage(mm.defaultGamestate)
 		// dw := cards.NewDeadweight(mm.defaultGamestate)
 		// kk := cards.NewRookieMage(mm.defaultGamestate)
@@ -176,8 +183,9 @@ func (g *Game) ChangeState(stateName string) {
 		// lair := cards.NewGoblinSmallLairArea(mm.defaultGamestate)
 		// heal := item.NewHealingPotion(defaultGamestate)
 		// ll := append(mm.defaultGamestate.CardsInCenterDeck.List()[:3], &spikeFloor)
-		// rest := mm.defaultGamestate.CardsInCenterDeck.List()[4:]
-		// mm.defaultGamestate.CardsInCenterDeck.SetList(append(ll, rest...))
+		rest := mm.defaultGamestate.CardsInCenterDeck.List()
+		iceWyvern := cards.NewIceWyvern(mm.defaultGamestate)
+		mm.defaultGamestate.CardsInCenterDeck.SetList(append([]cards.Card{&iceWyvern}, rest...))
 		// mm.defaultGamestate.ItemCards = append(mm.defaultGamestate.ItemCards, &heal)
 		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &spikeFloor)
 		// mm.defaultGamestate.CardsInDeck.Stack(&wl)

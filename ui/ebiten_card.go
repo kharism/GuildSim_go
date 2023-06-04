@@ -3,6 +3,7 @@ package main
 import (
 	"github/kharism/GuildSim_go/internal/cards"
 	"math"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	csg "github.com/kharism/golang-csg/core"
@@ -43,11 +44,29 @@ func (e *EbitenCard) Draw(screen *ebiten.Image) {
 	screen.DrawImage(e.image, op)
 }
 func (e *EbitenCard) Update() {
+	if e.CurrMove == nil && len(e.AnimationQueue) > 0 {
+		e.CurrMove = e.AnimationQueue[0]
+		e.AnimationQueue = e.AnimationQueue[1:]
+		if e.CurrMove.SleepPre != 0 {
+			time.Sleep(e.CurrMove.SleepPre)
+		}
+		e.tx = e.CurrMove.tx
+		e.ty = e.CurrMove.ty
+		vx := float64(e.tx - e.x)
+		vy := float64(e.ty - e.y)
+		speedVector := csg.NewVector(vx, vy, 0)
+		speedVector = speedVector.Normalize().MultiplyScalar(e.CurrMove.Speed)
+		e.vx = speedVector.X
+		e.vy = speedVector.Y
+	}
 	e.x += e.vx
 	e.y += e.vy
 	// fmt.Println(e.x, e.y)
 	if math.Abs(float64(e.tx-e.x))+math.Abs(float64(e.ty-e.y)) < 15 {
 		if e.CurrMove != nil && e.CurrMove.DoneFunc != nil {
+			if e.CurrMove.SleepPost != 0 {
+				//time.Sleep(e.CurrMove.SleepPost)
+			}
 			e.CurrMove.DoneFunc()
 		}
 		if len(e.AnimationQueue) == 0 {
@@ -59,6 +78,9 @@ func (e *EbitenCard) Update() {
 		} else {
 			e.CurrMove = e.AnimationQueue[0]
 			e.AnimationQueue = e.AnimationQueue[1:]
+			if e.CurrMove.SleepPre != 0 {
+				//time.Sleep(e.CurrMove.SleepPre)
+			}
 			e.tx = e.CurrMove.tx
 			e.ty = e.CurrMove.ty
 			vx := float64(e.tx - e.x)
