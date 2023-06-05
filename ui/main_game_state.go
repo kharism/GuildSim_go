@@ -41,6 +41,7 @@ type MainGameState struct {
 	startDragY    int
 	dragMode      bool
 	dragDist      int
+	stillAnim     bool
 	// cards in limbo meaning cards that is moving into cooldownpile or banished pile
 	// they have still visible until they reach those position
 	cardsInLimbo     []*EbitenCard
@@ -120,11 +121,18 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 			s.m.currentSubState = s.m.cardListState
 		} else if xCur > ENDTURN_START_X {
 			fmt.Println("Endturn")
-			go func() {
-				s.m.defaultGamestate.EndTurn()
+			if s.m.stillAnim {
+				return
+			} else {
+				s.m.stillAnim = true
+				go func() {
+					s.m.defaultGamestate.EndTurn()
 
-				s.m.defaultGamestate.BeginTurn()
-			}()
+					s.m.defaultGamestate.BeginTurn()
+					s.m.stillAnim = false
+				}()
+			}
+
 		} else if yCur > HAND_START_Y && xCur < DISCARD_START_X && xCur >= HAND_START_X {
 			// left click on hand
 			for i := len(s.m.cardInHand) - 1; i >= 0; i-- {
