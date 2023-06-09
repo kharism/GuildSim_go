@@ -130,7 +130,8 @@ func (d *DefaultGamestate) LegalCheck(actionName string, data interface{}) bool 
 }
 func (d *DefaultGamestate) PayResource(cost cards.Cost) {
 	for key, val := range cost.Detail {
-		d.currentResource.Detail[key] -= val
+		//d.currentResource.Detail[key] -= val
+		d.AddResource(key, -val)
 	}
 }
 func (d *DefaultGamestate) RemoveCardFromHand(c cards.Card) {
@@ -279,7 +280,7 @@ func (d *DefaultGamestate) SetBoolPicker(a cards.AbstractBoolPicker) {
 	d.boolPicker = a
 }
 func (d *DefaultGamestate) EndTurn() {
-
+	d.mutex.Lock()
 	// remove cards played
 	for i := len(d.CardsPlayed) - 1; i >= 0; i-- {
 		c := d.CardsPlayed[i]
@@ -289,6 +290,7 @@ func (d *DefaultGamestate) EndTurn() {
 		}
 	}
 	d.CardsPlayed = []cards.Card{}
+	d.mutex.Unlock()
 
 	// remove cards in hand
 	for i := len(d.CardsInHand) - 1; i >= 0; i-- {
@@ -300,13 +302,18 @@ func (d *DefaultGamestate) EndTurn() {
 		d.RemoveCardFromHand(c)
 	}
 	// reset resource except money and reputation
+	d.MutexLock()
 	curRes := d.GetCurrentResource().Detail
 	for k := range curRes {
 		if k == cards.RESOURCE_NAME_MONEY || k == cards.RESOURCE_NAME_REPUTATION || k == cards.RESOURCE_NAME_BLOCK {
 			continue
 		}
-		d.GetCurrentResource().Detail[k] = 0
+		decreaseAmount := d.GetCurrentResource().Detail[k]
+		d.AddResource(k, -decreaseAmount)
+		//d.GetCurrentResource().Detail[k] -= decreaseAmount
+
 	}
+	d.MutexUnlock()
 	if !d.centerCardChanged {
 		cardsShuffledBack := 0
 		for i := len(d.CenterCards) - 1; i >= 0; i-- {
@@ -341,7 +348,9 @@ func (d *DefaultGamestate) EndTurn() {
 			pun.OnPunish()
 		}
 	}
-	d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] = 0
+	// d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] = 0
+	decreaseAmount := d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK]
+	d.AddResource(cards.RESOURCE_NAME_BLOCK, -decreaseAmount)
 	if _, ok := d.TopicsListeners[cards.EVENT_END_OF_TURN]; ok {
 		j := d.TopicsListeners[cards.EVENT_END_OF_TURN]
 		data := map[string]interface{}{}
@@ -351,6 +360,8 @@ func (d *DefaultGamestate) EndTurn() {
 }
 
 func (d *DefaultGamestate) PlayCard(c cards.Card) {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
 	d.RemoveCardFromHand(c)
 	c.OnPlay()
 	// fmt.Println("Card played", c.GetName())
@@ -411,7 +422,7 @@ func (d *DefaultGamestate) DiscardCard(c cards.Card, source string) {
 	return
 }
 func (d *DefaultGamestate) CenterRowInit() {
-	// d.CardsInCenterDeck.Shuffle()
+	d.CardsInCenterDeck.Shuffle()
 	for i := 0; i < 5; i++ {
 		f := d.ReplaceCenterCard()
 		d.CenterCards = append(d.CenterCards, f)
@@ -598,5 +609,15 @@ func (d *DefaultGamestate) GetCurrentResource() cards.Resource {
 	return d.currentResource
 }
 func (d *DefaultGamestate) AddResource(name string, amount int) {
-	d.currentResource.AddResource(name, amount)
+	if amount > 0 {
+		d.currentResource.AddResource(name, amount)
+	} else {
+		d.currentResource.RemoveResource(name, -amount)
+	}
+
+	if _, ok := d.TopicsListeners[cards.EVENT_ADD_RESOURCE]; ok {
+		j := d.TopicsListeners[cards.EVENT_ADD_RESOURCE]
+		data := map[string]interface{}{cards.EVENT_ATTR_ADD_RESOURCE_NAME: name, cards.EVENT_ATTR_ADD_RESOURCE_AMOUNT: amount}
+		j.Notify(data)
+	}
 }

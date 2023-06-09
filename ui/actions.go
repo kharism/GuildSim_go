@@ -11,6 +11,7 @@ import (
 	csg "github.com/kharism/golang-csg/core"
 )
 
+// when a card is drawn
 type OnDrawAction struct {
 	mainGameState *MainGameState
 }
@@ -224,8 +225,8 @@ func (p *onDiscardAction) DoAction(data map[string]interface{}) {
 	cardDiscarded := data[cards.EVENT_ATTR_CARD_DISCARDED].(cards.Card)
 	source := data[cards.EVENT_ATTR_DISCARD_SOURCE].(string)
 	fmt.Println("Discard card", cardDiscarded.GetName())
-	defer p.mainGameState.mutex.Unlock()
 	p.mainGameState.mutex.Lock()
+	defer p.mainGameState.mutex.Unlock()
 	// var ebitenCard *EbitenCard
 	sourceCard := []*EbitenCard{}
 	newSource := []*EbitenCard{}
@@ -265,7 +266,9 @@ func (p *onDiscardAction) DoAction(data map[string]interface{}) {
 			ebitenCard.vx = speedVector.X
 			ebitenCard.vy = speedVector.Y
 			// fmt.Println("DetectDiscarded", cardDiscarded.GetName(), source, ebitenCard.vx, ebitenCard.vy)
+			// p.mainGameState.mutex.Lock()
 			p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+			// p.mainGameState.mutex.Unlock()
 		} else {
 			newSource = append(newSource, sourceCard[i])
 		}
@@ -412,8 +415,8 @@ func (p *onDefeatAction) DoAction(data map[string]interface{}) {
 	fmt.Println("defeat")
 	exploredCard := data[cards.EVENT_ATTR_CARD_DEFEATED].(cards.Card)
 	newCenterCard := []*EbitenCard{}
-	defer p.mainGameState.mutex.Unlock()
 	p.mainGameState.mutex.Lock()
+	defer p.mainGameState.mutex.Unlock()
 	moveIndex := -1
 	for i := 0; i < len(p.mainGameState.cardsInCenter); i++ {
 		if p.mainGameState.cardsInCenter[i].card == exploredCard {
@@ -574,14 +577,16 @@ func (p *onGotoCenterDeckAction) DoAction(data map[string]interface{}) {
 			if p.mainGameState.cardsInCenter[i].card == returnedCard {
 				moveIndex = i
 				ebitenCard := p.mainGameState.cardsInCenter[i]
-				ebitenCard.tx = CENTER_DECK_START_X
-				ebitenCard.ty = CENTER_DECK_START_Y
-				vx := float64(ebitenCard.tx - ebitenCard.x)
-				vy := float64(ebitenCard.ty - ebitenCard.y)
-				speedVector := csg.NewVector(vx, vy, 0)
-				speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-				ebitenCard.vx = speedVector.X
-				ebitenCard.vy = speedVector.Y
+				newAnim := &MoveAnimation{tx: CENTER_DECK_START_X, ty: CENTER_DECK_START_Y, Speed: CARD_MOVE_SPEED}
+				ebitenCard.AnimationQueue = append(ebitenCard.AnimationQueue, newAnim)
+				// ebitenCard.tx = CENTER_DECK_START_X
+				// ebitenCard.ty = CENTER_DECK_START_Y
+				// vx := float64(ebitenCard.tx - ebitenCard.x)
+				// vy := float64(ebitenCard.ty - ebitenCard.y)
+				// speedVector := csg.NewVector(vx, vy, 0)
+				// speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+				// ebitenCard.vx = speedVector.X
+				// ebitenCard.vy = speedVector.Y
 				p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
 			} else {
 				newCenterCard = append(newCenterCard, p.mainGameState.cardsInCenter[i])
@@ -616,6 +621,27 @@ func (p *onGotoCenterDeckAction) DoAction(data map[string]interface{}) {
 	}
 }
 
+type onChangeResource struct {
+	mainGameState *MainGameState
+}
+
+func (p *onChangeResource) DoAction(data map[string]interface{}) {
+	resourceName := data[cards.EVENT_ATTR_ADD_RESOURCE_NAME].(string)
+	amount := data[cards.EVENT_ATTR_ADD_RESOURCE_AMOUNT].(int)
+	p.mainGameState.mutex.Lock()
+	switch resourceName {
+	case cards.RESOURCE_NAME_BLOCK:
+		p.mainGameState.block += amount
+	case cards.RESOURCE_NAME_COMBAT:
+		p.mainGameState.combat += amount
+	case cards.RESOURCE_NAME_EXPLORATION:
+		p.mainGameState.exploration += amount
+	case cards.RESOURCE_NAME_REPUTATION:
+		p.mainGameState.reputation += amount
+	}
+	p.mainGameState.mutex.Unlock()
+}
+
 type onTakeDamage struct {
 	mainGameState *MainGameState
 }
@@ -635,8 +661,13 @@ func (p *onTakeDamage) DoAction(data map[string]interface{}) {
 	moveUp := &MoveAnimation{tx: damageText.x, ty: damageText.y - 50, Speed: 1}
 	moveUp.DoneFunc = CreateDoneFunc(nil, wg)
 	damageText.AnimationQueue = append(damageText.AnimationQueue, moveUp)
+	p.mainGameState.mutex.Lock()
 	p.mainGameState.textInLimbo = append(p.mainGameState.textInLimbo, damageText)
-	wg.Wait()
+	p.mainGameState.mutex.Unlock()
+	// wg.Wait()
+	p.mainGameState.mutex.Lock()
+	p.mainGameState.hp -= damageAmount
+	p.mainGameState.mutex.Unlock()
 }
 
 type onPrePunish struct {
@@ -653,13 +684,16 @@ func (p *onPrePunish) DoAction(data map[string]interface{}) {
 			break
 		}
 	}
+	animatedCard.mutex.Lock()
 	base_x := animatedCard.tx
 	base_y := animatedCard.ty
+	animatedCard.mutex.Unlock()
 	if len(animatedCard.AnimationQueue) > 0 {
 		lastAnim := animatedCard.AnimationQueue[len(animatedCard.AnimationQueue)-1]
 		base_x = lastAnim.tx
 		base_y = lastAnim.ty
 	}
+
 	moveBack := &MoveAnimation{tx: base_x, ty: base_y - 20, Speed: 1}
 	moveAtk := &MoveAnimation{tx: base_x, ty: base_y + 270, Speed: 10}
 	moveReturn := &MoveAnimation{tx: base_x, ty: base_y, Speed: 5}
@@ -668,7 +702,10 @@ func (p *onPrePunish) DoAction(data map[string]interface{}) {
 	wg.Add(1)
 	moveReturn.DoneFunc = CreateDoneFunc(animatedCard, wg)
 	moveQ := []*MoveAnimation{moveBack, moveAtk, moveReturn}
-	animatedCard.AnimationQueue = append(animatedCard.AnimationQueue, moveQ...)
+	// animatedCard.mutex.Lock()
+	// animatedCard.AnimationQueue = append(animatedCard.AnimationQueue, moveQ...)
+	animatedCard.AddAnimation(moveQ...)
+	// animatedCard.mutex.Unlock()
 	// mutex2.Lock()
 	wg.Wait()
 }

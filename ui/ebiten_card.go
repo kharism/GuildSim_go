@@ -3,6 +3,7 @@ package main
 import (
 	"github/kharism/GuildSim_go/internal/cards"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -26,6 +27,9 @@ type EbitenCard struct {
 	// translation on x axis due to dragging
 	x_drag int
 
+	// syncinc stuff
+	mutex *sync.Mutex
+
 	// animation stuff
 	CurrMove       *MoveAnimation
 	AnimationQueue []*MoveAnimation
@@ -43,7 +47,14 @@ func (e *EbitenCard) Draw(screen *ebiten.Image) {
 	// op.GeoM.Translate(float64(e.x), float64(e.y))
 	screen.DrawImage(e.image, op)
 }
+func (e *EbitenCard) AddAnimation(animation ...*MoveAnimation) {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+	e.AnimationQueue = append(e.AnimationQueue, animation...)
+}
 func (e *EbitenCard) Update() {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 	if e.CurrMove == nil && len(e.AnimationQueue) > 0 {
 		e.CurrMove = e.AnimationQueue[0]
 		e.AnimationQueue = e.AnimationQueue[1:]

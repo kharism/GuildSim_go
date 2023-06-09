@@ -1,6 +1,9 @@
 package cards
 
-import "github/kharism/GuildSim_go/internal/observer"
+import (
+	"fmt"
+	"github/kharism/GuildSim_go/internal/observer"
+)
 
 type StillAliveListener struct {
 	state  AbstractGamestate
@@ -15,6 +18,7 @@ func NewStillAliveListener(state AbstractGamestate, action AbstractActon) observ
 
 func (s *StillAliveListener) DoAction(data map[string]interface{}) {
 	if s.state.GetCurrentHP() <= 0 {
+		fmt.Println("HP is lt 0")
 		s.action.DoAction()
 	}
 }

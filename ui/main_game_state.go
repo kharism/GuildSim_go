@@ -52,6 +52,16 @@ type MainGameState struct {
 	defaultGamestate *gamestate.DefaultGamestate
 	limiter          string
 
+	// ui related stuff so we don't do mutex lock every update/draw
+	hp          int
+	combat      int
+	exploration int
+	block       int
+	reputation  int
+
+	// channels
+	CardPlayedChan chan cards.Card
+
 	// sub-states
 	currentSubState SubState
 	mainState       *mainMainState
@@ -76,6 +86,14 @@ func CreateDoneFunc(c *EbitenCard, wg *sync.WaitGroup) func() {
 		wg.Done()
 	}
 }
+
+// this routine play cards, any cards played will be sent to this routine
+func CardPlayer(m *MainGameState, cardPlayed <-chan cards.Card) {
+	for card := range cardPlayed {
+		m.defaultGamestate.PlayCard(card)
+	}
+}
+
 func (s *mainMainState) Draw(screen *ebiten.Image) {
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
 		xCurInt, yCurInt := ebiten.CursorPosition()
@@ -129,7 +147,9 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 					s.m.defaultGamestate.EndTurn()
 
 					s.m.defaultGamestate.BeginTurn()
+					s.m.mutex.Lock()
 					s.m.stillAnim = false
+					s.m.mutex.Unlock()
 				}()
 			}
 
@@ -137,7 +157,8 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 			// left click on hand
 			for i := len(s.m.cardInHand) - 1; i >= 0; i-- {
 				if s.m.cardInHand[i].x < xCur {
-					go s.m.defaultGamestate.PlayCard(s.m.cardInHand[i].card)
+					//s.m.defaultGamestate.PlayCard(s.m.cardInHand[i].card)
+					s.m.CardPlayedChan <- s.m.cardInHand[i].card
 					//s.m.detailViewCard = s.m.cardInHand[i]
 					//fmt.Println("cardIndex at", i)
 					break
@@ -164,9 +185,9 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 					clickedCard := s.m.cardsInCenter[i]
 					switch clickedCard.card.GetCardType() {
 					case cards.Area:
-						go s.m.defaultGamestate.Explore(clickedCard.card)
+						s.m.defaultGamestate.Explore(clickedCard.card)
 					case cards.Hero:
-						go s.m.defaultGamestate.RecruitCard(clickedCard.card)
+						s.m.defaultGamestate.RecruitCard(clickedCard.card)
 					case cards.Monster:
 						if _, ok := clickedCard.card.(cards.Recruitable); ok {
 							go func() {
@@ -179,7 +200,7 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 							}()
 						} else {
 							fmt.Println("Unrecruitable")
-							go s.m.defaultGamestate.DefeatCard(clickedCard.card)
+							s.m.defaultGamestate.DefeatCard(clickedCard.card)
 						}
 
 					case cards.Trap:
@@ -376,6 +397,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
+
 	cardInHand := []*EbitenCard{}
 	cardsPlayed := []*EbitenCard{}
 	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger,
@@ -383,6 +405,8 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 		cardsPlayed: cardsPlayed, DiscardPile: discardPile, MainDeck: mainDeck, EndturnBtn: EndturnBtn, GameOver: game_over,
 		ItemIcon: item_icon, Reputation: iconReputation, Block: iconBlock,
 	}
+	mgs.CardPlayedChan = make(chan cards.Card)
+	go CardPlayer(mgs, mgs.CardPlayedChan)
 	mainState := &mainMainState{m: mgs, mutex: &sync.Mutex{}}
 	detailState := &detailState{m: mgs}
 	cardpicker := &cardPickState{m: mgs, pickedCards: make(chan int)}
@@ -482,51 +506,56 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(ITEM_ICON_START_X, ITEM_ICON_START_Y)
 	screen.DrawImage(m.ItemIcon, op)
 
-	res := m.defaultGamestate.GetCurrentResource()
-	hp := m.defaultGamestate.GetCurrentHP()
-	text.Draw(screen, fmt.Sprintf("HP %d", hp), mplusResource, 150, 40, color.RGBA{255, 0, 0, 255})
+	// m.defaultGamestate.MutexLock()
+	//res := m.defaultGamestate.GetCurrentResource()
+	//hp := m.defaultGamestate.GetCurrentHP()
+	// m.defaultGamestate.MutexUnlock()
+	m.mutex.Lock()
+	text.Draw(screen, fmt.Sprintf("HP %d", m.hp), mplusResource, 150, 40, color.RGBA{255, 0, 0, 255})
 	if m.limiter != "" {
 		ebitenutil.DebugPrint(screen, m.limiter)
 	}
+	text.Draw(screen, fmt.Sprintf("%d", m.combat), mplusResource, 500, 40, color.RGBA{255, 0, 0, 255})
+	text.Draw(screen, fmt.Sprintf("%d", m.exploration), mplusResource, 670, 40, color.RGBA{0, 255, 0, 255})
+	text.Draw(screen, fmt.Sprintf("%d", m.reputation), mplusResource, 850, 40, color.RGBA{127, 127, 0, 255})
+	text.Draw(screen, fmt.Sprintf("%d", m.block), mplusResource, 960, 40, color.RGBA{127, 127, 0, 255})
+	m.mutex.Unlock()
 
 	op.GeoM.Reset()
 	op.GeoM.Scale(0.8, 0.8)
 	op.GeoM.Translate(350, 0)
 	screen.DrawImage(m.iconCombat, op)
-	combat, ok := res.Detail[cards.RESOURCE_NAME_COMBAT]
-	if !ok {
-		combat = 0
-	}
-	text.Draw(screen, fmt.Sprintf("%d", combat), mplusResource, 500, 40, color.RGBA{255, 0, 0, 255})
+	// combat, ok := res.Detail[cards.RESOURCE_NAME_COMBAT]
+	// if !ok {
+	// 	combat = 0
+	// }
 
 	op.GeoM.Reset()
 	op.GeoM.Scale(0.8, 0.8)
 	op.GeoM.Translate(540, 0)
 	screen.DrawImage(m.iconExplore, op)
-	explore, ok := res.Detail[cards.RESOURCE_NAME_EXPLORATION]
-	if !ok {
-		explore = 0
-	}
-	text.Draw(screen, fmt.Sprintf("%d", explore), mplusResource, 670, 40, color.RGBA{0, 255, 0, 255})
+	// explore, ok := res.Detail[cards.RESOURCE_NAME_EXPLORATION]
+	// if !ok {
+	// 	explore = 0
+	// }
 
 	op.GeoM.Reset()
 	op.GeoM.Scale(0.3, 0.3)
 	op.GeoM.Translate(750, -10)
 	screen.DrawImage(m.Reputation, op)
-	rep, ok := res.Detail[cards.RESOURCE_NAME_REPUTATION]
-	if !ok {
-		rep = 0
-	}
-	text.Draw(screen, fmt.Sprintf("%d", rep), mplusResource, 850, 40, color.RGBA{127, 127, 0, 255})
+	// rep, ok := res.Detail[cards.RESOURCE_NAME_REPUTATION]
+	// if !ok {
+	// 	rep = 0
+	// }
+
 	op.GeoM.Reset()
 	op.GeoM.Scale(0.09, 0.09)
 	op.GeoM.Translate(900, -10)
 	screen.DrawImage(m.Block, op)
-	block, ok := res.Detail[cards.RESOURCE_NAME_BLOCK]
-	if !ok {
-		block = 0
-	}
-	text.Draw(screen, fmt.Sprintf("%d", block), mplusResource, 960, 40, color.RGBA{127, 127, 0, 255})
+	// block, ok := res.Detail[cards.RESOURCE_NAME_BLOCK]
+	// if !ok {
+	// 	block = 0
+	// }
 
 	for _, c := range m.cardInHand {
 		c.Draw(screen)
@@ -558,10 +587,11 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	screen.DrawImage(m.EndturnBtn, op)
 
 	m.currentSubState.Draw(screen)
-
+	m.mutex.Lock()
 	for _, c := range m.cardsInLimbo {
 		c.Draw(screen)
 	}
+	m.mutex.Unlock()
 	for _, c := range m.textInLimbo {
 		c.Draw(screen)
 	}
@@ -575,6 +605,8 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 }
 func (m *MainGameState) Update() error {
 	dist := 0
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 	if m.dragMode {
 		curX, _ := ebiten.CursorPosition()
 		dist = curX - m.startDragX
@@ -630,7 +662,9 @@ func (m *MainGameState) Update() error {
 			newTextInLimbo = append(newTextInLimbo, c)
 		}
 	}
+	// m.mutex.Lock()
 	m.textInLimbo = newTextInLimbo
+	// m.mutex.Unlock()
 
 	return m.currentSubState.Update()
 }

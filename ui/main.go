@@ -144,6 +144,7 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 	onItemAdd := &onItemAdd{mainGameState: mainGame.(*MainGameState)}
 	onCardStacked := &onCardStacked{mainGameState: mainGame.(*MainGameState)}
 	onPrePunish := &onPrePunish{mainGameState: mainGame.(*MainGameState)}
+	onAddResource := &onChangeResource{mainGameState: mainGame.(*MainGameState)}
 	ff := &onLimiterAttach{mainGameState: mainGame.(*MainGameState)}
 	fg := &onLimiterDetach{mainGameState: mainGame.(*MainGameState)}
 	state.AttachListener(cards.EVENT_CARD_EXPLORED, onExplore)
@@ -155,6 +156,7 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 	state.AttachListener(cards.EVENT_ATTACH_LIMITER, ff)
 	state.AttachListener(cards.EVENT_DETACH_LIMITER, fg)
 	state.AttachListener(cards.EVENT_BEFORE_PUNISH, onPrePunish)
+	state.AttachListener(cards.EVENT_ADD_RESOURCE, onAddResource)
 	return state
 }
 func (g *Game) ChangeState(stateName string) {
@@ -170,26 +172,30 @@ func (g *Game) ChangeState(stateName string) {
 		defaultGamestate := gamestate.CustomizedDefaultGamestate(starterDeckSet, centerDeckSet, decorators)
 		mm := mainGame.(*MainGameState)
 		mm.defaultGamestate = defaultGamestate.(*gamestate.DefaultGamestate)
+		mm.hp = defaultGamestate.GetCurrentHP()
 		mm.defaultGamestate.SetCardPicker(mm.cardPicker)
 		mm.defaultGamestate.SetDetailViewer(mm.detailState)
 		mm.defaultGamestate.SetBoolPicker(mm.boolPicker)
 		// mm.defaultGamestate.TakeDamage(40)
-		// wl := cards.NewRookieMage(mm.defaultGamestate)
+		// wl := cards.NewWingedLion(mm.defaultGamestate)
 		// dw := cards.NewDeadweight(mm.defaultGamestate)
-		// kk := cards.NewRookieMage(mm.defaultGamestate)
+		kk := cards.NewRookieMage(mm.defaultGamestate)
 		// slimeRoom := cards.NewSlimeRoom(mm.defaultGamestate)
 		// boulder := cards.NewBoulderTrap(mm.defaultGamestate)
 		// spikeFloor := cards.NewDamageEndturnCurse(mm.defaultGamestate) //cards.NewSpikeFloor(mm.defaultGamestate)
 		// lair := cards.NewGoblinSmallLairArea(mm.defaultGamestate)
 		// heal := item.NewHealingPotion(defaultGamestate)
 		// ll := append(mm.defaultGamestate.CardsInCenterDeck.List()[:3], &spikeFloor)
-		rest := mm.defaultGamestate.CardsInCenterDeck.List()
-		iceWyvern := cards.NewIceWyvern(mm.defaultGamestate)
-		mm.defaultGamestate.CardsInCenterDeck.SetList(append([]cards.Card{&iceWyvern}, rest...))
+		// rest := mm.defaultGamestate.CardsInCenterDeck.List()
+		// iceWyvern := cards.NewIceWyvern(mm.defaultGamestate)
+		// mm.defaultGamestate.CardsInCenterDeck.SetList(append([]cards.Card{&iceWyvern}, rest...))
 		// mm.defaultGamestate.ItemCards = append(mm.defaultGamestate.ItemCards, &heal)
 		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &spikeFloor)
-		// mm.defaultGamestate.CardsInDeck.Stack(&wl)
-		// mm.defaultGamestate.CardsInDeck.Stack(&dw)
+		// list := mm.defaultGamestate.CardsInDeck.List()
+		// newList := append(list[0:6], &kk)
+		// newList = append(newList, list[7:]...)
+		// mm.defaultGamestate.CardsInDeck.SetList(newList)
+		mm.defaultGamestate.CardsInDeck.Stack(&kk)
 		// newDeck := []cards.Card{&boulder}
 		// rookieCard := NewEbitenCardFromCard(&spikeFloor)
 		// rookieCard.x = HAND_START_X
