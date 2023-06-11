@@ -185,9 +185,9 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 					clickedCard := s.m.cardsInCenter[i]
 					switch clickedCard.card.GetCardType() {
 					case cards.Area:
-						s.m.defaultGamestate.Explore(clickedCard.card)
+						go s.m.defaultGamestate.Explore(clickedCard.card)
 					case cards.Hero:
-						s.m.defaultGamestate.RecruitCard(clickedCard.card)
+						go s.m.defaultGamestate.RecruitCard(clickedCard.card)
 					case cards.Monster:
 						if _, ok := clickedCard.card.(cards.Recruitable); ok {
 							go func() {
@@ -200,7 +200,9 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 							}()
 						} else {
 							fmt.Println("Unrecruitable")
-							s.m.defaultGamestate.DefeatCard(clickedCard.card)
+							go func() {
+								s.m.defaultGamestate.DefeatCard(clickedCard.card)
+							}()
 						}
 
 					case cards.Trap:
@@ -556,7 +558,7 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	// if !ok {
 	// 	block = 0
 	// }
-
+	m.mutex.Lock()
 	for _, c := range m.cardInHand {
 		c.Draw(screen)
 	}
@@ -569,7 +571,10 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 		c.Draw(screen)
 	}
 	// center deck size
+	m.mutex.Unlock()
+	m.defaultGamestate.MutexLock()
 	size := m.defaultGamestate.CardsInCenterDeck.Size()
+	m.defaultGamestate.MutexUnlock()
 	text.Draw(screen, fmt.Sprintf("%d", size), mplusResource, CENTER_DECK_START_X, CENTER_DECK_START_Y+50, color.RGBA{0, 255, 0, 255})
 	op.GeoM.Reset()
 	op.GeoM.Scale(HAND_SCALE, HAND_SCALE)
@@ -586,15 +591,16 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(ENDTURN_START_X, ENDTURN_START_Y)
 	screen.DrawImage(m.EndturnBtn, op)
 
-	m.currentSubState.Draw(screen)
 	m.mutex.Lock()
+	m.currentSubState.Draw(screen)
 	for _, c := range m.cardsInLimbo {
 		c.Draw(screen)
 	}
-	m.mutex.Unlock()
+
 	for _, c := range m.textInLimbo {
 		c.Draw(screen)
 	}
+	m.mutex.Unlock()
 
 	// if len(m.cardsPlayed) > 0 {
 	// 	msg := fmt.Sprintf("Card1Pos=(%d,%d)\nCard1Target=(%d,%d)\nCard1V=(%d,%d)", m.cardsPlayed[0].x, m.cardsPlayed[0].y,

@@ -10,13 +10,15 @@ import (
 )
 
 type DummyEventListener struct {
+	mutex     *sync.Mutex
 	Listeners []observer.Listener
 }
 
-func NewDummyEventListener() DummyEventListener {
+func NewDummyEventListener() *DummyEventListener {
 	d := DummyEventListener{}
+	d.mutex = &sync.Mutex{}
 	d.Listeners = []observer.Listener{}
-	return d
+	return &d
 }
 func (d *DummyEventListener) Attach(l observer.Listener) {
 
@@ -37,9 +39,11 @@ func (d *DummyEventListener) Detach(l observer.Listener) {
 }
 
 func (d *DummyEventListener) Notify(data map[string]interface{}) {
+	d.mutex.Lock()
 	for _, i := range d.Listeners {
 		i.DoAction(data)
 	}
+	d.mutex.Unlock()
 }
 
 type DefaultGamestate struct {
@@ -60,7 +64,7 @@ type DefaultGamestate struct {
 	centerCardChanged bool
 	boolPicker        cards.AbstractBoolPicker
 	cardViewer        cards.AbstractDetailViewer
-	mutex             sync.Mutex
+	mutex             *sync.Mutex
 }
 
 func (d *DefaultGamestate) MutexLock() {
@@ -75,7 +79,9 @@ func (d *DefaultGamestate) AddCardToCenterDeck(source string, shuffle bool, c ..
 	var j *DummyEventListener
 	j = d.TopicsListeners[cards.EVENT_CARD_GOTO_CENTER]
 	for _, cc := range c {
+		d.mutex.Lock()
 		d.CardsInCenterDeck.Stack(cc)
+		d.mutex.Unlock()
 		if j != nil {
 			evt := map[string]interface{}{cards.EVENT_ATTR_CARD_GOTO_CENTER: cc, cards.EVENT_ATTR_DISCARD_SOURCE: source}
 			j.Notify(evt)
@@ -102,6 +108,7 @@ func NewDefaultGamestate() cards.AbstractGamestate {
 	d.CardsDiscarded = cards.Deck{}
 	d.CardsInCenterDeck = cards.Deck{}
 	d.CardsInDeck = cards.Deck{}
+	d.mutex = &sync.Mutex{}
 	return &d
 }
 func (d *DefaultGamestate) AttachLegalCheck(actionName string, lc cards.LegalChecker) {
@@ -175,7 +182,7 @@ func (d *DefaultGamestate) RemoveCardFromCooldownIdx(i int) {
 }
 func (d *DefaultGamestate) AttachListener(eventName string, l observer.Listener) {
 	if _, ok := d.TopicsListeners[eventName]; !ok {
-		d.TopicsListeners[eventName] = &DummyEventListener{}
+		d.TopicsListeners[eventName] = NewDummyEventListener()
 	}
 	k := (d.TopicsListeners[eventName])
 	k.Attach(l)
@@ -361,8 +368,8 @@ func (d *DefaultGamestate) EndTurn() {
 
 func (d *DefaultGamestate) PlayCard(c cards.Card) {
 	d.mutex.Lock()
-	defer d.mutex.Unlock()
 	d.RemoveCardFromHand(c)
+	d.mutex.Unlock()
 	c.OnPlay()
 	// fmt.Println("Card played", c.GetName())
 	cardPlayedEvent := map[string]interface{}{cards.EVENT_ATTR_CARD_PLAYED: c}
@@ -371,8 +378,9 @@ func (d *DefaultGamestate) PlayCard(c cards.Card) {
 	if ok {
 		l.Notify(cardPlayedEvent)
 	}
-
+	d.mutex.Lock()
 	d.CardsPlayed = append(d.CardsPlayed, c)
+	d.mutex.Unlock()
 }
 func (d *DefaultGamestate) GetPlayedCards() []cards.Card {
 	return d.CardsPlayed
@@ -388,8 +396,13 @@ func (d *DefaultGamestate) RecruitCard(c cards.Card) {
 		return
 	}
 	k := c.GetCost()
-	if k.IsEnough(d.currentResource) {
+	d.mutex.Lock()
+	isEnough := k.IsEnough(d.currentResource)
+	d.mutex.Unlock()
+	if isEnough {
+		d.mutex.Lock()
 		d.PayResource(k)
+		d.mutex.Unlock()
 		if _, ok := c.(cards.Recruitable); ok {
 			o := c.(cards.Recruitable)
 			o.OnRecruit()
@@ -471,7 +484,9 @@ func (d *DefaultGamestate) Explore(c cards.Card) {
 	res := d.currentResource
 	if (&f).IsEnough(res) {
 		// payResource
+		d.mutex.Lock()
 		d.PayResource(f)
+		d.mutex.Unlock()
 		c.OnExplored()
 		d.RemoveCardFromCenterRow(c)
 		// remove c from center cards
@@ -503,7 +518,9 @@ func (d *DefaultGamestate) PeekCenterCard() cards.Card {
 }
 func (d *DefaultGamestate) ReplaceCenterCard() cards.Card {
 	d.centerCardChanged = true
+	d.mutex.Lock()
 	replacementCard := d.CardsInCenterDeck.Draw()
+	d.mutex.Unlock()
 	if _, ok := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]; ok {
 		evtDetails := map[string]interface{}{cards.EVENT_ATTR_CARD_DRAWN: replacementCard}
 		j := d.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER]
@@ -569,7 +586,9 @@ func (d *DefaultGamestate) Disarm(c cards.Card) {
 	f := c.GetCost()
 	res := d.currentResource
 	if (&f).IsEnough(res) {
+		d.mutex.Lock()
 		d.PayResource(f)
+		d.mutex.Unlock()
 		c.OnSlain()
 		d.RemoveCardFromCenterRow(c)
 		// remove c from center cards
@@ -588,8 +607,13 @@ func (d *DefaultGamestate) DefeatCard(c cards.Card) {
 	}
 	f := c.GetCost()
 	res := d.currentResource
-	if (&f).IsEnough(res) {
+	d.MutexLock()
+	isEnough := (&f).IsEnough(res)
+	d.MutexUnlock()
+	if isEnough {
+		d.mutex.Lock()
 		d.PayResource(f)
+		d.mutex.Unlock()
 		c.OnSlain()
 		d.RemoveCardFromCenterRow(c)
 		// remove c from center cards
@@ -609,11 +633,13 @@ func (d *DefaultGamestate) GetCurrentResource() cards.Resource {
 	return d.currentResource
 }
 func (d *DefaultGamestate) AddResource(name string, amount int) {
+	// d.mutex.Lock()
 	if amount > 0 {
 		d.currentResource.AddResource(name, amount)
 	} else {
 		d.currentResource.RemoveResource(name, -amount)
 	}
+	// d.mutex.Unlock()
 
 	if _, ok := d.TopicsListeners[cards.EVENT_ADD_RESOURCE]; ok {
 		j := d.TopicsListeners[cards.EVENT_ADD_RESOURCE]

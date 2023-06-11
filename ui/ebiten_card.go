@@ -52,12 +52,31 @@ func (e *EbitenCard) AddAnimation(animation ...*MoveAnimation) {
 	defer e.mutex.Unlock()
 	e.AnimationQueue = append(e.AnimationQueue, animation...)
 }
+func (e *EbitenCard) ReplaceCurrentAnim(animation *MoveAnimation) {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+	e.CurrMove = animation
+	e.tx = e.CurrMove.tx
+	e.ty = e.CurrMove.ty
+	vx := float64(e.tx - e.x)
+	vy := float64(e.ty - e.y)
+	if vx != 0 || vy != 0 {
+		speedVector := csg.NewVector(vx, vy, 0)
+		speedVector = speedVector.Normalize().MultiplyScalar(e.CurrMove.Speed)
+		e.vx = speedVector.X
+		e.vy = speedVector.Y
+	} else {
+		e.vx = 0
+		e.vy = 0
+	}
+}
 func (e *EbitenCard) Update() {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	if e.CurrMove == nil && len(e.AnimationQueue) > 0 {
 		e.CurrMove = e.AnimationQueue[0]
 		e.AnimationQueue = e.AnimationQueue[1:]
+		// fmt.Println("animation queue", e.card.GetName(), e.CurrMove)
 		if e.CurrMove.SleepPre != 0 {
 			time.Sleep(e.CurrMove.SleepPre)
 		}
@@ -65,10 +84,16 @@ func (e *EbitenCard) Update() {
 		e.ty = e.CurrMove.ty
 		vx := float64(e.tx - e.x)
 		vy := float64(e.ty - e.y)
-		speedVector := csg.NewVector(vx, vy, 0)
-		speedVector = speedVector.Normalize().MultiplyScalar(e.CurrMove.Speed)
-		e.vx = speedVector.X
-		e.vy = speedVector.Y
+		if vx != 0 || vy != 0 {
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(e.CurrMove.Speed)
+			e.vx = speedVector.X
+			e.vy = speedVector.Y
+		} else {
+			e.vx = 0
+			e.vy = 0
+		}
+
 	}
 	e.x += e.vx
 	e.y += e.vy
@@ -96,10 +121,16 @@ func (e *EbitenCard) Update() {
 			e.ty = e.CurrMove.ty
 			vx := float64(e.tx - e.x)
 			vy := float64(e.ty - e.y)
-			speedVector := csg.NewVector(vx, vy, 0)
-			speedVector = speedVector.Normalize().MultiplyScalar(e.CurrMove.Speed)
-			e.vx = speedVector.X
-			e.vy = speedVector.Y
+			if vy != 0 || vx != 0 {
+				speedVector := csg.NewVector(vx, vy, 0)
+				speedVector = speedVector.Normalize().MultiplyScalar(e.CurrMove.Speed)
+				e.vx = speedVector.X
+				e.vy = speedVector.Y
+			} else {
+				e.vx = 0
+				e.vy = 0
+			}
+
 		}
 
 	}

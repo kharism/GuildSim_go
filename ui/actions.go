@@ -27,7 +27,8 @@ func (d *OnDrawAction) DoAction(data map[string]interface{}) {
 	newEbitenCard.x = math.Floor(MAIN_DECK_X)
 	newEbitenCard.y = math.Floor(MAIN_DECK_Y)
 	newAnim := &MoveAnimation{tx: HAND_START_X + float64(indexCard)*HAND_DIST_X, ty: HAND_START_Y, Speed: CARD_MOVE_SPEED}
-	newEbitenCard.AnimationQueue = append(newEbitenCard.AnimationQueue, newAnim)
+	// newEbitenCard.AnimationQueue = append(newEbitenCard.AnimationQueue, newAnim)
+	newEbitenCard.AddAnimation(newAnim)
 	// newEbitenCard.tx = math.Floor(HAND_START_X + float64(indexCard)*HAND_DIST_X)
 	// newEbitenCard.ty = HAND_START_Y
 	// vx := float64(newEbitenCard.tx - newEbitenCard.x)
@@ -56,18 +57,20 @@ func (p *OnPlayAction) DoAction(data map[string]interface{}) {
 	ty := PLAYED_START_Y
 	moveIndex := -1
 	for idx, val := range mm.cardInHand {
+		fmt.Println("newcard in hand", val.card.GetName())
 		txOld, tyOld := val.tx, val.ty
 		if val.card == playedCards {
 			moveIndex = idx
-			val.tx = float64(tx)
-			val.ty = float64(ty)
-			vx := float64(val.tx - val.x)
-			vy := float64(val.ty - val.y)
-			speedVector := csg.NewVector(vx, vy, 0)
-			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-			val.vx = speedVector.X
-			val.vy = speedVector.Y
-
+			moveAnim := &MoveAnimation{tx: float64(tx), ty: float64(ty), Speed: CARD_MOVE_SPEED}
+			// val.tx = float64(tx)
+			// val.ty = float64(ty)
+			// vx := float64(val.tx - val.x)
+			// vy := float64(val.ty - val.y)
+			// speedVector := csg.NewVector(vx, vy, 0)
+			// speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+			// val.vx = speedVector.X
+			// val.vy = speedVector.Y
+			mm.cardInHand[idx].AddAnimation(moveAnim)
 			mm.cardsPlayed = append(mm.cardsPlayed, val)
 		} else {
 			newHand = append(newHand, val)
@@ -83,7 +86,7 @@ func (p *OnPlayAction) DoAction(data map[string]interface{}) {
 		fmt.Println("MoveIds Play", moveIndex)
 		newStartHand := HAND_START_X //float64(0.0)
 		if len(newHand) > 0 {
-			if moveIndex > 0 {
+			if moveIndex > 0 && newHand[0].x < HAND_START_X {
 				newStartHand = newHand[0].x
 			} else {
 
@@ -95,22 +98,35 @@ func (p *OnPlayAction) DoAction(data map[string]interface{}) {
 		}
 		for i := 0; i < len(newHand); i++ {
 			fmt.Println("idx", i, newStartHand, HAND_DIST_X)
+			newHand[i].mutex.Lock()
 			newHand[i].tx = newStartHand + float64(i)*HAND_DIST_X //math.Floor(HAND_START_X + float64(i)*HAND_DIST_X)
-			fmt.Println("idx", i, newHand[i].card.GetName(), newHand[i].tx, newHand[i].x)
-			newHand[i].ty = HAND_START_Y
+			newAnim := &MoveAnimation{}
+			newAnim.tx = newStartHand + float64(i)*HAND_DIST_X
+			newAnim.ty = HAND_START_Y
+			// newHand[i].ty = HAND_START_Y
+			newAnim.Speed = CARD_MOVE_SPEED
+			// newHand[i].AddAnimation(newAnim)
+			// fmt.Println("idx", i, newHand[i].card.GetName(), newHand[i].x, newHand[i].tx)
 			vx := float64(newHand[i].tx - newHand[i].x)
 			vy := float64(newHand[i].ty - newHand[i].y)
 			if vx == 0 && vy == 0 {
-				newHand[i].vx = 0
-				newHand[i].vy = 0
+				// newHand[i].vx = 0
+				// newHand[i].vy = 0
+				newHand[i].mutex.Unlock()
 			} else {
 				speedVector := csg.NewVector(vx, vy, 0)
 				speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
 
 				newHand[i].vx = speedVector.X
 				newHand[i].vy = speedVector.Y
+				newHand[i].mutex.Unlock()
+				newHand[i].AddAnimation(newAnim)
 			}
 
+		}
+		fmt.Println("hand after Assigning tx")
+		for idx, c := range newHand {
+			fmt.Println(idx, c.card.GetName(), c.x, c.tx)
 		}
 		mm.cardInHand = newHand
 	}
@@ -283,8 +299,15 @@ func (p *onDiscardAction) DoAction(data map[string]interface{}) {
 		}
 		if len(p.mainGameState.cardInHand) > 0 {
 			fmt.Println("Discard from hand", movedIdx)
+
 			for i := movedIdx + 1; i < len(p.mainGameState.cardInHand); i++ {
 				ebitenCard := sourceCard[i]
+				// moveAnim := &MoveAnimation{}
+				// moveAnim.tx = newStartHand + float64(i)*HAND_DIST_X
+
+				// moveAnim.ty = ebitenCard.y
+				// moveAnim.Speed = CARD_MOVE_SPEED
+				// ebitenCard.ReplaceCurrentAnim(moveAnim)
 				ebitenCard.tx = ebitenCard.x - HAND_DIST_X
 				vx := float64(ebitenCard.tx - ebitenCard.x)
 				vy := float64(ebitenCard.ty - ebitenCard.y)
@@ -292,6 +315,7 @@ func (p *onDiscardAction) DoAction(data map[string]interface{}) {
 				speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
 				ebitenCard.vx = speedVector.X
 				ebitenCard.vy = speedVector.Y
+				fmt.Println("Geser kartu", i, ebitenCard.card.GetName(), ebitenCard.x, ebitenCard.tx)
 				sourceCard[i] = ebitenCard
 			}
 		}
@@ -470,7 +494,9 @@ func (p *onItemAdd) DoAction(data map[string]interface{}) {
 	// speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
 	// ebitenCard.vx = speedVector.X
 	// ebitenCard.vy = speedVector.Y
+	p.mainGameState.mutex.Lock()
 	p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+	p.mainGameState.mutex.Unlock()
 }
 
 type onDisarmAction struct {
@@ -649,11 +675,15 @@ type onTakeDamage struct {
 func (p *onTakeDamage) DoAction(data map[string]interface{}) {
 	damageAmount := data[cards.EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT].(int)
 	// TODO: add take damage/heal animation
-	damageText := &EbitenText{text: fmt.Sprintf("%d", damageAmount), face: mplusResource, x: DMG_START_X, y: DMG_START_Y}
+	damageText := &EbitenText{face: mplusResource, x: DMG_START_X, y: DMG_START_Y}
 	if damageAmount > 0 {
+		damageText.text = fmt.Sprintf("%d", damageAmount)
 		damageText.color = color.RGBA{255, 0, 0, 255}
-	} else {
+	} else if damageAmount < 0 {
+		damageText.text = fmt.Sprintf("%d", -damageAmount)
 		damageText.color = color.RGBA{0, 255, 0, 255}
+	} else {
+		return
 	}
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -748,6 +778,8 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 		ebitenCard.y = DISCARD_NA_SOURCE_Y
 		newAnim := &MoveAnimation{tx: MAIN_DECK_X, ty: MAIN_DECK_Y, Speed: CARD_MOVE_SPEED, SleepPre: 750 * time.Millisecond}
 		ebitenCard.AnimationQueue = append(ebitenCard.AnimationQueue, newAnim)
+		p.mainGameState.mutex.Lock()
 		p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+		p.mainGameState.mutex.Unlock()
 	}
 }

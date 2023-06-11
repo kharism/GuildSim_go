@@ -41,10 +41,12 @@ func (c *cardPickState) PickCard(list []cards.Card, message string) int {
 	c.message = message
 	// fmt.Println("Tunggu hasil")
 	c.optional = false
+	c.m.mutex.Lock()
 	c.m.currentSubState = c
 	for i := range c.m.cardsInCenter {
 		fmt.Println(c.m.cardsInCenter[i].card.GetName(), c.m.cardsInCenter[i].x, c.m.cardsInCenter[i].y, c.m.cardsInCenter[i].tx, c.m.cardsInCenter[i].ty)
 	}
+	c.m.mutex.Unlock()
 	pickedCards := <-c.pickedCards
 	for i := range c.m.cardsInCenter {
 		fmt.Println(c.m.cardsInCenter[i].card.GetName(), c.m.cardsInCenter[i].x, c.m.cardsInCenter[i].y, c.m.cardsInCenter[i].tx, c.m.cardsInCenter[i].ty)
@@ -56,7 +58,9 @@ func (c *cardPickState) PickCardOptional(list []cards.Card, message string) int 
 	c.cards = list
 	c.message = message
 	c.optional = true
+	c.m.mutex.Lock()
 	c.m.currentSubState = c
+	c.m.mutex.Unlock()
 	// fmt.Println("Tunggu hasil")
 	pickedCards := <-c.pickedCards
 	// fmt.Println("Dapat hasil", pickedCards)
@@ -237,8 +241,9 @@ func (c *boolPickState) Update() error {
 }
 func (c *boolPickState) BoolPick(message string) bool {
 	c.msg = message
+	c.m.mutex.Lock()
 	c.m.currentSubState = c
-
+	c.m.mutex.Unlock()
 	pickedCards := <-c.pickedOption
 	// fmt.Println("Dapat hasil", pickedCards)
 	return pickedCards

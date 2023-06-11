@@ -105,6 +105,7 @@ func AttachGameOverListener(state cards.AbstractGamestate) cards.AbstractGamesta
 	onTakeDamage := &onTakeDamage{mainGameState: mainGame.(*MainGameState)}
 	state.AttachListener(cards.EVENT_TAKE_DAMAGE, gameoverlistener)
 	state.AttachListener(cards.EVENT_TAKE_DAMAGE, onTakeDamage)
+	state.AttachListener(cards.EVENT_HEAL_DAMAGE, onTakeDamage)
 	return state
 }
 
@@ -179,7 +180,7 @@ func (g *Game) ChangeState(stateName string) {
 		// mm.defaultGamestate.TakeDamage(40)
 		// wl := cards.NewWingedLion(mm.defaultGamestate)
 		// dw := cards.NewDeadweight(mm.defaultGamestate)
-		kk := cards.NewRookieMage(mm.defaultGamestate)
+		// kk := cards.NewRookieNurse(mm.defaultGamestate)
 		// slimeRoom := cards.NewSlimeRoom(mm.defaultGamestate)
 		// boulder := cards.NewBoulderTrap(mm.defaultGamestate)
 		// spikeFloor := cards.NewDamageEndturnCurse(mm.defaultGamestate) //cards.NewSpikeFloor(mm.defaultGamestate)
@@ -195,7 +196,7 @@ func (g *Game) ChangeState(stateName string) {
 		// newList := append(list[0:6], &kk)
 		// newList = append(newList, list[7:]...)
 		// mm.defaultGamestate.CardsInDeck.SetList(newList)
-		mm.defaultGamestate.CardsInDeck.Stack(&kk)
+		// mm.defaultGamestate.CardsInDeck.Stack(&kk)
 		// newDeck := []cards.Card{&boulder}
 		// rookieCard := NewEbitenCardFromCard(&spikeFloor)
 		// rookieCard.x = HAND_START_X
