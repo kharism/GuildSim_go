@@ -485,7 +485,10 @@ func (d *DefaultGamestate) Explore(c cards.Card) {
 	// check cost and resource
 	f := c.GetCost()
 	res := d.currentResource
-	if (&f).IsEnough(res) {
+	d.mutex.Lock()
+	isEnough := (&f).IsEnough(res)
+	d.mutex.Unlock()
+	if isEnough {
 		// payResource
 		d.mutex.Lock()
 		d.PayResource(f)
@@ -588,7 +591,10 @@ func (d *DefaultGamestate) BanishCard(c cards.Card, source string) {
 func (d *DefaultGamestate) Disarm(c cards.Card) {
 	f := c.GetCost()
 	res := d.currentResource
-	if (&f).IsEnough(res) {
+	d.mutex.Lock()
+	enough := (&f).IsEnough(res)
+	d.mutex.Unlock()
+	if enough {
 		d.mutex.Lock()
 		d.PayResource(f)
 		d.mutex.Unlock()

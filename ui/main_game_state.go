@@ -283,8 +283,11 @@ type detailState struct {
 
 func (s *detailState) ShowDetail(c cards.Card) {
 	s.m.detailViewCard = NewEbitenCardFromCard(c)
+	s.m.mutex.Lock()
 	s.prevSubState = s.m.currentSubState
+
 	s.m.currentSubState = s
+	s.m.mutex.Unlock()
 	// <-s.wait
 }
 func (s *detailState) Draw(screen *ebiten.Image) {

@@ -30,8 +30,9 @@ func (b *BoulderTrap) GetCost() Cost {
 func (b *BoulderTrap) Trap() {
 	if !b.isDisarmed {
 		b.state.MutexLock()
-		defer b.state.MutexUnlock()
+
 		cardinhand := b.state.GetCardInHand()
+		b.state.MutexUnlock()
 		if len(cardinhand) > 0 {
 			idx := b.state.GetCardPicker().PickCard(cardinhand, "pick card to be stacked")
 			if idx >= 0 {
