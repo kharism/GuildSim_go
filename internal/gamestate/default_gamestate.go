@@ -248,7 +248,10 @@ func (d *DefaultGamestate) TakeDamage(dmg int) {
 		if ok {
 			if dmg <= block {
 				// d.PayResource()
-				d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] -= dmg
+				// d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] -= dmg
+				cost := cards.NewCost()
+				cost.AddResource(cards.RESOURCE_NAME_BLOCK, dmg)
+				d.PayResource(cost)
 				dmg = 0
 			} else {
 				dmg -= block
