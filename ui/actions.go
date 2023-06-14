@@ -302,19 +302,21 @@ func (p *onDiscardAction) DoAction(data map[string]interface{}) {
 
 			for i := movedIdx + 1; i < len(p.mainGameState.cardInHand); i++ {
 				ebitenCard := sourceCard[i]
-				// moveAnim := &MoveAnimation{}
-				// moveAnim.tx = newStartHand + float64(i)*HAND_DIST_X
-
+				moveAnim := &MoveAnimation{}
+				moveAnim.tx = ebitenCard.x - HAND_DIST_X //newStartHand + float64(i)*HAND_DIST_X
+				moveAnim.ty = ebitenCard.y
+				moveAnim.Speed = CARD_MOVE_SPEED
+				ebitenCard.AddAnimation(moveAnim)
 				// moveAnim.ty = ebitenCard.y
 				// moveAnim.Speed = CARD_MOVE_SPEED
 				// ebitenCard.ReplaceCurrentAnim(moveAnim)
-				ebitenCard.tx = ebitenCard.x - HAND_DIST_X
-				vx := float64(ebitenCard.tx - ebitenCard.x)
-				vy := float64(ebitenCard.ty - ebitenCard.y)
-				speedVector := csg.NewVector(vx, vy, 0)
-				speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-				ebitenCard.vx = speedVector.X
-				ebitenCard.vy = speedVector.Y
+				// ebitenCard.tx = ebitenCard.x - HAND_DIST_X
+				// vx := float64(ebitenCard.tx - ebitenCard.x)
+				// vy := float64(ebitenCard.ty - ebitenCard.y)
+				// speedVector := csg.NewVector(vx, vy, 0)
+				// speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+				// ebitenCard.vx = speedVector.X
+				// ebitenCard.vy = speedVector.Y
 				fmt.Println("Geser kartu", i, ebitenCard.card.GetName(), ebitenCard.x, ebitenCard.tx)
 				sourceCard[i] = ebitenCard
 			}
