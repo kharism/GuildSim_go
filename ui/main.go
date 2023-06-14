@@ -180,10 +180,10 @@ func (g *Game) ChangeState(stateName string) {
 		// mm.defaultGamestate.TakeDamage(40)
 		// wl := cards.NewWingedLion(mm.defaultGamestate)
 		// dw := cards.NewDeadweight(mm.defaultGamestate)
-		// kk := cards.NewRookieNurse(mm.defaultGamestate)
+		// kk := cards.NewRookieMage(mm.defaultGamestate)
 		// slimeRoom := cards.NewSlimeRoom(mm.defaultGamestate)
 		// boulder := cards.NewBoulderTrap(mm.defaultGamestate)
-		// spikeFloor := cards.NewDamageEndturnCurse(mm.defaultGamestate) //cards.NewSpikeFloor(mm.defaultGamestate)
+		// spikeFloor := cards.NewSpikeFloor(mm.defaultGamestate)
 		// lair := cards.NewGoblinSmallLairArea(mm.defaultGamestate)
 		// heal := item.NewHealingPotion(defaultGamestate)
 		// ll := append(mm.defaultGamestate.CardsInCenterDeck.List()[:3], &spikeFloor)
@@ -193,8 +193,8 @@ func (g *Game) ChangeState(stateName string) {
 		// mm.defaultGamestate.ItemCards = append(mm.defaultGamestate.ItemCards, &heal)
 		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &spikeFloor)
 		// list := mm.defaultGamestate.CardsInDeck.List()
-		// newList := append(list[0:6], &kk)
-		// newList = append(newList, list[7:]...)
+		// newList := append(list[0:3], &kk)
+		// newList = append(newList, list[4:]...)
 		// mm.defaultGamestate.CardsInDeck.SetList(newList)
 		// mm.defaultGamestate.CardsInDeck.Stack(&kk)
 		// newDeck := []cards.Card{&boulder}
@@ -205,7 +205,7 @@ func (g *Game) ChangeState(stateName string) {
 		currentState = mainGame
 		mm.defaultGamestate.CenterRowInit()
 		// mm.defaultGamestate.CardsInCenterDeck.Stack(&boulder)
-		// mm.defaultGamestate.CardsInCenterDeck.Stack(&boulder)
+		// mm.defaultGamestate.CardsInCenterDeck.Stack(&spikeFloor)
 		// mm.defaultGamestate.CardsInCenterDeck.Stack(&slimeRoom)
 		mm.defaultGamestate.BeginTurn()
 	case STATE_MAIN_MENU:
