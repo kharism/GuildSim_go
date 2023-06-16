@@ -372,7 +372,7 @@ func (p *onCenterDrawAction) DoAction(data map[string]interface{}) {
 	// newEbitenCard.vx = speedVector.X
 	// newEbitenCard.vy = speedVector.Y
 	if isATrap {
-		fmt.Println(newEbitenCard.x, newEbitenCard.y, newEbitenCard.tx, newEbitenCard.ty, newEbitenCard.vx, newEbitenCard.vy)
+		fmt.Println("TRAP", newEbitenCard.x, newEbitenCard.y, newAnim.tx, newAnim.ty, newEbitenCard.vx, newEbitenCard.vy)
 	}
 
 	ll.mutex.Lock()
@@ -573,16 +573,22 @@ func (p *onRecruitAction) DoAction(data map[string]interface{}) {
 			newCenterCard = append(newCenterCard, p.mainGameState.cardsInCenter[i])
 		}
 	}
-	fmt.Println("Geser Recruit")
+	fmt.Println("Geser Recruit", moveIndex, len(newCenterCard))
 	for i := moveIndex; i < len(newCenterCard); i++ {
 		newCenterCard[i].tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
 		newCenterCard[i].ty = CENTER_START_Y
 		vx := float64(newCenterCard[i].tx - newCenterCard[i].x)
 		vy := float64(newCenterCard[i].ty - newCenterCard[i].y)
-		speedVector := csg.NewVector(vx, vy, 0)
-		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-		newCenterCard[i].vx = speedVector.X
-		newCenterCard[i].vy = speedVector.Y
+		if vx != 0 || vy != 0 {
+			speedVector := csg.NewVector(vx, vy, 0)
+			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+			newCenterCard[i].vx = speedVector.X
+			newCenterCard[i].vy = speedVector.Y
+		} else {
+			newCenterCard[i].vx = 0
+			newCenterCard[i].vy = 0
+		}
+
 		// fmt.Sprintf("%d %f %f\n", i, newCenterCard[i].tx, newCenterCard[i].ty)
 	}
 	p.mainGameState.cardsInCenter = newCenterCard
@@ -778,6 +784,15 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 		ebitenCard := NewEbitenCardFromCard(returnedCard)
 		ebitenCard.x = DISCARD_NA_SOURCE_X
 		ebitenCard.y = DISCARD_NA_SOURCE_Y
+		newAnim := &MoveAnimation{tx: MAIN_DECK_X, ty: MAIN_DECK_Y, Speed: CARD_MOVE_SPEED, SleepPre: 750 * time.Millisecond}
+		ebitenCard.AnimationQueue = append(ebitenCard.AnimationQueue, newAnim)
+		p.mainGameState.mutex.Lock()
+		p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+		p.mainGameState.mutex.Unlock()
+	} else if source == cards.DISCARD_SOURCE_COOLDOWN {
+		ebitenCard := NewEbitenCardFromCard(returnedCard)
+		ebitenCard.x = DISCARD_START_X
+		ebitenCard.y = DISCARD_START_Y
 		newAnim := &MoveAnimation{tx: MAIN_DECK_X, ty: MAIN_DECK_Y, Speed: CARD_MOVE_SPEED, SleepPre: 750 * time.Millisecond}
 		ebitenCard.AnimationQueue = append(ebitenCard.AnimationQueue, newAnim)
 		p.mainGameState.mutex.Lock()

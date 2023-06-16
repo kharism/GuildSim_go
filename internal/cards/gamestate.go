@@ -121,9 +121,9 @@ type AbstractGamestate interface {
 	// damage
 	GetCurrentHP() int
 
-	// take damage, the parameter can also take negative damage which means heals
-	// it also trigger takeDamage or healDamage event
-	// since we added Block resource, deduce the damage to the block resource
+	// Take damage, the parameter can also take negative damage which means heals.
+	// It also trigger takeDamage or healDamage event.
+	// Since we added Block resource, deduce the damage to the block resource.
 	// like if a monster call for TakeDamage(3) damage and you have 2 block, then
 	// player HP will be reduced by 1 and their block will be 0
 	TakeDamage(int)
