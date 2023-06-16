@@ -20,7 +20,7 @@ func (r *Bulwark) GetDescription() string {
 }
 func (r *Bulwark) GetCost() Cost {
 	cost := NewCost()
-	cost.AddResource(RESOURCE_NAME_EXPLORATION, 4)
+	cost.AddResource(RESOURCE_NAME_EXPLORATION, 3)
 	return cost
 }
 func (r *Bulwark) OnPlay() {
