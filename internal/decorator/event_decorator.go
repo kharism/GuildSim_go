@@ -38,9 +38,24 @@ func (s *ProgressListener) DoAction(data map[string]interface{}) {
 			h := cards.NewThief(s.state)
 			deck = append(deck, &h)
 		}
-		count = mrand.Int() % 5
+		// count = mrand.Int() % 5
 		for i := 0; i < 4; i++ {
 			h := cards.NewCleric(s.state)
+			deck = append(deck, &h)
+		}
+		count = mrand.Int() % 5
+		for i := 0; i < count; i++ {
+			h := cards.NewShieldBasher(s.state)
+			deck = append(deck, &h)
+		}
+		count = mrand.Int() % 3
+		for i := 0; i < count; i++ {
+			h := cards.NewArcher(s.state)
+			deck = append(deck, &h)
+		}
+		count = mrand.Int() % 5
+		for i := 0; i < count; i++ {
+			h := cards.NewGoblinWolfRaiderMonster(s.state)
 			deck = append(deck, &h)
 		}
 		for i := 0; i < 3; i++ {

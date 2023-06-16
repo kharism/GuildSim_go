@@ -98,6 +98,16 @@ func createStarterCenterDeck(gamestate cards.AbstractGamestate) []cards.Card {
 		deck = append(deck, &h)
 	}
 	for i := 0; i < 2; i++ {
+		h := cards.NewCleric(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 3; i++ {
+		ll := cards.NewBulwark(gamestate)
+		deck = append(deck, &ll)
+	}
+	ll := cards.NewArcher(gamestate)
+	deck = append(deck, &ll)
+	for i := 0; i < 2; i++ {
 		h := cards.NewRookieHunter(gamestate)
 		j := cards.NewThief(gamestate)
 		deck = append(deck, &h, &j)
