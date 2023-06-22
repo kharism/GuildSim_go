@@ -14,7 +14,7 @@ func (h *ShieldBasher) GetName() string {
 	return "Shield basher"
 }
 func (h *ShieldBasher) GetDescription() string {
-	return "gain combat equal to your block"
+	return "if you have 0 block gain 5 block, otherwise gain combat equal to your block"
 }
 func (h *ShieldBasher) GetCost() Cost {
 	cost := NewCost()
@@ -29,6 +29,11 @@ func (h *ShieldBasher) OnPlay() {
 	// h.state.MutexLock()
 	res := h.state.GetCurrentResource()
 	blockCounter := res.Detail[RESOURCE_NAME_BLOCK]
-	h.state.AddResource(RESOURCE_NAME_COMBAT, blockCounter)
+	if blockCounter == 0 {
+		h.state.AddResource(RESOURCE_NAME_BLOCK, 5)
+	} else {
+		h.state.AddResource(RESOURCE_NAME_COMBAT, blockCounter)
+	}
+
 	// h.state.MutexUnlock()
 }

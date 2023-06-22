@@ -22,6 +22,7 @@ func CreatePotion(name string, state cards.AbstractGamestate) cards.Card {
 	}
 	return nil
 }
+
 func CreateRelicRandom(state cards.AbstractGamestate, rarity int) cards.Card {
 	commonList := []string{}
 	rareList := []string{"CombatGauntlet", "ExplorerBoots", "Regen Amulet"}
@@ -33,7 +34,7 @@ func CreateRelicRandom(state cards.AbstractGamestate, rarity int) cards.Card {
 		allList = append(allList, rareList...)
 	}
 	picked := rand.Int() % len(allList)
-	newPotion := CreatePotion(allList[picked], state)
+	newPotion := CreateRelic(allList[picked], state)
 	return newPotion
 }
 

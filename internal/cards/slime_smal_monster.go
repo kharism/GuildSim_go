@@ -22,11 +22,11 @@ func (m *SlimeSmall) GetCost() Cost {
 	return cost
 }
 func (m *SlimeSmall) OnPunish() {
-	m.state.TakeDamage(2)
+	m.state.TakeDamage(1)
 }
 func (m *SlimeSmall) OnSlain() {
 	// m.state.AddResource(RESOURCE_NAME_EXPLORATION, 1)
-	m.state.AddResource(RESOURCE_NAME_REPUTATION, 2)
+	m.state.AddResource(RESOURCE_NAME_REPUTATION, 1)
 	// h := []Card{}
 	// for i := 0; i < 3; i++ {
 	// 	midSlime := NewSlimeMid(m.state)

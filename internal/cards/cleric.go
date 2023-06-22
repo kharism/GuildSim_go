@@ -32,12 +32,15 @@ func (r *Cleric) OnPlay() {
 			availCard = append(availCard, i)
 		}
 	}
-	cardPicker := r.gamestate.GetCardPicker()
-	banishIdx := cardPicker.PickCard(availCard, "Choose Card to banish")
-	banishedCard := availCard[banishIdx]
-	r.gamestate.RemoveCardFromCenterRow(banishedCard)
-	r.gamestate.UpdateCenterCard(banishedCard)
-	r.gamestate.BanishCard(banishedCard, DISCARD_SOURCE_CENTER)
+	if len(availCard) > 0 {
+		cardPicker := r.gamestate.GetCardPicker()
+		banishIdx := cardPicker.PickCard(availCard, "Choose Card to banish")
+		banishedCard := availCard[banishIdx]
+		r.gamestate.RemoveCardFromCenterRow(banishedCard)
+		r.gamestate.UpdateCenterCard(banishedCard)
+		r.gamestate.BanishCard(banishedCard, DISCARD_SOURCE_CENTER)
 
-	r.gamestate.Draw()
+		r.gamestate.Draw()
+	}
+
 }
