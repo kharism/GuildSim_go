@@ -26,6 +26,9 @@ func (a *TombForgottenMonarchEntrance) GetCost() Cost {
 	cost.AddResource(RESOURCE_NAME_EXPLORATION, 3)
 	return cost
 }
+func (a *TombForgottenMonarchEntrance) Unbanishable() {
+
+}
 func (a *TombForgottenMonarchEntrance) OnExplored() {
 	// add reward
 	a.state.AddResource(RESOURCE_NAME_MONEY, 100)

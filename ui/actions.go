@@ -683,7 +683,7 @@ type onTakeDamage struct {
 func (p *onTakeDamage) DoAction(data map[string]interface{}) {
 	damageAmount := data[cards.EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT].(int)
 	// TODO: add take damage/heal animation
-	damageText := &EbitenText{face: mplusResource, x: DMG_START_X, y: DMG_START_Y}
+	damageText := &EbitenText{face: mplusDamage, x: DMG_START_X, y: DMG_START_Y}
 	if damageAmount > 0 {
 		damageText.text = fmt.Sprintf("%d", damageAmount)
 		damageText.color = color.RGBA{255, 0, 0, 255}

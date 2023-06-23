@@ -516,18 +516,18 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	//hp := m.defaultGamestate.GetCurrentHP()
 	// m.defaultGamestate.MutexUnlock()
 	m.mutex.Lock()
-	text.Draw(screen, fmt.Sprintf("HP %d", m.hp), mplusResource, 150, 40, color.RGBA{255, 0, 0, 255})
+	text.Draw(screen, fmt.Sprintf("HP %d", m.hp), mplusDamage, 150, 40, color.RGBA{255, 0, 0, 255})
 	if m.limiter != "" {
 		ebitenutil.DebugPrint(screen, m.limiter)
 	}
-	text.Draw(screen, fmt.Sprintf("%d", m.combat), mplusResource, 500, 40, color.RGBA{255, 0, 0, 255})
-	text.Draw(screen, fmt.Sprintf("%d", m.exploration), mplusResource, 670, 40, color.RGBA{0, 255, 0, 255})
-	text.Draw(screen, fmt.Sprintf("%d", m.reputation), mplusResource, 850, 40, color.RGBA{127, 127, 0, 255})
-	text.Draw(screen, fmt.Sprintf("%d", m.block), mplusResource, 960, 40, color.RGBA{127, 127, 0, 255})
+	text.Draw(screen, fmt.Sprintf("%d", m.combat), mplusResource, 380, 27, color.RGBA{255, 0, 0, 255})
+	text.Draw(screen, fmt.Sprintf("%d", m.exploration), mplusResource, 380, 55, color.RGBA{0, 255, 0, 255})
+	text.Draw(screen, fmt.Sprintf("%d", m.reputation), mplusResource, 500, 27, color.RGBA{127, 127, 0, 255})
+	text.Draw(screen, fmt.Sprintf("%d", m.block), mplusResource, 500, 55, color.RGBA{127, 127, 0, 255})
 	m.mutex.Unlock()
 
 	op.GeoM.Reset()
-	op.GeoM.Scale(0.8, 0.8)
+	op.GeoM.Scale(0.35, 0.35)
 	op.GeoM.Translate(350, 0)
 	screen.DrawImage(m.iconCombat, op)
 	// combat, ok := res.Detail[cards.RESOURCE_NAME_COMBAT]
@@ -536,8 +536,8 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	// }
 
 	op.GeoM.Reset()
-	op.GeoM.Scale(0.8, 0.8)
-	op.GeoM.Translate(540, 0)
+	op.GeoM.Scale(0.4, 0.4)
+	op.GeoM.Translate(345, 30)
 	screen.DrawImage(m.iconExplore, op)
 	// explore, ok := res.Detail[cards.RESOURCE_NAME_EXPLORATION]
 	// if !ok {
@@ -545,8 +545,8 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	// }
 
 	op.GeoM.Reset()
-	op.GeoM.Scale(0.3, 0.3)
-	op.GeoM.Translate(750, -10)
+	op.GeoM.Scale(0.15, 0.15)
+	op.GeoM.Translate(450, 0)
 	screen.DrawImage(m.Reputation, op)
 	// rep, ok := res.Detail[cards.RESOURCE_NAME_REPUTATION]
 	// if !ok {
@@ -554,8 +554,8 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	// }
 
 	op.GeoM.Reset()
-	op.GeoM.Scale(0.09, 0.09)
-	op.GeoM.Translate(900, -10)
+	op.GeoM.Scale(0.045, 0.045)
+	op.GeoM.Translate(450, 30)
 	screen.DrawImage(m.Block, op)
 	// block, ok := res.Detail[cards.RESOURCE_NAME_BLOCK]
 	// if !ok {
