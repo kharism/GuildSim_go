@@ -54,7 +54,7 @@ var EVENT_ATTR_DAMAGE_AMMT = "DamageAmount"
 var EVENT_ATTR_DISCARD_SOURCE = "DiscardSource"
 
 var EVENT_MINIBOSS_DEFEATED = "MinibossDefeated"
-var EVENT_BOSS_DEFEATED = "MinibossDefeated"
+var EVENT_BOSS_DEFEATED = "BossDefeated"
 
 const (
 	ACTION_DRAW    = "Draw"

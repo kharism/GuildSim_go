@@ -31,7 +31,7 @@ func (b *SlimeRoom) GetCost() Cost {
 	return cost
 }
 func (b *SlimeRoom) OnDisarm() {
-	relic := b.state.GenerateRandomRelic(RARITY_RARE)
+	relic := b.state.GenerateRandomRelic(RARITY_COMMON)
 	b.state.AddItem(relic)
 	data := map[string]interface{}{}
 	b.state.NotifyListener(EVENT_MINIBOSS_DEFEATED, data)

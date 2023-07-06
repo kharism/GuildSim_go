@@ -40,6 +40,7 @@ func (d *OnDrawAction) DoAction(data map[string]interface{}) {
 	fmt.Println("Draw card", drawnCards.GetName(), newEbitenCard.x, newEbitenCard.y, newEbitenCard.tx, newEbitenCard.ty)
 	ll.mutex.Lock()
 	ll.cardInHand = append(ll.cardInHand, newEbitenCard)
+	ll.NumCardInDeck = ll.defaultGamestate.CardsInDeck.Size()
 	ll.mutex.Unlock()
 }
 
@@ -797,6 +798,7 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 		ebitenCard.AnimationQueue = append(ebitenCard.AnimationQueue, newAnim)
 		p.mainGameState.mutex.Lock()
 		p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+		p.mainGameState.NumCardInDeck = p.mainGameState.defaultGamestate.CardsInDeck.Size()
 		p.mainGameState.mutex.Unlock()
 	}
 }

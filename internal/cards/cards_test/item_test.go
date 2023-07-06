@@ -151,3 +151,25 @@ func TestTalisman(t *testing.T) {
 	}
 
 }
+func TestBloodyCompas(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	compass := item.NewBloodyCompass(dumGamestate)
+	buckler := item.NewCompanionBuckler(dumGamestate)
+	gamestate.AddItem(&compass)
+	gamestate.AddItem(&buckler)
+	data := map[string]interface{}{}
+	gamestate.NotifyListener(cards.EVENT_CARD_DEFEATED, data)
+	res := gamestate.GetCurrentResource()
+	exploration := res.Detail[cards.RESOURCE_NAME_EXPLORATION]
+	if exploration != 2 {
+		t.Fail()
+	}
+	gamestate.NotifyListener(cards.EVENT_CARD_RECRUITED, data)
+	block := res.Detail[cards.RESOURCE_NAME_BLOCK]
+	if block != 3 {
+		t.Fail()
+	}
+}

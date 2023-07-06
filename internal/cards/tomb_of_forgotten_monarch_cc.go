@@ -23,7 +23,7 @@ func (a *TombMonarchCC) GetCost() Cost {
 func (a *TombMonarchCC) Unbanishable() {}
 func (a *TombMonarchCC) OnExplored() {
 	//a.state.AddResource(RESOURCE_NAME_MONEY, 100)
-	relic := a.state.GenerateRandomRelic(RARITY_RARE)
+	relic := a.state.GenerateRandomRelic(RARITY_COMMON)
 	a.state.AddItem(relic)
 
 	thunderGolem := NewThunderGolem(a.state)

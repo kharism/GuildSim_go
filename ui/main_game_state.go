@@ -53,11 +53,13 @@ type MainGameState struct {
 	limiter          string
 
 	// ui related stuff so we don't do mutex lock every update/draw
-	hp          int
-	combat      int
-	exploration int
-	block       int
-	reputation  int
+	hp              int
+	combat          int
+	exploration     int
+	block           int
+	reputation      int
+	NumCardInDeck   int
+	NumCardCooldown int
 
 	// channels
 	CardPlayedChan chan cards.Card
@@ -524,6 +526,7 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	text.Draw(screen, fmt.Sprintf("%d", m.exploration), mplusResource, 380, 55, color.RGBA{0, 255, 0, 255})
 	text.Draw(screen, fmt.Sprintf("%d", m.reputation), mplusResource, 500, 27, color.RGBA{127, 127, 0, 255})
 	text.Draw(screen, fmt.Sprintf("%d", m.block), mplusResource, 500, 55, color.RGBA{127, 127, 0, 255})
+
 	m.mutex.Unlock()
 
 	op.GeoM.Reset()
@@ -583,6 +586,10 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	op.GeoM.Scale(HAND_SCALE, HAND_SCALE)
 	op.GeoM.Translate(MAIN_DECK_X, MAIN_DECK_Y)
 	screen.DrawImage(m.MainDeck, op)
+
+	m.mutex.Lock()
+	text.Draw(screen, fmt.Sprintf("%d", m.NumCardInDeck), mplusResource, MAIN_DECK_X+int(math.Floor(ORI_CARD_WIDTH*HAND_SCALE/2)), MAIN_DECK_Y+int(math.Floor(ORI_CARD_HEIGHT*HAND_SCALE*0.75)), color.RGBA{127, 127, 0, 255})
+	m.mutex.Unlock()
 
 	op.GeoM.Reset()
 	op.GeoM.Scale(HAND_SCALE, HAND_SCALE)
