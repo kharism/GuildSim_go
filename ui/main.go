@@ -6,6 +6,7 @@ import (
 	"github/kharism/GuildSim_go/internal/factory"
 	"github/kharism/GuildSim_go/internal/gamestate"
 	"log"
+	"sync"
 
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
@@ -177,12 +178,16 @@ func (g *Game) ChangeState(stateName string) {
 			AttachReturnToCenterListener,
 		}
 		defaultGamestate := gamestate.CustomizedDefaultGamestate(starterDeckSet, centerDeckSet, decorators)
+		// mainGame = NewMainGameState(g)
 		mm := mainGame.(*MainGameState)
 		mm.defaultGamestate = defaultGamestate.(*gamestate.DefaultGamestate)
 		mm.hp = defaultGamestate.GetCurrentHP()
 		mm.defaultGamestate.SetCardPicker(mm.cardPicker)
 		mm.defaultGamestate.SetDetailViewer(mm.detailState)
 		mm.defaultGamestate.SetBoolPicker(mm.boolPicker)
+		mm.mainState = &mainMainState{m: mm, mutex: &sync.Mutex{}}
+		mm.currentSubState = mm.mainState
+		mm.mainState.Reset()
 		// mm.defaultGamestate.TakeDamage(40)
 		// wl := cards.NewWingedLion(mm.defaultGamestate)
 		// dw := cards.NewDeadweight(mm.defaultGamestate)

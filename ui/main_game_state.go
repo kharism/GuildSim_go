@@ -95,7 +95,11 @@ func CardPlayer(m *MainGameState, cardPlayed <-chan cards.Card) {
 		m.defaultGamestate.PlayCard(card)
 	}
 }
-
+func (s *mainMainState) Reset() {
+	s.m.cardInHand = []*EbitenCard{}
+	s.m.cardsInLimbo = []*EbitenCard{}
+	s.m.cardsInCenter = []*EbitenCard{}
+}
 func (s *mainMainState) Draw(screen *ebiten.Image) {
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
 		xCurInt, yCurInt := ebiten.CursorPosition()
