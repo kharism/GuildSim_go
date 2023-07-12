@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
+	"github/kharism/GuildSim_go/internal/gamestate"
 	"image/color"
 	"math"
 	"sync"
@@ -500,6 +501,27 @@ func (p *onItemAdd) DoAction(data map[string]interface{}) {
 	p.mainGameState.mutex.Lock()
 	p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
 	p.mainGameState.mutex.Unlock()
+}
+
+type onBossDefeated struct {
+	mainGameState      *MainGameState
+	bossDefeatedAction gamestate.BossDefeatedAction
+}
+
+func (b *onBossDefeated) DoAction(data map[string]interface{}) {
+	b.mainGameState.actClearState.alpha = 0
+	b.mainGameState.actClearState.doneFunc = func() {
+		b.mainGameState.mutex.Lock()
+		b.mainGameState.cardInHand = []*EbitenCard{}
+		b.mainGameState.cardsInLimbo = []*EbitenCard{}
+		b.mainGameState.cardsInCenter = []*EbitenCard{}
+		b.mainGameState.cardsPlayed = []*EbitenCard{}
+		b.mainGameState.mutex.Unlock()
+		b.mainGameState.currentSubState = b.mainGameState.mainState
+		b.bossDefeatedAction.DoAction(data)
+
+	}
+	b.mainGameState.currentSubState = b.mainGameState.actClearState
 }
 
 type onDisarmAction struct {

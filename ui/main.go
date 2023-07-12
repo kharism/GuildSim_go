@@ -155,6 +155,7 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 	onAddResource := &onChangeResource{mainGameState: mainGame.(*MainGameState)}
 	ff := &onLimiterAttach{mainGameState: mainGame.(*MainGameState)}
 	fg := &onLimiterDetach{mainGameState: mainGame.(*MainGameState)}
+	onBossDefeated := &onBossDefeated{mainGameState: mainGame.(*MainGameState), bossDefeatedAction: gamestate.BossDefeatedAction{State: state.(*gamestate.DefaultGamestate)}}
 	state.AttachListener(cards.EVENT_CARD_EXPLORED, onExplore)
 	state.AttachListener(cards.EVENT_CARD_RECRUITED, onRecruit)
 	state.AttachListener(cards.EVENT_CARD_DEFEATED, onDefeat)
@@ -165,6 +166,7 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 	state.AttachListener(cards.EVENT_DETACH_LIMITER, fg)
 	state.AttachListener(cards.EVENT_BEFORE_PUNISH, onPrePunish)
 	state.AttachListener(cards.EVENT_ADD_RESOURCE, onAddResource)
+	state.AttachListener(cards.EVENT_BOSS_DEFEATED, onBossDefeated)
 	return state
 }
 func (g *Game) ChangeState(stateName string) {
@@ -178,6 +180,7 @@ func (g *Game) ChangeState(stateName string) {
 			AttachReturnToCenterListener,
 		}
 		defaultGamestate := gamestate.CustomizedDefaultGamestate(starterDeckSet, centerDeckSet, decorators)
+		defaultGamestate.AddActDecorator(decorator.AttachHuntForDragonLord)
 		// mainGame = NewMainGameState(g)
 		mm := mainGame.(*MainGameState)
 		mm.defaultGamestate = defaultGamestate.(*gamestate.DefaultGamestate)
@@ -185,9 +188,12 @@ func (g *Game) ChangeState(stateName string) {
 		mm.defaultGamestate.SetCardPicker(mm.cardPicker)
 		mm.defaultGamestate.SetDetailViewer(mm.detailState)
 		mm.defaultGamestate.SetBoolPicker(mm.boolPicker)
+		// mm.defaultGamestate.AddResource(cards.RESOURCE_NAME_COMBAT, 20)
 		mm.mainState = &mainMainState{m: mm, mutex: &sync.Mutex{}}
 		mm.currentSubState = mm.mainState
 		mm.mainState.Reset()
+		// jj := cards.NewForgottenMonarchP2(mm.defaultGamestate)
+		// mm.defaultGamestate.CardsInCenterDeck.Stack(&jj)
 		// mm.defaultGamestate.TakeDamage(40)
 		// wl := cards.NewWingedLion(mm.defaultGamestate)
 		// dw := cards.NewDeadweight(mm.defaultGamestate)

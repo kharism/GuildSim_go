@@ -235,6 +235,12 @@ func (d *DummyGamestate) NotifyListener(eventname string, data map[string]interf
 		j.Notify(data)
 	}
 }
+func (d *DummyGamestate) ActDecorators() []func(cards.AbstractGamestate) cards.AbstractGamestate {
+	return nil
+}
+func (d *DummyGamestate) AddActDecorator(f func(cards.AbstractGamestate) cards.AbstractGamestate) {
+	return
+}
 func (d *DummyGamestate) GetCardPicker() cards.AbstractCardPicker {
 	return d.cardPiker
 }

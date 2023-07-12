@@ -56,6 +56,8 @@ var EVENT_ATTR_DISCARD_SOURCE = "DiscardSource"
 var EVENT_MINIBOSS_DEFEATED = "MinibossDefeated"
 var EVENT_BOSS_DEFEATED = "BossDefeated"
 
+var EVENT_ATTR_BOSS_DEFEATED_COUNT = "BossDefeatedCount"
+
 const (
 	ACTION_DRAW    = "Draw"
 	ACTION_DEFEAT  = "Defeat"
@@ -178,4 +180,8 @@ type AbstractGamestate interface {
 	GetCurrentResource() Resource
 	AddResource(name string, amount int)
 	PayResource(cost Cost)
+
+	// this function will decorate the current gamestate since we now have multi act gamenow
+	ActDecorators() []func(AbstractGamestate) AbstractGamestate
+	AddActDecorator(func(AbstractGamestate) AbstractGamestate)
 }

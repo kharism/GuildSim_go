@@ -65,6 +65,9 @@ type DefaultGamestate struct {
 	boolPicker        cards.AbstractBoolPicker
 	cardViewer        cards.AbstractDetailViewer
 	mutex             *sync.Mutex
+
+	// act manager
+	ActDecorator []func(cards.AbstractGamestate) cards.AbstractGamestate
 }
 
 func (d *DefaultGamestate) MutexLock() {
@@ -76,8 +79,7 @@ func (d *DefaultGamestate) MutexUnlock() {
 
 // AddCardToCenterDeck implements cards.AbstractGamestate
 func (d *DefaultGamestate) AddCardToCenterDeck(source string, shuffle bool, c ...cards.Card) {
-	var j *DummyEventListener
-	j = d.TopicsListeners[cards.EVENT_CARD_GOTO_CENTER]
+	j := d.TopicsListeners[cards.EVENT_CARD_GOTO_CENTER]
 	for _, cc := range c {
 		d.mutex.Lock()
 		d.CardsInCenterDeck.Stack(cc)
@@ -235,6 +237,12 @@ func (d *DefaultGamestate) NotifyListener(eventname string, data map[string]inte
 		j := d.TopicsListeners[eventname]
 		j.Notify(data)
 	}
+}
+func (d *DefaultGamestate) ActDecorators() []func(cards.AbstractGamestate) cards.AbstractGamestate {
+	return d.ActDecorator
+}
+func (d *DefaultGamestate) AddActDecorator(f func(cards.AbstractGamestate) cards.AbstractGamestate) {
+	d.ActDecorator = append(d.ActDecorator, f)
 }
 func (d *DefaultGamestate) ConsumeItem(c cards.Consumable) {
 	c.OnConsume()
@@ -423,7 +431,6 @@ func (d *DefaultGamestate) RecruitCard(c cards.Card) {
 		// d.CenterCards = append(d.CenterCards, replacement)
 
 	}
-	return
 }
 func (d *DefaultGamestate) GetCooldownCard() []cards.Card {
 	return d.CardsDiscarded.List()
@@ -435,7 +442,6 @@ func (d *DefaultGamestate) DiscardCard(c cards.Card, source string) {
 	if _, ok := d.TopicsListeners[cards.EVENT_CARD_DISCARDED]; ok {
 		d.TopicsListeners[cards.EVENT_CARD_DISCARDED].Notify(data)
 	}
-	return
 }
 func (d *DefaultGamestate) CenterRowInit() {
 	d.CardsInCenterDeck.Shuffle()
@@ -577,7 +583,7 @@ func (d *DefaultGamestate) Draw() {
 		j := d.TopicsListeners[cards.EVENT_CARD_DRAWN]
 		j.Notify(evtDetails)
 	}
-	return
+
 }
 func (d *DefaultGamestate) BanishCard(c cards.Card, source string) {
 	d.CardsBanished = append(d.CardsBanished, c)
@@ -586,7 +592,7 @@ func (d *DefaultGamestate) BanishCard(c cards.Card, source string) {
 		notification := map[string]interface{}{cards.EVENT_ATTR_CARD_BANISHED: c, cards.EVENT_ATTR_DISCARD_SOURCE: source}
 		d.TopicsListeners[cards.EVENT_CARD_BANISHED].Notify(notification)
 	}
-	return
+
 }
 func (d *DefaultGamestate) Disarm(c cards.Card) {
 	f := c.GetCost()
@@ -608,7 +614,7 @@ func (d *DefaultGamestate) Disarm(c cards.Card) {
 		d.NotifyListener(cards.EVENT_TRAP_REMOVED, trapRemovedEvent)
 
 	}
-	return
+
 }
 func (d *DefaultGamestate) DefeatCard(c cards.Card) {
 	if !d.LegalCheck(cards.ACTION_DEFEAT, c) {
@@ -636,7 +642,7 @@ func (d *DefaultGamestate) DefeatCard(c cards.Card) {
 		}
 
 	}
-	return
+
 }
 func (d *DefaultGamestate) GetCurrentResource() cards.Resource {
 	return d.currentResource

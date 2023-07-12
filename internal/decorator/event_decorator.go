@@ -13,74 +13,78 @@ type ProgressListener struct {
 	MinibossDefeated int
 }
 
+// 1st miniboss defeated update on center deck
+func StackMiniboss1(state cards.AbstractGamestate) {
+	deck := []cards.Card{}
+	count := mrand.Int() % 2
+	for i := 0; i < count; i++ {
+		h := cards.NewMonsterSlayer(state)
+		deck = append(deck, &h)
+
+	}
+	count = mrand.Int() % 2
+	for i := 0; i < count; i++ {
+		h := cards.NewStagShaman(state)
+		deck = append(deck, &h)
+	}
+	count = mrand.Int() % 3
+	for i := 0; i < count; i++ {
+		h := cards.NewDeadweight(state)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 3; i++ {
+		h := cards.NewThief(state)
+		deck = append(deck, &h)
+	}
+	// count = mrand.Int() % 5
+	for i := 0; i < 4; i++ {
+		h := cards.NewCleric(state)
+		deck = append(deck, &h)
+	}
+	count = mrand.Int() % 5
+	for i := 0; i < count; i++ {
+		h := cards.NewShieldBasher(state)
+		deck = append(deck, &h)
+	}
+	count = mrand.Int() % 3
+	for i := 0; i < count; i++ {
+		h := cards.NewArcher(state)
+		deck = append(deck, &h)
+	}
+	count = mrand.Int() % 5
+	for i := 0; i < count; i++ {
+		h := cards.NewGoblinWolfRaiderMonster(state)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 3; i++ {
+		h := cards.NewNobleKnight(state)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 2; i++ {
+		h := cards.NewIceWyvern(state)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 4; i++ {
+		h := cards.NewTorchtail(state)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 2; i++ {
+		h := cards.NewSlimeLarge(state)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 2; i++ {
+		h := cards.NewFirelake(state)
+		deck = append(deck, &h)
+	}
+	state.AddCardToCenterDeck(cards.DISCARD_SOURCE_NAN, true, deck...)
+}
 func (s *ProgressListener) DoAction(data map[string]interface{}) {
 	s.MinibossDefeated++
 	if s.MinibossDefeated == 1 {
 		// add in stronger hero in center deck
-		deck := []cards.Card{}
-		count := mrand.Int() % 2
-		for i := 0; i < count; i++ {
-			h := cards.NewMonsterSlayer(s.state)
-			deck = append(deck, &h)
 
-		}
-		count = mrand.Int() % 2
-		for i := 0; i < count; i++ {
-			h := cards.NewStagShaman(s.state)
-			deck = append(deck, &h)
-		}
-		count = mrand.Int() % 3
-		for i := 0; i < count; i++ {
-			h := cards.NewDeadweight(s.state)
-			deck = append(deck, &h)
-		}
-		for i := 0; i < 3; i++ {
-			h := cards.NewThief(s.state)
-			deck = append(deck, &h)
-		}
-		// count = mrand.Int() % 5
-		for i := 0; i < 4; i++ {
-			h := cards.NewCleric(s.state)
-			deck = append(deck, &h)
-		}
-		count = mrand.Int() % 5
-		for i := 0; i < count; i++ {
-			h := cards.NewShieldBasher(s.state)
-			deck = append(deck, &h)
-		}
-		count = mrand.Int() % 3
-		for i := 0; i < count; i++ {
-			h := cards.NewArcher(s.state)
-			deck = append(deck, &h)
-		}
-		count = mrand.Int() % 5
-		for i := 0; i < count; i++ {
-			h := cards.NewGoblinWolfRaiderMonster(s.state)
-			deck = append(deck, &h)
-		}
-		for i := 0; i < 3; i++ {
-			h := cards.NewNobleKnight(s.state)
-			deck = append(deck, &h)
-		}
-		for i := 0; i < 2; i++ {
-			h := cards.NewIceWyvern(s.state)
-			deck = append(deck, &h)
-		}
-		for i := 0; i < 4; i++ {
-			h := cards.NewTorchtail(s.state)
-			deck = append(deck, &h)
-		}
-		for i := 0; i < 2; i++ {
-			h := cards.NewSlimeLarge(s.state)
-			deck = append(deck, &h)
-		}
-		for i := 0; i < 2; i++ {
-			h := cards.NewFirelake(s.state)
-			deck = append(deck, &h)
-		}
-		s.state.AddCardToCenterDeck(cards.DISCARD_SOURCE_NAN, true, deck...)
 		// add more difficult location to explore
-
+		StackMiniboss1(s.state)
 		return
 	} else if s.MinibossDefeated == 2 {
 		deck := []cards.Card{}
@@ -98,6 +102,7 @@ func (s *ProgressListener) DoAction(data map[string]interface{}) {
 
 func AttachProgressionCounter(state cards.AbstractGamestate) cards.AbstractGamestate {
 	state.AttachListener(cards.EVENT_MINIBOSS_DEFEATED, &ProgressListener{state: state})
+	state.AttachListener(cards.EVENT_BOSS_DEFEATED, &ProgressListener{state: state})
 	return state
 }
 
@@ -113,5 +118,9 @@ func AttachTombOfForgottenMonarch(state cards.AbstractGamestate) cards.AbstractG
 	removeEventListenerAction.(*cards.RemoveEventListenerAction).SetListener(addTombListener)
 
 	state.AttachListener(cards.EVENT_CARD_RECRUITED, addTombListener)
+	return state
+}
+
+func AttachHuntForDragonLord(state cards.AbstractGamestate) cards.AbstractGamestate {
 	return state
 }

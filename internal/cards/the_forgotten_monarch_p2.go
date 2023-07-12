@@ -15,7 +15,7 @@ func (m *ForgottenMonarchP2) GetName() string {
 	return "ForgottenMonarchP2"
 }
 func (m *ForgottenMonarchP2) GetDescription() string {
-	return "Trap: Stack 1 Stun on main deck. On Punish: take 9 damage at end of turn.  Reward: stack 1 card from discard pile and stack ForgottenRagingMonarch"
+	return "Trap: Stack 1 Stun on main deck. On Punish: take 9 damage at end of turn.  Reward: gain 10 reputation"
 }
 func (m *ForgottenMonarchP2) GetCost() Cost {
 	cost := NewCost()
@@ -34,6 +34,12 @@ func (m *ForgottenMonarchP2) Disarm() {
 }
 func (m *ForgottenMonarchP2) OnDisarm() {
 
+}
+func (m *ForgottenMonarchP2) OnSlain() {
+	m.state.AddResource(RESOURCE_NAME_REPUTATION, 10)
+	data := map[string]interface{}{}
+	data[EVENT_ATTR_BOSS_DEFEATED_COUNT] = 1
+	m.state.NotifyListener(EVENT_BOSS_DEFEATED, data)
 }
 func (m *ForgottenMonarchP2) OnPunish() {
 	m.turnCounter += 1

@@ -8,6 +8,7 @@ import (
 const SET_STARTER_DECK = "starter_deck"
 
 const SET_CENTER_DECK_1 = "center_deck"
+const SET_CENTER_DECK_2 = "center_deck_2"
 
 const SET_POTION_COMMON_RANDOM = "POT_COMMON_RAND"
 
@@ -24,6 +25,8 @@ func CardFactory(setname string, gamestate cards.AbstractGamestate) []cards.Card
 		item.CreatePotionRandom(gamestate, cards.RARITY_COMMON)
 	case SET_FILLER_CARDS:
 		return createFillerCenterDeck(gamestate)
+	case SET_CENTER_DECK_2:
+		return createStarterCenterDeckAct2(gamestate)
 	case SET_CENTER_DECK_1:
 	default:
 		return createStarterCenterDeck(gamestate)
@@ -52,6 +55,26 @@ func createFillerCenterDeck(gamestate cards.AbstractGamestate) []cards.Card {
 		h := cards.NewIceWyvern(gamestate)
 		j := cards.NewTorchtail(gamestate)
 		deck = append(deck, &h, &j)
+	}
+	return deck
+}
+func createStarterCenterDeckAct2(gamestate cards.AbstractGamestate) []cards.Card {
+	deck := []cards.Card{}
+	for i := 0; i < 4; i++ {
+		h := cards.NewTorchtail(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 3; i++ {
+		h := cards.NewFirelake(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 6; i++ {
+		h := cards.NewAggroDjinn(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 5; i++ {
+		h := cards.NewIceWyvern(gamestate)
+		deck = append(deck, &h)
 	}
 	return deck
 }

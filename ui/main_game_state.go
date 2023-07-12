@@ -31,6 +31,7 @@ type MainGameState struct {
 	MainDeck      *ebiten.Image
 	EndturnBtn    *ebiten.Image
 	GameOver      *ebiten.Image
+	ActClear      *ebiten.Image
 	ItemIcon      *ebiten.Image
 	Reputation    *ebiten.Image
 	Block         *ebiten.Image
@@ -72,6 +73,7 @@ type MainGameState struct {
 	boolPicker      *boolPickState
 	cardListState   *cardListState
 	gameoverState   *gameOverSubstate
+	actClearState   *actClearSubstate
 }
 type SubState interface {
 	Draw(screen *ebiten.Image)
@@ -399,6 +401,10 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	if err != nil {
 		log.Fatal(err)
 	}
+	act_clear, _, err := ebitenutil.NewImageFromFile("img/act_clear.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 	item_icon, _, err := ebitenutil.NewImageFromFile("img/misc/bag.png")
 	if err != nil {
 		log.Fatal(err)
@@ -414,7 +420,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger,
 		paperBg: paperBg, checkMark: checkmark, btn: btn, iconCombat: iconCombat, iconExplore: iconExplore, mutex: mutex,
 		cardsPlayed: cardsPlayed, DiscardPile: discardPile, MainDeck: mainDeck, EndturnBtn: EndturnBtn, GameOver: game_over,
-		ItemIcon: item_icon, Reputation: iconReputation, Block: iconBlock,
+		ItemIcon: item_icon, Reputation: iconReputation, Block: iconBlock, ActClear: act_clear,
 	}
 	mgs.CardPlayedChan = make(chan cards.Card)
 	go CardPlayer(mgs, mgs.CardPlayedChan)
@@ -430,6 +436,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	mgs.cardPicker = cardpicker
 	mgs.cardListState = cardListState
 	mgs.boolPicker = boolPicker
+	mgs.actClearState = &actClearSubstate{m: mgs}
 	return mgs
 }
 
