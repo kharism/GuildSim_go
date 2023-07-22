@@ -11,7 +11,7 @@ func NewLightingStag(state AbstractGamestate) LightingStag {
 }
 
 func (ed *LightingStag) GetName() string {
-	return "LightingStag"
+	return "LightningStag"
 }
 func (ed *LightingStag) Dispose(source string) {
 	ed.gamestate.DiscardCard(ed, source)
@@ -36,5 +36,8 @@ func (m *LightingStag) OnPlay() {
 	m.gamestate.StackCards(DISCARD_SOURCE_NAN, &stunCurse)
 }
 func (g *LightingStag) OnSlain() {
-	g.gamestate.AddResource(RESOURCE_NAME_REPUTATION, 1)
+	g.gamestate.TakeDamage(-5)
+	stunCurse := NewStunCurse(g.gamestate)
+	g.gamestate.DiscardCard(&stunCurse, DISCARD_SOURCE_NAN)
+	// g.gamestate.AddResource(RESOURCE_NAME_REPUTATION, 1)
 }
