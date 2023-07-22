@@ -650,14 +650,11 @@ func (p *onGotoCenterDeckAction) DoAction(data map[string]interface{}) {
 			}
 		}
 		for i := moveIndex; i < len(newCenterCard); i++ {
-			newCenterCard[i].tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
-			newCenterCard[i].ty = CENTER_START_Y
-			vx := float64(newCenterCard[i].tx - newCenterCard[i].x)
-			vy := float64(newCenterCard[i].ty - newCenterCard[i].y)
-			speedVector := csg.NewVector(vx, vy, 0)
-			speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
-			newCenterCard[i].vx = speedVector.X
-			newCenterCard[i].vy = speedVector.Y
+			moveAnim := MoveAnimation{}
+			moveAnim.tx = math.Floor(CENTER_START_X + float64(i)*HAND_DIST_X)
+			moveAnim.ty = CENTER_START_Y
+			moveAnim.Speed = CARD_MOVE_SPEED
+			newCenterCard[i].AddAnimation(&moveAnim)
 			// fmt.Sprintf("%d %f %f\n", i, newCenterCard[i].tx, newCenterCard[i].ty)
 		}
 		p.mainGameState.cardsInCenter = newCenterCard
@@ -688,13 +685,13 @@ func (p *onChangeResource) DoAction(data map[string]interface{}) {
 	p.mainGameState.mutex.Lock()
 	switch resourceName {
 	case cards.RESOURCE_NAME_BLOCK:
-		p.mainGameState.block += amount
+		p.mainGameState.block = amount
 	case cards.RESOURCE_NAME_COMBAT:
-		p.mainGameState.combat += amount
+		p.mainGameState.combat = amount
 	case cards.RESOURCE_NAME_EXPLORATION:
-		p.mainGameState.exploration += amount
+		p.mainGameState.exploration = amount
 	case cards.RESOURCE_NAME_REPUTATION:
-		p.mainGameState.reputation += amount
+		p.mainGameState.reputation = amount
 	}
 	p.mainGameState.mutex.Unlock()
 }

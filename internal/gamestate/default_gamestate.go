@@ -658,7 +658,8 @@ func (d *DefaultGamestate) AddResource(name string, amount int) {
 
 	if _, ok := d.TopicsListeners[cards.EVENT_ADD_RESOURCE]; ok {
 		j := d.TopicsListeners[cards.EVENT_ADD_RESOURCE]
-		data := map[string]interface{}{cards.EVENT_ATTR_ADD_RESOURCE_NAME: name, cards.EVENT_ATTR_ADD_RESOURCE_AMOUNT: amount}
+		currVal := d.currentResource.Detail[name]
+		data := map[string]interface{}{cards.EVENT_ATTR_ADD_RESOURCE_NAME: name, cards.EVENT_ATTR_ADD_RESOURCE_AMOUNT: currVal}
 		j.Notify(data)
 	}
 }
