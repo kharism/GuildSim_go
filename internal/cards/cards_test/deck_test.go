@@ -235,6 +235,9 @@ func (d *DummyGamestate) NotifyListener(eventname string, data map[string]interf
 		j.Notify(data)
 	}
 }
+func (d *DummyGamestate) GetMainDeck() *cards.Deck {
+	return &d.CardsInDeck.Deck
+}
 func (d *DummyGamestate) ActDecorators() []func(cards.AbstractGamestate) cards.AbstractGamestate {
 	return nil
 }
@@ -388,6 +391,39 @@ func (d *DummyGamestate) RemoveCardFromHand(c cards.Card) {
 			d.RemoveCardFromHandIdx(idx)
 			return
 		}
+	}
+}
+func (d *DummyGamestate) RemoveCardFromPlayed(c cards.Card) {
+	for idx, c2 := range d.CardsPlayed {
+		if c2 == c {
+			d.RemoveCardFromHandIdx(idx)
+			return
+		}
+	}
+}
+func (d *DummyGamestate) RemoveCardFromPlayedIdx(i int) {
+	j := append(d.CardsPlayed[:i], d.CardsPlayed[i+1:]...)
+	d.CardsPlayed = j
+}
+func (d *DummyGamestate) DetachCard(c cards.Overlay) {
+	f := c.GetCost()
+	res := d.currentResource
+	d.MutexLock()
+	isEnough := (&f).IsEnough(res)
+	d.MutexUnlock()
+	if isEnough {
+		d.mutex.Lock()
+		d.PayResource(f)
+		d.mutex.Unlock()
+		if c.HasOverlayCard() {
+			c.Detach()
+		} else {
+			c.Dispose(cards.DISCARD_SOURCE_CENTER)
+			d.RemoveCardFromCenterRow(c)
+			// remove c from center cards
+			d.updateCenterCard(c)
+		}
+
 	}
 }
 func (d *DummyGamestate) RemoveCardFromHandIdx(i int) {

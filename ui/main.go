@@ -105,6 +105,8 @@ func (e *exitAction) DoAction() {
 	//os.Exit(0)
 	ll := mainGame.(*MainGameState)
 	ll.currentSubState = ll.gameoverState
+	ll.cardsPlayed = []*EbitenCard{}
+	ll.cardInHand = []*EbitenCard{}
 }
 func AttachGameOverListener(state cards.AbstractGamestate) cards.AbstractGamestate {
 	quit := exitAction{}
@@ -155,6 +157,7 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 	onAddResource := &onChangeResource{mainGameState: mainGame.(*MainGameState)}
 	ff := &onLimiterAttach{mainGameState: mainGame.(*MainGameState)}
 	fg := &onLimiterDetach{mainGameState: mainGame.(*MainGameState)}
+	detachAct := &onDetachAction{mainGameState: mainGame.(*MainGameState)}
 	onBossDefeated := &onBossDefeated{mainGameState: mainGame.(*MainGameState), bossDefeatedAction: gamestate.BossDefeatedAction{State: state.(*gamestate.DefaultGamestate)}}
 	state.AttachListener(cards.EVENT_CARD_EXPLORED, onExplore)
 	state.AttachListener(cards.EVENT_CARD_RECRUITED, onRecruit)
@@ -164,6 +167,7 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 	state.AttachListener(cards.EVENT_CARD_STACKED, onCardStacked)
 	state.AttachListener(cards.EVENT_ATTACH_LIMITER, ff)
 	state.AttachListener(cards.EVENT_DETACH_LIMITER, fg)
+	state.AttachListener(cards.EVENT_REMOVE_OVERLAY, detachAct)
 	state.AttachListener(cards.EVENT_BEFORE_PUNISH, onPrePunish)
 	state.AttachListener(cards.EVENT_ADD_RESOURCE, onAddResource)
 	state.AttachListener(cards.EVENT_BOSS_DEFEATED, onBossDefeated)
@@ -174,7 +178,7 @@ func (g *Game) ChangeState(stateName string) {
 	case STATE_MAIN_GAME:
 		starterDeckSet := []string{factory.SET_STARTER_DECK}
 		centerDeckSet := []string{factory.SET_CENTER_DECK_1}
-		decorators := []decorator.AbstractDecorator{decorator.AttachTombOfForgottenMonarch, decorator.AttachProgressionCounter,
+		decorators := []decorator.AbstractDecorator{decorator.AttachTombOfForgottenMonarch, decorator.AttachTreasure, decorator.AttachProgressionCounter,
 			AttachGameOverListener, AttachDrawMainDeckListener, AttachCardPlayedListener,
 			AttachCardDiscardListener, AttachCenterCardDrawnListener, AttachCenterCardRecDefExp,
 			AttachReturnToCenterListener,
@@ -199,7 +203,7 @@ func (g *Game) ChangeState(stateName string) {
 		// dw := cards.NewDeadweight(mm.defaultGamestate)
 		// kk := cards.NewRookieMage(mm.defaultGamestate)
 		// slimeRoom := cards.NewSlimeRoom(mm.defaultGamestate)
-		// boulder := cards.NewBoulderTrap(mm.defaultGamestate)
+		// boulder := cards.NewWolfPack(mm.defaultGamestate)
 		// spikeFloor := cards.NewSpikeFloor(mm.defaultGamestate)
 		// lair := cards.NewGoblinSmallLairArea(mm.defaultGamestate)
 		// heal := item.NewHealingPotion(defaultGamestate)

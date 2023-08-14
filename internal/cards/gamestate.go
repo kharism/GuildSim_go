@@ -22,6 +22,8 @@ var EVENT_ATTACH_LIMITER = "AttachLimiter"
 var EVENT_DETACH_LIMITER = "DetachLimiter"
 var EVENT_BEFORE_PUNISH = "BeforePunish"
 var EVENT_ADD_RESOURCE = "AddResource"
+var EVENT_ADD_OVERLAY = "AddOverlay"
+var EVENT_REMOVE_OVERLAY = "RemoveOverlay"
 
 var EVENT_START_OF_TURN = "BeginTurn"
 var EVENT_END_OF_TURN = "EndTurn"
@@ -45,6 +47,8 @@ var EVENT_ATTR_TRAP_REMOVED = "TrapRemoved"
 var EVENT_ATTR_BEFORE_PUNISH_CARD = "CardBeforePunish"
 var EVENT_ATTR_ADD_RESOURCE_NAME = "AttrAddResourceName"
 var EVENT_ATTR_ADD_RESOURCE_AMOUNT = "AttrAddResourceAmount"
+var EVENT_ATTR_ADD_OVERLAY_BASE_CARD = "AddOverlayBase"
+var EVENT_ATTR_ADD_OVERLAY_ADDED_CARD = "AddOverlayNew"
 
 var EVENT_ATTR_LIMITER = "Limiter"
 var EVENT_ATTR_LIMITER_ACTION = "LimiterAction"
@@ -74,6 +78,7 @@ const (
 	DISCARD_SOURCE_COOLDOWN    = "cooldown"
 	DISCARD_SOURCE_NAN         = "nan"
 	DISCARD_SOURCE_DISCARD     = "discard"
+	DISCARD_SOURCE_MAIN_DECK   = "main"
 )
 const (
 	RARITY_COMMON = 0b001
@@ -90,6 +95,7 @@ type AbstractGamestate interface {
 	DiscardCard(c Card, source string)
 	BanishCard(c Card, source string)
 	DefeatCard(c Card)
+	DetachCard(c Overlay)
 
 	// thsi is method to call when remove trap in center row.
 	Disarm(c Card)
@@ -138,6 +144,8 @@ type AbstractGamestate interface {
 	UpdateCenterCard(c Card)
 	RemoveCardFromCooldown(c Card)
 	RemoveCardFromCooldownIdx(i int)
+	RemoveCardFromPlayed(c Card)
+	RemoveCardFromPlayedIdx(i int)
 
 	// return a card drawn from central deck
 	ReplaceCenterCard() Card
@@ -166,6 +174,7 @@ type AbstractGamestate interface {
 	// put cards to top of main deck, the order matter
 	// c[0] will be stacked first, then c[1], then c[2], etc
 	StackCards(source string, c ...Card)
+	GetMainDeck() *Deck
 	ShuffleMainDeck()
 
 	AttachListener(eventName string, l observer.Listener)

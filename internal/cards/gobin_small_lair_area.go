@@ -30,7 +30,7 @@ func (ed *GoblinSmallLairArea) OnExplored() {
 	ed.gamestate.AddItem(newPotion)
 	ed.gamestate.AddResource(RESOURCE_NAME_REPUTATION, 2)
 	wolfRaiders := []Card{}
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 2; i++ {
 		ll := NewGoblinWolfRaiderMonster(ed.gamestate)
 		wolfRaiders = append(wolfRaiders, &ll)
 	}

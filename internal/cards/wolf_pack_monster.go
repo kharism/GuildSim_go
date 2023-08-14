@@ -33,7 +33,7 @@ func (b *WolfPack) OnSlain() {
 }
 
 func NewWolfPack(state AbstractGamestate) WolfPack {
-	k := WolfPack{state: state}
+	k := WolfPack{state: state, isDisarmed: false}
 	return k
 }
 
@@ -44,6 +44,9 @@ func (b *WolfPack) Trap() {
 			b.state.AddCardToCenterDeck(DISCARD_SOURCE_NAN, false, &direwolf)
 		}
 	}
+}
+func (b *WolfPack) OnDisarm() {
+	b.OnSlain()
 }
 func (b *WolfPack) IsDisarmed() bool {
 	return b.isDisarmed

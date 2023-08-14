@@ -155,6 +155,19 @@ func (d *DefaultGamestate) RemoveCardFromHandIdx(i int) {
 	j := append(d.CardsInHand[:i], d.CardsInHand[i+1:]...)
 	d.CardsInHand = j
 }
+func (d *DefaultGamestate) RemoveCardFromPlayed(c cards.Card) {
+	for idx, c2 := range d.CardsPlayed {
+		if c2 == c {
+			d.RemoveCardFromHandIdx(idx)
+			return
+		}
+	}
+
+}
+func (d *DefaultGamestate) RemoveCardFromPlayedIdx(i int) {
+	j := append(d.CardsPlayed[:i], d.CardsPlayed[i+1:]...)
+	d.CardsPlayed = j
+}
 func (d *DefaultGamestate) RemoveCardFromCenterRow(c cards.Card) {
 	for idx, c2 := range d.CenterCards {
 		if c2 == c {
@@ -462,6 +475,9 @@ func (d *DefaultGamestate) StackCards(source string, cc ...cards.Card) {
 	}
 
 }
+func (d *DefaultGamestate) GetMainDeck() *cards.Deck {
+	return &d.CardsInDeck
+}
 func (d *DefaultGamestate) ShuffleMainDeck() {
 	d.CardsInDeck.Shuffle()
 }
@@ -574,6 +590,10 @@ func (d *DefaultGamestate) Draw() {
 		d.CardsDiscarded.Shuffle()
 		d.CardsInDeck = d.CardsDiscarded
 		d.CardsDiscarded = cards.Deck{}
+		// if still no cards in deck after joining discard and deck, return
+		if d.CardsInDeck.Size() == 0 {
+			return
+		}
 	}
 	newCard := d.CardsInDeck.Draw()
 	d.CardsInHand = append(d.CardsInHand, newCard)
@@ -604,7 +624,7 @@ func (d *DefaultGamestate) Disarm(c cards.Card) {
 		d.mutex.Lock()
 		d.PayResource(f)
 		d.mutex.Unlock()
-		c.OnSlain()
+		c.(cards.Trapper).OnDisarm()
 		d.RemoveCardFromCenterRow(c)
 		// remove c from center cards
 		d.updateCenterCard(c)
@@ -615,6 +635,27 @@ func (d *DefaultGamestate) Disarm(c cards.Card) {
 
 	}
 
+}
+func (d *DefaultGamestate) DetachCard(c cards.Overlay) {
+	f := c.GetCost()
+	res := d.currentResource
+	d.MutexLock()
+	isEnough := (&f).IsEnough(res)
+	d.MutexUnlock()
+	if isEnough {
+		d.mutex.Lock()
+		d.PayResource(f)
+		d.mutex.Unlock()
+		if c.HasOverlayCard() {
+			c.Detach()
+		} else {
+			c.Dispose(cards.DISCARD_SOURCE_CENTER)
+			d.RemoveCardFromCenterRow(c)
+			// remove c from center cards
+			d.updateCenterCard(c)
+		}
+
+	}
 }
 func (d *DefaultGamestate) DefeatCard(c cards.Card) {
 	if !d.LegalCheck(cards.ACTION_DEFEAT, c) {

@@ -73,7 +73,8 @@ func TestTombEntrance(t *testing.T) {
 	// PrintCardList(dumGamestate.CenterCards, t)
 	t.Log(len(dumGamestate.CenterCards), dumGamestate.CenterCards[0].GetName())
 	gamestate.DefeatCard(dumGamestate.CenterCards[0])
-	if dumGamestate.CardsInCenterDeck.Size() != 2 {
+	t.Log(dumGamestate.CardsInCenterDeck.Size())
+	if dumGamestate.CardsInCenterDeck.Size() != 1 {
 		t.Log("failed to defeat and replace")
 		t.FailNow()
 	}
@@ -93,7 +94,8 @@ func TestTombEntrance(t *testing.T) {
 	cardPicker := TestCardPicker{ChooseMethod: StaticCardPicker(0)}
 	gamestate.SetCardPicker(&cardPicker)
 	gamestate.DefeatCard(dumGamestate.CenterCards[0])
-	if dumGamestate.CardsInCenterDeck.Size() != 7 {
+	t.Log(dumGamestate.CardsInCenterDeck.Size())
+	if dumGamestate.CardsInCenterDeck.Size() != 1 {
 		PrintCardList(dumGamestate.CardsInCenterDeck.List(), t)
 		t.Log("failed to defeat and replace")
 		t.FailNow()

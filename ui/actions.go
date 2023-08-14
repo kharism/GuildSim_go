@@ -524,6 +524,35 @@ func (b *onBossDefeated) DoAction(data map[string]interface{}) {
 	b.mainGameState.currentSubState = b.mainGameState.actClearState
 }
 
+type onDetachAction struct {
+	mainGameState *MainGameState
+}
+
+func (p *onDetachAction) DoAction(data map[string]interface{}) {
+	baseCard := data[cards.EVENT_ATTR_ADD_OVERLAY_BASE_CARD].(cards.Card)
+	addedCard := data[cards.EVENT_ATTR_ADD_OVERLAY_ADDED_CARD].(cards.Card)
+	fmt.Println("Added card", addedCard.GetName())
+	// get the x/y of the added card
+	for _, c := range p.mainGameState.cardsInCenter {
+		if c.card == baseCard {
+			ll := c.card.(cards.Overlay)
+			pp := ll.GetOverlay()
+			ebCard := NewEbitenCardFromCard(addedCard)
+			ebCard.x = c.x
+			ebCard.y = c.y + float64(OVERLAY_MARGIN*(len(pp)+1))
+			moveAnim := MoveAnimation{}
+			moveAnim.Speed = CARD_MOVE_SPEED
+			moveAnim.tx = BANISHED_START_X
+			moveAnim.ty = BANISHED_START_Y
+
+			ebCard.AddAnimation(&moveAnim)
+			p.mainGameState.mutex.Lock()
+			p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebCard)
+			p.mainGameState.mutex.Unlock()
+		}
+	}
+}
+
 type onDisarmAction struct {
 	mainGameState *MainGameState
 }

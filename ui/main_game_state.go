@@ -118,14 +118,25 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 		}
 		for i := len(cardCollection) - 1; i >= 0; i-- {
 			if cardCollection[i].x < xCur {
-				s.m.detailViewCard = cardCollection[i]
+				if jj, ok := cardCollection[i].card.(cards.Overlay); ok {
+					ol := jj.GetOverlay()
+					all := []cards.Card{cardCollection[i].card}
+					all = append(all, ol...)
+					// pp := NewEbitenCardFromCard(ol[len(ol)-1])
+					//s.m.detailViewCard = pp
+					s.m.cardListState.cards = all
+					s.m.currentSubState = s.m.cardListState
+				} else {
+					s.m.detailViewCard = cardCollection[i]
+					if s.m.detailViewCard != nil {
+						s.m.detailState.prevSubState = s
+						s.m.currentSubState = s.m.detailState
+					}
+				}
+
 				//fmt.Println("cardIndex at", i)
 				break
 			}
-		}
-		if s.m.detailViewCard != nil {
-			s.m.detailState.prevSubState = s
-			s.m.currentSubState = s.m.detailState
 		}
 
 	}
@@ -191,31 +202,35 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 			for i := len(s.m.cardsInCenter) - 1; i >= 0; i-- {
 				if s.m.cardsInCenter[i].x < xCur {
 					clickedCard := s.m.cardsInCenter[i]
-					switch clickedCard.card.GetCardType() {
-					case cards.Area:
-						go s.m.defaultGamestate.Explore(clickedCard.card)
-					case cards.Hero:
-						go s.m.defaultGamestate.RecruitCard(clickedCard.card)
-					case cards.Monster:
-						if _, ok := clickedCard.card.(cards.Recruitable); ok {
-							go func() {
-								recruit := s.m.defaultGamestate.GetBoolPicker().BoolPick("Recruit " + clickedCard.card.GetName() + " ?")
-								if recruit {
-									s.m.defaultGamestate.RecruitCard((clickedCard.card))
-								} else {
+					if ll, ok := clickedCard.card.(cards.Overlay); ok && ll.HasOverlayCard() {
+						go s.m.defaultGamestate.DetachCard(ll)
+					} else {
+						switch clickedCard.card.GetCardType() {
+						case cards.Area:
+							go s.m.defaultGamestate.Explore(clickedCard.card)
+						case cards.Hero:
+							go s.m.defaultGamestate.RecruitCard(clickedCard.card)
+						case cards.Monster:
+							if _, ok := clickedCard.card.(cards.Recruitable); ok {
+								go func() {
+									recruit := s.m.defaultGamestate.GetBoolPicker().BoolPick("Recruit " + clickedCard.card.GetName() + " ?")
+									if recruit {
+										s.m.defaultGamestate.RecruitCard((clickedCard.card))
+									} else {
+										s.m.defaultGamestate.DefeatCard(clickedCard.card)
+									}
+								}()
+							} else {
+								fmt.Println("Unrecruitable")
+								go func() {
 									s.m.defaultGamestate.DefeatCard(clickedCard.card)
-								}
-							}()
-						} else {
-							fmt.Println("Unrecruitable")
-							go func() {
-								s.m.defaultGamestate.DefeatCard(clickedCard.card)
-							}()
+								}()
+							}
+						case cards.Trap:
+							go s.m.defaultGamestate.Disarm(clickedCard.card)
 						}
-
-					case cards.Trap:
-						go s.m.defaultGamestate.Disarm(clickedCard.card)
 					}
+
 					//go s.m.defaultGamestate.PlayCard(s.m.cardInHand[i].card)
 					//s.m.detailViewCard = s.m.cardInHand[i]
 					//fmt.Println("cardIndex at", i)

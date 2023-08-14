@@ -95,3 +95,40 @@ func TestRuleEnforcer(t *testing.T) {
 		t.FailNow()
 	}
 }
+func TestWolfShaman(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return false }
+	gamestate.SetBoolPicker(&cardPicker)
+	gamestate.SetCardPicker(&cardPicker)
+	gamestate.SetDetailViewer(&cardPicker)
+
+	wolfShaman := cards.NewWolfShaman(gamestate)
+	gamestate.PlayCard(&wolfShaman)
+	iceWyvern := cards.NewIceWyvern(gamestate)
+	freezeCurse := cards.NewFreezeCurse(gamestate)
+	dumGamestate.CenterCards = append(dumGamestate.CenterCards, &iceWyvern)
+	dumGamestate.EndTurn()
+	// t.Log(dumGamestate.CardsInDeck.Deck.List()[0].GetName())
+	if dumGamestate.CardsInDeck.Deck.List()[0].GetName() == freezeCurse.GetName() {
+		t.FailNow()
+	}
+	dumGamestate.EndTurn()
+	// t.Log(dumGamestate.CardsInDeck.Deck.List()[0].GetName())
+	if dumGamestate.CardsInDeck.Deck.List()[0].GetName() != freezeCurse.GetName() {
+		t.FailNow()
+	}
+	dumGamestate.Draw()
+	dumGamestate.CenterCards = append(dumGamestate.CenterCards, &iceWyvern)
+	gamestate.PlayCard(&wolfShaman)
+	dumGamestate.EndTurn()
+	if dumGamestate.CardsInDeck.Deck.List()[0].GetName() != freezeCurse.GetName() {
+		t.FailNow()
+	}
+}

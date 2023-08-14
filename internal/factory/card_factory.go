@@ -3,6 +3,7 @@ package factory
 import (
 	"github/kharism/GuildSim_go/internal/cards"
 	"github/kharism/GuildSim_go/internal/cards/item"
+	"math/rand"
 )
 
 const SET_STARTER_DECK = "starter_deck"
@@ -72,10 +73,38 @@ func createStarterCenterDeckAct2(gamestate cards.AbstractGamestate) []cards.Card
 		h := cards.NewAggroDjinn(gamestate)
 		deck = append(deck, &h)
 	}
+	for i := 0; i < 4; i++ {
+		h := cards.NewNoviceAdventurer(gamestate)
+		deck = append(deck, &h)
+		ix := cards.NewNoviceCombatant(gamestate)
+		deck = append(deck, &ix)
+		j := cards.NewNoviceNurse(gamestate)
+		deck = append(deck, &j)
+	}
+	for i := 0; i < 2; i++ {
+		h := cards.NewLightingStag(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 3; i++ {
+		h := cards.NewWolfShaman(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 3; i++ {
+		h := cards.NewTigerRevenger(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 2; i++ {
+		h := cards.NewWolfPack(gamestate)
+		deck = append(deck, &h)
+	}
 	for i := 0; i < 5; i++ {
 		h := cards.NewIceWyvern(gamestate)
 		deck = append(deck, &h)
 	}
+	rand.Shuffle(len(deck), func(i, j int) {
+		deck[i], deck[j] = deck[j], deck[i]
+	})
+
 	return deck
 }
 func createStarterCenterDeck(gamestate cards.AbstractGamestate) []cards.Card {
@@ -143,6 +172,9 @@ func createStarterCenterDeck(gamestate cards.AbstractGamestate) []cards.Card {
 		h := cards.NewWingedLion(gamestate)
 		deck = append(deck, &h)
 	}
-
+	rand.Shuffle(len(deck), func(i, j int) {
+		deck[i], deck[j] = deck[j], deck[i]
+	})
+	deck = deck[:25]
 	return deck
 }

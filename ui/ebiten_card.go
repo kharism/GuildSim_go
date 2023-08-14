@@ -27,6 +27,8 @@ type EbitenCard struct {
 	// translation on x axis due to dragging
 	x_drag int
 
+	overlays []EbitenCard
+
 	// syncinc stuff
 	mutex *sync.Mutex
 
@@ -34,6 +36,8 @@ type EbitenCard struct {
 	CurrMove       *MoveAnimation
 	AnimationQueue []*MoveAnimation
 }
+
+const OVERLAY_MARGIN = 15
 
 func (e *EbitenCard) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
@@ -46,6 +50,24 @@ func (e *EbitenCard) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(float64(e.x_drag), 0)
 	// op.GeoM.Translate(float64(e.x), float64(e.y))
 	screen.DrawImage(e.image, op)
+	// if e.card.GetName() == "Treasure" {
+	if _, ok := e.card.(cards.Overlay); ok {
+		l := e.card.(cards.Overlay)
+		if l.HasOverlayCard() {
+			overlays := l.GetOverlay()
+			for idx, val := range overlays {
+				op.GeoM.Reset()
+				op.GeoM.Scale(0.25, 0.25)
+				overlayPosX := float64(e.x)
+				overlayPosY := float64(e.y) + float64(idx+1)*OVERLAY_MARGIN
+				op.GeoM.Translate(overlayPosX, overlayPosY)
+				pp := NewEbitenCardFromCard(val)
+				screen.DrawImage(pp.image, op)
+			}
+		}
+	}
+	// }
+
 }
 func (e *EbitenCard) AddAnimation(animation ...*MoveAnimation) {
 	e.mutex.Lock()

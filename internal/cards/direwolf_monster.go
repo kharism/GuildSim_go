@@ -23,9 +23,21 @@ func (b *Direwolf) GetCost() Cost {
 	cost.AddResource(RESOURCE_NAME_COMBAT, 7)
 	return cost
 }
+func (b *Direwolf) OnPunish() {
+	b.state.TakeDamage(3)
+}
 
 // TODO
 func (b *Direwolf) OnSlain() {
+	cardInHand := b.state.GetCardInHand()
+	if len(cardInHand) > 0 {
+		idx := b.state.GetCardPicker().PickCard(cardInHand, "Pick a card to banish")
+		selectedCard := cardInHand[idx]
+		b.state.RemoveCardFromHandIdx(idx)
+		b.state.BanishCard(selectedCard, DISCARD_SOURCE_HAND)
+		monsterMasher := NewMonsterMasher(b.state)
+		b.state.DiscardCard(&monsterMasher, DISCARD_SOURCE_NAN)
+	}
 	// b.state.AddResource(RESOURCE_NAME_REPUTATION, 2)
 	// if b.state.GetBoolPicker().BoolPick("Draw a card?") {
 	// 	b.state.Draw()

@@ -26,6 +26,12 @@ func (m *ForgottenMonarchP2) Trap() {
 	s := NewStunCurse(m.state)
 	m.state.StackCards(DISCARD_SOURCE_NAN, &s)
 }
+func (m *ForgottenMonarchP2) Unbanishable() {
+
+}
+func (m *ForgottenMonarchP2) Unshuffleable() {
+
+}
 func (m *ForgottenMonarchP2) IsDisarmed() bool {
 	return m.isDisarmed
 }

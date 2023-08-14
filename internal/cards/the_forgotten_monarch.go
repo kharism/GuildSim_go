@@ -21,6 +21,12 @@ func (m *ForgottenMonarch) GetCost() Cost {
 	cost.AddResource(RESOURCE_NAME_COMBAT, 8)
 	return cost
 }
+func (m *ForgottenMonarch) Unbanishable() {
+
+}
+func (m *ForgottenMonarch) Unshuffleable() {
+
+}
 func (m *ForgottenMonarch) OnSlain() {
 	m.state.TakeDamage(-2)
 	phase2 := NewForgottenMonarchP2(m.state)
