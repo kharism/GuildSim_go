@@ -13,7 +13,7 @@ func (m *GoblinRaiderMonster) GetName() string {
 	return "GoblinRaiderMonster"
 }
 func (m *GoblinRaiderMonster) GetDescription() string {
-	return "2 damage per turn"
+	return "2 damage per turn. Reward: banish 1 card on your cooldownpile"
 }
 func (m *GoblinRaiderMonster) GetCost() Cost {
 	cost := NewCost()
@@ -22,6 +22,15 @@ func (m *GoblinRaiderMonster) GetCost() Cost {
 }
 func (m *GoblinRaiderMonster) OnPunish() {
 	m.state.TakeDamage(2)
+}
+func (m *GoblinRaiderMonster) OnSlain() {
+	cooldown := m.state.GetCooldownCard()
+	if len(cooldown) > 0 {
+		removeIdx := m.state.GetCardPicker().PickCard(cooldown, "Banish a card")
+		removedCard := cooldown[removeIdx]
+		m.state.RemoveCardFromCooldownIdx(removeIdx)
+		m.state.BanishCard(removedCard, DISCARD_SOURCE_COOLDOWN)
+	}
 }
 func (m *GoblinRaiderMonster) Dispose(source string) {
 	m.state.DiscardCard(m, source)

@@ -1,0 +1,52 @@
+1. Add default Hero on center deck 
+   2.4 add hero that generate honor and money (either priest or mercenary) (optional)
+2. Add gothic horror area and monsters (optional)
+3. Add mechanical monsters (optional)
+4. Add recruitable monster or Hero with punish effect
+6. Add Hero that can scale for late game
+   - add class for hero (spelluser, warrior, animal, unearthly being, etc)
+   - Hero that generate more combat with how much monsters in your deck + recruitable monsters that add copies of itself
+7. Implement Items:
+   - relic extra draw (super rare)
+8. add more cards
+   - monster realm location
+     - unlock by defeating 1 miniboxx
+     - on explored, shuffle infernal jester, aggro djinn, and other hellish creature.
+     - hellhound : a multi-phase monster, if defeated shuffle a copy of itself to center deck
+   - trap hole : have continuous eff to prevents player to recruit hero/defeat monster until it is disarmed
+   - add drake/wyvern monsters that take 4 or more combat point. Gives them decent rewards like extra draw or something
+   - 
+9. finish the tomb of forgotten monarch.
+   - scrap the labyrinth area. It is sucks/tedious
+   - add item combination gimmick. Has 3 or more boss monsters drop item the player must use when certain cards is on the central row to unlock new area
+
+
+DONE
+1. Decouple game logic and UI logic
+2. Add curse card
+3. Add default Hero on center deck
+   2.1 add hero that banishes cards from discard pile or hand (done)
+   2.2 add hero that draw (done)
+   2.3 add hero that replace cards in center row (for now replace cards in center row with top deck in center row)(done)
+4. Make undead area and monsters (partially done, add more room for exploration)
+5. Finish the TUI
+6. Test ebiten framework for this game
+7. Finish OnBanish/OnDiscard implementation
+8. Implement Items:
+   - potion combat/explore gain (common)
+   - potion recover HP (common)
+   - banish card from cooldown (common)
+   - relic gain combat/explore each turn (rare)
+   - relic recover HP (rare)
+   - potion mulligan (rare)
+   - recursion potion (rare)
+9. TESTING ON
+   - aggro djinn monster
+   - bulwark
+   - deadweight
+   - infernal jester
+   - monster masher
+   - noble knight
+   - rogue infiltrator
+   - spike floor trap
+8. Add mechanic/debuff that limit/prevents player from drawing too much

@@ -2,6 +2,7 @@ package cards_test
 
 import (
 	"github/kharism/GuildSim_go/internal/cards"
+	"github/kharism/GuildSim_go/internal/factory"
 	"testing"
 )
 
@@ -308,7 +309,289 @@ func TestRookieMage(t *testing.T) {
 	}
 
 }
+func TestBulwark(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return true }
+	gamestate.SetBoolPicker(&cardPicker)
+	bulwark := cards.NewBulwark(gamestate)
+	gamestate.PlayCard(&bulwark)
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_COMBAT] != 2 {
+		t.Log("fail to generate combat")
+		t.FailNow()
+	}
+	cardPicker.ChooseMethodBool = func() bool { return false }
+	gamestate.PlayCard(&bulwark)
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] != 5 {
+		t.Log("fail to generate block")
+		t.FailNow()
+	}
+}
+func TestAggroDjinn(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return true }
+	aggroDjinn := cards.NewAggroDjinn(gamestate)
+	anotherAggroDjinn := cards.NewAggroDjinn(gamestate)
+	dumGamestate.CardsInHand = append(dumGamestate.CardsInHand, &aggroDjinn)
+	dumGamestate.CenterCards = append(dumGamestate.CenterCards, &anotherAggroDjinn)
+	gamestate.PlayCard(&aggroDjinn)
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_COMBAT] != 5 {
+		t.Log("Failed to gain resource, djinn")
+		t.FailNow()
+	}
+	if dumGamestate.CardsDiscarded.Size() != 1 {
+		t.Log("Failed to add a copy of djinn")
+		t.FailNow()
+	}
+	gamestate.RecruitCard(&anotherAggroDjinn)
+	if dumGamestate.CardsDiscarded.Size() != 2 {
+		t.Log("Failed to add a copy of djinn")
+		t.FailNow()
+	}
+}
+func TestDeadWeight(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return true }
+	dumGamestate.SetBoolPicker(&cardPicker)
+	dumGamestate.SetCardPicker(&cardPicker)
+	deadweight := cards.NewDeadweight(gamestate)
+	rookieMage := cards.NewRookieMage(gamestate)
+	dumGamestate.StackCards("NA", &deadweight, &rookieMage)
+	dumGamestate.CardsInHand = append(dumGamestate.CardsInHand, &deadweight, &rookieMage)
+	gamestate.PlayCard(&rookieMage)
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_COMBAT] != 3 {
+		t.Log("fail to generate combat")
+		t.FailNow()
+	}
+	cardPicker.ChooseMethodBool = func() bool { return false }
+	gamestate.PlayCard(&rookieMage)
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_EXPLORATION] != 3 {
+		t.Log("fail to generate explore")
+		t.FailNow()
+	}
+}
+func TestCarcassSlime(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return false }
+	gamestate.SetBoolPicker(&cardPicker)
+	gamestate.SetCardPicker(&cardPicker)
+	gamestate.SetDetailViewer(&cardPicker)
+	carcassSlime := cards.NewCarcassSlimeCurse(gamestate)
+	dumGamestate.CardsInHand = append(dumGamestate.CardsInHand, &carcassSlime)
+	HPStart := gamestate.GetCurrentHP()
+	gamestate.EndTurn()
+	HPNow := gamestate.GetCurrentHP()
+	if HPNow == HPStart {
+		t.FailNow()
+	}
+	if HPStart-HPNow != 13 {
+		t.Log("Damage is not 13")
+		t.FailNow()
+	}
+	HPStart = HPNow
+	dumGamestate.CardsInHand = append(dumGamestate.CardsInHand, &carcassSlime)
+	dumGamestate.Draw()
+	gamestate.PlayCard(&carcassSlime)
+	if len(dumGamestate.CardsInHand) != 0 {
+		t.FailNow()
+	}
+	gamestate.EndTurn()
+	HPNow = gamestate.GetCurrentHP()
+	if (HPStart - HPNow) != 8 {
+		t.Log("Damage is not 8")
+		t.FailNow()
+	}
+	HPStart = HPNow
+	dumGamestate.CardsInHand = append([]cards.Card{}, &carcassSlime)
+	pyroKnight := cards.NewPyroKnight(gamestate)
+	gamestate.PlayCard(&pyroKnight)
+	t.Log(len(dumGamestate.CardsInHand))
+	if len(dumGamestate.CardsInHand) != 0 {
+		t.FailNow()
+	}
 
+}
+func TestJester(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return true }
+	dumGamestate.SetBoolPicker(&cardPicker)
+	dumGamestate.SetCardPicker(&cardPicker)
+	jester1 := cards.NewInfernalJester(gamestate)
+	jester2 := cards.NewInfernalJester(gamestate)
+
+	gamestate.StackCards("NA", &jester1)
+	dumGamestate.CenterCards = append(dumGamestate.CenterCards, &jester2)
+	gamestate.Draw()
+	gamestate.Draw()
+	dumGamestate.CardsInHand = dumGamestate.CardsInHand[1:]
+	nonJesterCard := dumGamestate.CardsInHand[0]
+	// t.Log(nonJesterCard.GetName())
+	gamestate.PlayCard(&jester1)
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_COMBAT] != 4 {
+		t.Log("fail to generate resource")
+		t.FailNow()
+	}
+	if len(dumGamestate.CardsInHand) != 0 {
+		t.Log("failed to stact cards")
+		t.FailNow()
+	}
+	// t.Log(dumGamestate.CardsInDeck.List()[0].GetName())
+	if dumGamestate.CardsInDeck.List()[0] != nonJesterCard {
+		t.Log("failed to stact cards")
+		t.FailNow()
+	}
+	gamestate.RecruitCard(&jester2)
+	if dumGamestate.CardsDiscarded.Size() != 1 {
+		t.Log("Fail to recruit monster")
+		t.FailNow()
+	}
+	dumGamestate.AddResource(cards.RESOURCE_NAME_COMBAT, 3)
+	dumGamestate.DefeatCard(&jester1)
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_REPUTATION] != 6 {
+		t.Log("fail to generate resource")
+		t.FailNow()
+	}
+}
+func TestRogueTrap(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return true }
+	spikeFloor := cards.NewSpikeFloor(gamestate)
+	rogue := cards.NewRogueInfiltrator(gamestate)
+	dumGamestate.CardsInCenterDeck.Stack(&spikeFloor)
+	gamestate.ReplaceCenterCard()
+	if gamestate.GetCurrentHP() != 60-4 {
+		t.Log("Fail inflict damage")
+		t.FailNow()
+	}
+	dumGamestate.SetBoolPicker(&cardPicker)
+	dumGamestate.SetCardPicker(&cardPicker)
+	gamestate.PlayCard(&rogue)
+	if gamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_EXPLORATION] != 3 {
+		t.Log("Fail gain resource")
+		t.FailNow()
+	}
+	cardPicker.ChooseMethodBool = func() bool { return false }
+	gamestate.PlayCard(&rogue)
+	dumGamestate.CardsInCenterDeck.Stack(&spikeFloor)
+	gamestate.ReplaceCenterCard()
+	if gamestate.GetCurrentHP() != 60-4 {
+		t.Log("Fail inflict damage", gamestate.GetCurrentHP())
+		t.FailNow()
+	}
+	if len(dumGamestate.TopicsListeners[cards.EVENT_CARD_DRAWN_CENTER].Listeners) > 0 {
+		t.Log("Fail To Remove listener")
+		t.FailNow()
+	}
+	spikeFloor = cards.NewSpikeFloor(gamestate) // must create new spike floor, the first one is permanently disarmed
+	dumGamestate.CardsInCenterDeck.Stack(&spikeFloor)
+	gamestate.ReplaceCenterCard()
+	if gamestate.GetCurrentHP() != 52 {
+		t.Log("Fail inflict damage", gamestate.GetCurrentHP())
+		t.FailNow()
+	}
+}
+func TestCleric(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return false }
+	gamestate.SetBoolPicker(&cardPicker)
+	gamestate.SetCardPicker(&cardPicker)
+	gamestate.SetDetailViewer(&cardPicker)
+	cleric := cards.NewCleric(gamestate)
+	pyroKnight := cards.NewPyroKnight(gamestate)
+	dumGamestate.CardsInCenterDeck.Stack(&pyroKnight)
+	for i := 0; i < 5; i++ {
+		gamestate.CenterRowInit()
+	}
+
+	// centerCards2 := gamestate.GetCenterCard()
+	// for _, i := range centerCards2 {
+	// 	t.Log(i.GetName(), i.GetCardType())
+	// }
+	gamestate.PlayCard(&cleric)
+	if len(dumGamestate.CardsBanished) == 0 {
+		t.Log("Failed to banish")
+		t.FailNow()
+	}
+	// check if pyroKnight is still in center row
+	centerCards2 := gamestate.GetCenterCard()
+	for _, i := range centerCards2 {
+		if i == &pyroKnight {
+			t.Log("Fail to replace")
+			t.FailNow()
+		}
+	}
+}
+func TestThiefTrap(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return false }
+	gamestate.SetBoolPicker(&cardPicker)
+	gamestate.SetCardPicker(&cardPicker)
+	gamestate.SetDetailViewer(&cardPicker)
+	spikeFloor := cards.NewSpikeFloor(gamestate)
+	thief := cards.NewThief(gamestate)
+	dumGamestate.CardsInCenterDeck.Stack(&spikeFloor)
+	gamestate.PlayCard(&thief)
+	if !spikeFloor.IsDisarmed() {
+		t.Log("failed to disarm")
+		t.Fail()
+	}
+
+}
 func TestWingedLion(t *testing.T) {
 	gamestate := NewDummyGamestate()
 	cardPicker := TestCardPicker{}

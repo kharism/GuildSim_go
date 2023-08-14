@@ -11,8 +11,9 @@ const (
 	Hero CardType = iota
 	Area
 	Monster
-	Event
+	Trap
 	Curse
+	Item
 )
 
 func (i CardType) String() string {
@@ -23,10 +24,12 @@ func (i CardType) String() string {
 		return "Area"
 	case Monster:
 		return "Mons"
-	case Event:
-		return "Event"
+	case Trap:
+		return "Trap"
 	case Curse:
 		return "Curse"
+	case Item:
+		return "Item"
 	}
 	return ""
 }
@@ -51,8 +54,14 @@ type Card interface {
 	// when discarded to cooldown pile, do this
 	OnDiscarded()
 
+	OnBanished()
+	OnReturnToDeck()
+
 	// when added to hand do this
 	OnAddedToHand()
+
+	// when a card is added to item list
+	OnAcquire()
 
 	// get rid of this card, you either send this to discard pile or banished pile
 	Dispose(source string)

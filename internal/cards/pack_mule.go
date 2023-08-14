@@ -55,7 +55,7 @@ func (r *PackMule) OnPlay() {
 			removeEventListenerAction := NewRemoveEventListenerAction(r.gamestate, EVENT_CARD_PLAYED, nil)
 			compositeAction := NewCompositeAction(r.gamestate, addResourceAction, removeEventListenerAction)
 			cardPlayedListener := NewCardPlayedListener(filter, compositeAction)
-			removeEventListenerAction.(*RemoveEventListenerAction).listener = cardPlayedListener
+			removeEventListenerAction.(*RemoveEventListenerAction).listener = append(removeEventListenerAction.(*RemoveEventListenerAction).listener, cardPlayedListener)
 			r.eventListener = cardPlayedListener
 		}
 

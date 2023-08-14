@@ -19,6 +19,11 @@ func (a *BaseArea) GetCardType() CardType {
 func (a *BaseArea) Dispose(source string) {
 
 }
+func (a *BaseArea) OnAcquire() {
+
+}
+func (a *BaseArea) OnBanished()     {}
+func (a *BaseArea) OnReturnToDeck() {}
 
 // when played from hand, do this
 func (a *BaseArea) OnPlay() {}
@@ -33,3 +38,9 @@ func (a *BaseArea) OnSlain() {}
 
 // when discarded to cooldown pile, do this
 func (a *BaseArea) OnDiscarded() {}
+
+// a hack. any card implement this interface should not be legal to banish
+// any card that list a card to Banish should skip the card if it implements this interface
+type Unbanishable interface {
+	Unbanishable()
+}

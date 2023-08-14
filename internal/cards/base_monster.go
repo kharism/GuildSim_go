@@ -26,10 +26,15 @@ func (m *BaseMonster) OnExplored() {}
 
 func (m *BaseMonster) OnAddedToHand() {}
 
+func (a *BaseMonster) OnBanished()     {}
+func (a *BaseMonster) OnReturnToDeck() {}
+
 // when slain, do this
 func (m *BaseMonster) OnSlain() {}
 
 func (m *BaseMonster) Dispose(source string) {}
+
+func (m *BaseMonster) OnAcquire() {}
 
 // when discarded to cooldown pile, do this
 func (m *BaseMonster) OnDiscarded() {}
@@ -37,4 +42,11 @@ func (m *BaseMonster) OnDiscarded() {}
 // all monster that do punishing move on end phase should implement this
 type Punisher interface {
 	OnPunish()
+}
+
+// a hack. any card implement this interface will not be shuffled back on end of turn
+// when we can't defeat/explore/recruit cards on center row. They also cannot be returned
+// by card eff such as winged lion
+type Unshuffleable interface {
+	Unshuffleable()
 }

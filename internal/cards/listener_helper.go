@@ -17,3 +17,16 @@ func MakeOneTimeListener(l observer.Listener, ob observer.Observer) observer.Lis
 	o := &OneTimeListener{l: l, ob: ob}
 	return o
 }
+
+// a simple listener that execute action when triggered
+// it does not check the data sent by sender
+type BasicListener struct {
+	action AbstractActon
+}
+
+func NewBasicAction(action AbstractActon) *BasicListener {
+	return &BasicListener{action: action}
+}
+func (b *BasicListener) DoAction(data map[string]interface{}) {
+	b.action.DoAction()
+}

@@ -6,6 +6,7 @@ import (
 	"github/kharism/GuildSim_go/internal/factory"
 	"github/kharism/GuildSim_go/internal/gamestate"
 	"log"
+	"sync"
 
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
@@ -33,7 +34,7 @@ const (
 	MAIN_DECK_X = 30
 	MAIN_DECK_Y = 600*0.75 - 30
 
-	HAND_DIST_X     = 450*HAND_SCALE + 30
+	HAND_DIST_X     = 450*HAND_SCALE + 10
 	HAND_START_X    = MAIN_DECK_X + HAND_DIST_X
 	HAND_START_Y    = MAIN_DECK_Y
 	STATE_MAIN_MENU = "mainmenu"
@@ -46,6 +47,12 @@ const (
 	CENTER_DECK_START_X = 30
 	CENTER_DECK_START_Y = 75
 
+	ITEM_ICON_START_X = 20
+	ITEM_ICON_START_Y = 0
+
+	DISCARD_NA_SOURCE_X = 350 //600 - 450*3/4
+	DISCARD_NA_SOURCE_Y = 150 //300 - 300*3/4
+
 	CENTER_START_X = CENTER_DECK_START_X + HAND_DIST_X
 	CENTER_START_Y = CENTER_DECK_START_Y
 
@@ -57,6 +64,9 @@ const (
 
 	ENDTURN_START_X = 1100
 	ENDTURN_START_Y = MAIN_DECK_Y
+
+	DMG_START_X = 500
+	DMG_START_Y = 600*0.75 + 50
 )
 
 var mainMenu AbstractEbitenState
@@ -64,6 +74,7 @@ var mainGame AbstractEbitenState
 var currentState AbstractEbitenState
 var mplusNormalFont font.Face
 var mplusResource font.Face
+var mplusDamage font.Face
 
 func init() {
 	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
@@ -76,6 +87,11 @@ func init() {
 		Hinting: font.HintingFull,
 	})
 	mplusResource, err = opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    24,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	})
+	mplusDamage, err = opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    48,
 		DPI:     dpi,
 		Hinting: font.HintingFull,
@@ -89,11 +105,16 @@ func (e *exitAction) DoAction() {
 	//os.Exit(0)
 	ll := mainGame.(*MainGameState)
 	ll.currentSubState = ll.gameoverState
+	ll.cardsPlayed = []*EbitenCard{}
+	ll.cardInHand = []*EbitenCard{}
 }
 func AttachGameOverListener(state cards.AbstractGamestate) cards.AbstractGamestate {
 	quit := exitAction{}
 	gameoverlistener := cards.NewStillAliveListener(state, &quit)
+	onTakeDamage := &onTakeDamage{mainGameState: mainGame.(*MainGameState)}
 	state.AttachListener(cards.EVENT_TAKE_DAMAGE, gameoverlistener)
+	state.AttachListener(cards.EVENT_TAKE_DAMAGE, onTakeDamage)
+	state.AttachListener(cards.EVENT_HEAL_DAMAGE, onTakeDamage)
 	return state
 }
 
@@ -110,7 +131,9 @@ func AttachCardPlayedListener(state cards.AbstractGamestate) cards.AbstractGames
 }
 func AttachCardDiscardListener(state cards.AbstractGamestate) cards.AbstractGamestate {
 	onDiscardAction := &onDiscardAction{mainGameState: mainGame.(*MainGameState)}
+	onBanishAction := &onBanishAction{mainGameState: mainGame.(*MainGameState)}
 	state.AttachListener(cards.EVENT_ATTR_CARD_DISCARDED, onDiscardAction)
+	state.AttachListener(cards.EVENT_ATTR_CARD_BANISHED, onBanishAction)
 	return state
 }
 func AttachReturnToCenterListener(state cards.AbstractGamestate) cards.AbstractGamestate {
@@ -127,9 +150,27 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 	onExplore := &onExplorationAction{mainGameState: mainGame.(*MainGameState)}
 	onDefeat := &onDefeatAction{mainGameState: mainGame.(*MainGameState)}
 	onRecruit := &onRecruitAction{mainGameState: mainGame.(*MainGameState)}
+	onDisarm := &onDisarmAction{mainGameState: mainGame.(*MainGameState)}
+	onItemAdd := &onItemAdd{mainGameState: mainGame.(*MainGameState)}
+	onCardStacked := &onCardStacked{mainGameState: mainGame.(*MainGameState)}
+	onPrePunish := &onPrePunish{mainGameState: mainGame.(*MainGameState)}
+	onAddResource := &onChangeResource{mainGameState: mainGame.(*MainGameState)}
+	ff := &onLimiterAttach{mainGameState: mainGame.(*MainGameState)}
+	fg := &onLimiterDetach{mainGameState: mainGame.(*MainGameState)}
+	detachAct := &onDetachAction{mainGameState: mainGame.(*MainGameState)}
+	onBossDefeated := &onBossDefeated{mainGameState: mainGame.(*MainGameState), bossDefeatedAction: gamestate.BossDefeatedAction{State: state.(*gamestate.DefaultGamestate)}}
 	state.AttachListener(cards.EVENT_CARD_EXPLORED, onExplore)
 	state.AttachListener(cards.EVENT_CARD_RECRUITED, onRecruit)
 	state.AttachListener(cards.EVENT_CARD_DEFEATED, onDefeat)
+	state.AttachListener(cards.EVENT_TRAP_REMOVED, onDisarm)
+	state.AttachListener(cards.EVENT_ITEM_ADDED, onItemAdd)
+	state.AttachListener(cards.EVENT_CARD_STACKED, onCardStacked)
+	state.AttachListener(cards.EVENT_ATTACH_LIMITER, ff)
+	state.AttachListener(cards.EVENT_DETACH_LIMITER, fg)
+	state.AttachListener(cards.EVENT_REMOVE_OVERLAY, detachAct)
+	state.AttachListener(cards.EVENT_BEFORE_PUNISH, onPrePunish)
+	state.AttachListener(cards.EVENT_ADD_RESOURCE, onAddResource)
+	state.AttachListener(cards.EVENT_BOSS_DEFEATED, onBossDefeated)
 	return state
 }
 func (g *Game) ChangeState(stateName string) {
@@ -137,27 +178,56 @@ func (g *Game) ChangeState(stateName string) {
 	case STATE_MAIN_GAME:
 		starterDeckSet := []string{factory.SET_STARTER_DECK}
 		centerDeckSet := []string{factory.SET_CENTER_DECK_1}
-		decorators := []decorator.AbstractDecorator{decorator.AttachTombOfForgottenMonarch,
+		decorators := []decorator.AbstractDecorator{decorator.AttachTombOfForgottenMonarch, decorator.AttachTreasure, decorator.AttachProgressionCounter,
 			AttachGameOverListener, AttachDrawMainDeckListener, AttachCardPlayedListener,
 			AttachCardDiscardListener, AttachCenterCardDrawnListener, AttachCenterCardRecDefExp,
 			AttachReturnToCenterListener,
 		}
 		defaultGamestate := gamestate.CustomizedDefaultGamestate(starterDeckSet, centerDeckSet, decorators)
+		defaultGamestate.AddActDecorator(decorator.AttachHuntForDragonLord)
+		// mainGame = NewMainGameState(g)
 		mm := mainGame.(*MainGameState)
 		mm.defaultGamestate = defaultGamestate.(*gamestate.DefaultGamestate)
+		mm.hp = defaultGamestate.GetCurrentHP()
 		mm.defaultGamestate.SetCardPicker(mm.cardPicker)
-		mm.defaultGamestate.TakeDamage(40)
-		// rookieMage := cards.NewWingedLion(mm.defaultGamestate)
-		// ll := append(mm.defaultGamestate.CardsInDeck.List()[:3], &rookieMage)
-		// rest := mm.defaultGamestate.CardsInDeck.List()[4:]
-		// mm.defaultGamestate.CardsInDeck.SetList(append(ll, rest...))
-		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &rookieMage)
-		// rookieCard := NewEbitenCardFromCard(&rookieMage)
+		mm.defaultGamestate.SetDetailViewer(mm.detailState)
+		mm.defaultGamestate.SetBoolPicker(mm.boolPicker)
+		// mm.defaultGamestate.AddResource(cards.RESOURCE_NAME_COMBAT, 20)
+		mm.mainState = &mainMainState{m: mm, mutex: &sync.Mutex{}}
+		mm.currentSubState = mm.mainState
+		mm.mainState.Reset()
+		// jj := cards.NewForgottenMonarchP2(mm.defaultGamestate)
+		// mm.defaultGamestate.CardsInCenterDeck.Stack(&jj)
+		// mm.defaultGamestate.TakeDamage(40)
+		// wl := cards.NewWingedLion(mm.defaultGamestate)
+		// dw := cards.NewDeadweight(mm.defaultGamestate)
+		// kk := cards.NewRookieMage(mm.defaultGamestate)
+		// slimeRoom := cards.NewSlimeRoom(mm.defaultGamestate)
+		// boulder := cards.NewWolfPack(mm.defaultGamestate)
+		// spikeFloor := cards.NewSpikeFloor(mm.defaultGamestate)
+		// lair := cards.NewGoblinSmallLairArea(mm.defaultGamestate)
+		// heal := item.NewHealingPotion(defaultGamestate)
+		// ll := append(mm.defaultGamestate.CardsInCenterDeck.List()[:3], &spikeFloor)
+		// rest := mm.defaultGamestate.CardsInCenterDeck.List()
+		// iceWyvern := cards.NewIceWyvern(mm.defaultGamestate)
+		// mm.defaultGamestate.CardsInCenterDeck.SetList(append([]cards.Card{&iceWyvern}, rest...))
+		// mm.defaultGamestate.ItemCards = append(mm.defaultGamestate.ItemCards, &heal)
+		// mm.defaultGamestate.CardsInHand = append(mm.defaultGamestate.CardsInHand, &spikeFloor)
+		// list := mm.defaultGamestate.CardsInDeck.List()
+		// newList := append(list[0:3], &kk)
+		// newList = append(newList, list[4:]...)
+		// mm.defaultGamestate.CardsInDeck.SetList(newList)
+		// mm.defaultGamestate.CardsInDeck.Stack(&kk)
+		// newDeck := []cards.Card{&boulder}
+		// rookieCard := NewEbitenCardFromCard(&spikeFloor)
 		// rookieCard.x = HAND_START_X
 		// rookieCard.y = HAND_START_Y
 		// mm.cardInHand = append(mm.cardInHand, rookieCard)
 		currentState = mainGame
 		mm.defaultGamestate.CenterRowInit()
+		// mm.defaultGamestate.CardsInCenterDeck.Stack(&boulder)
+		// mm.defaultGamestate.CardsInCenterDeck.Stack(&spikeFloor)
+		// mm.defaultGamestate.CardsInCenterDeck.Stack(&slimeRoom)
 		mm.defaultGamestate.BeginTurn()
 	case STATE_MAIN_MENU:
 		currentState = mainMenu
