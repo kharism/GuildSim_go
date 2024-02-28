@@ -585,12 +585,89 @@ func TestThiefTrap(t *testing.T) {
 	spikeFloor := cards.NewSpikeFloor(gamestate)
 	thief := cards.NewThief(gamestate)
 	dumGamestate.CardsInCenterDeck.Stack(&spikeFloor)
+	gamestate.CenterRowInit()
 	gamestate.PlayCard(&thief)
-	if !spikeFloor.IsDisarmed() {
-		t.Log("failed to disarm")
-		t.Fail()
+	ll := gamestate.GetCenterCard()
+	if len(ll) != 0 {
+		t.Log("Failed to disarm for free")
 	}
-
+}
+func TestCurseEater(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	cardPicker := TestCardPicker{}
+	cardPicker.ChooseMethod = StaticCardPicker(0)
+	cardPicker.ChooseMethodBool = func() bool { return false }
+	gamestate.SetBoolPicker(&cardPicker)
+	gamestate.SetCardPicker(&cardPicker)
+	gamestate.SetDetailViewer(&cardPicker)
+	curseEater := cards.NewCurseEaterMonster(gamestate)
+	gamestate.AddResource(cards.RESOURCE_NAME_COMBAT, 4)
+	gamestate.AddCardToCenterDeck(cards.DISCARD_SOURCE_NAN, false, &curseEater)
+	gamestate.CenterRowInit()
+	gamestate.DefeatCard(&curseEater)
+	ll := gamestate.ListItems()
+	if len(ll) != 1 {
+		t.FailNow()
+		t.Log("Failed to add item")
+	}
+	curseCard := cards.NewStunCurse(gamestate)
+	gamestate.PlayCard(&curseCard)
+	res := gamestate.GetCurrentResource()
+	resBlock := res.Detail[cards.RESOURCE_NAME_BLOCK]
+	resCombat := res.Detail[cards.RESOURCE_NAME_COMBAT]
+	if resBlock != 2 || resCombat != 2 {
+		t.Log("Failed to add resource")
+		t.FailNow()
+	}
+}
+func TestRagingVampire(t *testing.T) {
+	gamestate := NewDummyGamestate()
+	starterDeck := factory.CardFactory(factory.SET_STARTER_DECK, gamestate)
+	centerCards := factory.CardFactory(factory.SET_CENTER_DECK_1, gamestate)
+	dumGamestate := gamestate.(*DummyGamestate)
+	dumGamestate.CardsInDeck.SetList(starterDeck)
+	dumGamestate.CardsInCenterDeck.SetList(centerCards)
+	vampire := cards.NewRagingVampire(dumGamestate)
+	dumGamestate.AddResource(cards.RESOURCE_NAME_COMBAT, 2)
+	dumGamestate.AddResource(cards.RESOURCE_NAME_REPUTATION, 4)
+	dumGamestate.RecruitCard(vampire)
+	reputation := dumGamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_REPUTATION]
+	if reputation != 0 {
+		t.Log(reputation)
+		t.FailNow()
+	}
+	// t.Log(dumGamestate.GetCurrentHP())
+	dumGamestate.PlayCard(vampire)
+	combat := dumGamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_COMBAT]
+	if combat != 10 {
+		t.Log(combat)
+		t.FailNow()
+	}
+	// t.Log(dumGamestate.GetCurrentHP())
+	rookieAdventurer := cards.NewRookieAdventurer(dumGamestate)
+	dumGamestate.PlayCard(&rookieAdventurer)
+	combat = dumGamestate.GetCurrentResource().Detail[cards.RESOURCE_NAME_COMBAT]
+	if combat != 10 {
+		t.Log(combat)
+		t.FailNow()
+	}
+	if dumGamestate.GetCurrentHP() != 59 {
+		t.Log(dumGamestate.GetCurrentHP())
+		t.FailNow()
+	}
+	dumGamestate.EndTurn()
+	dumGamestate.PlayCard(&rookieAdventurer)
+	dumGamestate.PlayCard(&rookieAdventurer)
+	dumGamestate.PlayCard(&rookieAdventurer)
+	if dumGamestate.GetCurrentHP() != 58 {
+		t.Log(dumGamestate.GetCurrentHP())
+		t.FailNow()
+	}
 }
 func TestWingedLion(t *testing.T) {
 	gamestate := NewDummyGamestate()

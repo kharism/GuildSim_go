@@ -1,19 +1,17 @@
 package main
 
 import (
-	"github/kharism/GuildSim_go/internal/cards"
-
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type actClearSubstate struct {
-	m            *MainGameState
-	cards        []cards.Card
-	selectedCard *EbitenCard
-	alpha        float64
-	alphaMove    float64
-	doneFunc     func()
+	m *MainGameState
+	// cards        []cards.Card
+	// selectedCard *EbitenCard
+	alpha     float64
+	alphaMove float64
+	doneFunc  func()
 }
 
 func (c *actClearSubstate) Update() error {

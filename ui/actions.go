@@ -137,6 +137,22 @@ func (p *OnPlayAction) DoAction(data map[string]interface{}) {
 	// fmt.Println(mm.cardInHand)
 }
 
+type onBeforeTrap struct {
+	MainGameState *MainGameState
+}
+
+func (p *onBeforeTrap) DoAction(data map[string]interface{}) {
+	trap := data[cards.EVENT_ATTR_BEFORE_TRAP].(cards.Card)
+	// p.MainGameState.detailState.prevSubState = p.MainGameState.mainState
+	p.MainGameState.detailState.prevSubState = p.MainGameState.mainState
+	p.MainGameState.detailState.ShowDetail(trap)
+	// p.MainGameState.detailViewCard = NewEbitenCardFromCard(trap)
+	// if p.MainGameState.detailViewCard != nil {
+	// 	p.MainGameState.detailState.prevSubState = p.MainGameState.mainState
+	// 	p.MainGameState.currentSubState = p.MainGameState.detailState
+	// }
+}
+
 // handle EVENT_START_PUNISH
 type onStartPunish struct {
 	MainGameState *mainMainState
@@ -175,6 +191,21 @@ func (p *onBanishAction) DoAction(data map[string]interface{}) {
 		// p.mainGameState.cardsPlayed = newPlayed
 	} else if source == cards.DISCARD_SOURCE_CENTER {
 		sourceCard = p.mainGameState.cardsInCenter
+	} else if source == cards.DISCARD_SOURCE_COOLDOWN {
+		ebitenCard := NewEbitenCardFromCard(cardDiscarded)
+		ebitenCard.x = DISCARD_START_X
+		ebitenCard.y = DISCARD_START_Y
+		ebitenCard.tx = BANISHED_START_X
+		ebitenCard.ty = BANISHED_START_Y
+		vx := float64(ebitenCard.tx - ebitenCard.x)
+		vy := float64(ebitenCard.ty - ebitenCard.y)
+		speedVector := csg.NewVector(vx, vy, 0)
+		speedVector = speedVector.Normalize().MultiplyScalar(CARD_MOVE_SPEED)
+		ebitenCard.vx = speedVector.X
+		ebitenCard.vy = speedVector.Y
+		// fmt.Println("DetectDiscarded", cardDiscarded.GetName(), source, ebitenCard.vx, ebitenCard.vy)
+		p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+		return
 	}
 
 	movedIdx := -1
@@ -200,7 +231,7 @@ func (p *onBanishAction) DoAction(data map[string]interface{}) {
 		p.mainGameState.cardInHand = newSource
 		// move cards on the right side to left
 		if len(p.mainGameState.cardInHand) > 0 {
-			for i := movedIdx; i < len(p.mainGameState.cardInHand); i++ {
+			for i := movedIdx; i <= len(p.mainGameState.cardInHand); i++ {
 				ebitenCard := sourceCard[i]
 				ebitenCard.tx -= HAND_DIST_X
 				vx := float64(ebitenCard.tx - ebitenCard.x)
@@ -299,10 +330,9 @@ func (p *onDiscardAction) DoAction(data map[string]interface{}) {
 			fmt.Println("Card Not found", cardDiscarded.GetName())
 
 		}
-		if len(p.mainGameState.cardInHand) > 0 {
+		if movedIdx >= 0 && len(p.mainGameState.cardInHand) > 0 {
 			fmt.Println("Discard from hand", movedIdx)
-
-			for i := movedIdx + 1; i < len(p.mainGameState.cardInHand); i++ {
+			for i := movedIdx + 1; i <= len(p.mainGameState.cardInHand); i++ {
 				ebitenCard := sourceCard[i]
 				moveAnim := &MoveAnimation{}
 				moveAnim.tx = ebitenCard.x - HAND_DIST_X //newStartHand + float64(i)*HAND_DIST_X
@@ -510,17 +540,24 @@ type onBossDefeated struct {
 
 func (b *onBossDefeated) DoAction(data map[string]interface{}) {
 	b.mainGameState.actClearState.alpha = 0
-	b.mainGameState.actClearState.doneFunc = func() {
-		b.mainGameState.mutex.Lock()
-		b.mainGameState.cardInHand = []*EbitenCard{}
-		b.mainGameState.cardsInLimbo = []*EbitenCard{}
-		b.mainGameState.cardsInCenter = []*EbitenCard{}
-		b.mainGameState.cardsPlayed = []*EbitenCard{}
-		b.mainGameState.mutex.Unlock()
-		b.mainGameState.currentSubState = b.mainGameState.mainState
-		b.bossDefeatedAction.DoAction(data)
+	if data[cards.EVENT_ATTR_BOSS_DEFEATED_COUNT].(int) < 2 {
+		b.mainGameState.actClearState.doneFunc = func() {
+			b.mainGameState.mutex.Lock()
+			b.mainGameState.cardInHand = []*EbitenCard{}
+			b.mainGameState.cardsInLimbo = []*EbitenCard{}
+			b.mainGameState.cardsInCenter = []*EbitenCard{}
+			b.mainGameState.cardsPlayed = []*EbitenCard{}
+			b.mainGameState.mutex.Unlock()
+			b.mainGameState.currentSubState = b.mainGameState.mainState
+			b.bossDefeatedAction.DoAction(data)
 
+		}
+	} else {
+		b.mainGameState.actClearState.doneFunc = func() {
+			mainGame.(*MainGameState).stateChanger.ChangeState(STATE_MAIN_MENU)
+		}
 	}
+
 	b.mainGameState.currentSubState = b.mainGameState.actClearState
 }
 
@@ -828,6 +865,7 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 			newHandCard[i].AnimationQueue = append(newHandCard[i].AnimationQueue, newAnim)
 		}
 		p.mainGameState.cardInHand = newHandCard
+		p.mainGameState.NumCardInDeck = p.mainGameState.defaultGamestate.CardsInDeck.Size()
 
 	} else if source == cards.DISCARD_SOURCE_NAN {
 		ebitenCard := NewEbitenCardFromCard(returnedCard)
@@ -837,6 +875,7 @@ func (p *onCardStacked) DoAction(data map[string]interface{}) {
 		ebitenCard.AnimationQueue = append(ebitenCard.AnimationQueue, newAnim)
 		p.mainGameState.mutex.Lock()
 		p.mainGameState.cardsInLimbo = append(p.mainGameState.cardsInLimbo, ebitenCard)
+		p.mainGameState.NumCardInDeck = p.mainGameState.defaultGamestate.CardsInDeck.Size()
 		p.mainGameState.mutex.Unlock()
 	} else if source == cards.DISCARD_SOURCE_COOLDOWN {
 		ebitenCard := NewEbitenCardFromCard(returnedCard)

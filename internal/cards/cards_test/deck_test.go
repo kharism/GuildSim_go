@@ -132,6 +132,11 @@ func (d *DummyGamestate) PayResource(cost cards.Cost) {
 		d.currentResource.Detail[key] -= val
 	}
 }
+func (d *DummyGamestate) SetFillerIndex(i int) {}
+func (d *DummyGamestate) GetFillerIndex() int  { return 0 }
+func (d *DummyGamestate) AppendCardFiller(func(cards.AbstractGamestate) []cards.Card) {
+
+}
 func (d *DummyGamestate) BeginTurn() {
 	//d.centerCardChanged = false
 	for i := 0; i < 5; i++ {

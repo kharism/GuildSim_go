@@ -44,13 +44,14 @@ func (b *TigerRevenger) Unbanishable() {
 }
 func (b *TigerRevenger) GetCost() Cost {
 	cost := NewCost()
-	cost.AddResource(RESOURCE_NAME_COMBAT, 7)
+	cost.AddResource(RESOURCE_NAME_COMBAT, 5)
 	return cost
 }
 func (b *TigerRevenger) OnSlain() {
 	b.state.RemoveListener(EVENT_CARD_DEFEATED, b.defeatListener)
 	b.state.AddResource(RESOURCE_NAME_REPUTATION, 5)
-
+	jj := NewDragonLord(b.state)
+	b.state.AddCardToCenterDeck(DISCARD_SOURCE_NAN, true, &jj)
 }
 func (b *TigerRevenger) OnPunish() {
 	b.state.TakeDamage(4)

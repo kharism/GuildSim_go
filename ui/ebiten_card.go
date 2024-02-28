@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+
 	csg "github.com/kharism/golang-csg/core"
 )
 
@@ -27,6 +28,8 @@ type EbitenCard struct {
 	// translation on x axis due to dragging
 	x_drag int
 
+	MouseIn bool
+
 	overlays []EbitenCard
 
 	// syncinc stuff
@@ -39,6 +42,12 @@ type EbitenCard struct {
 
 const OVERLAY_MARGIN = 15
 
+func (e *EbitenCard) IsMouseIn(mouseX, mouseY float64) bool {
+	if mouseX > e.x && mouseX < e.x+HAND_DIST_X && mouseY > e.y && mouseY < e.y+SPRITE_HEIGHT {
+		return true
+	}
+	return false
+}
 func (e *EbitenCard) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Reset()
@@ -68,6 +77,25 @@ func (e *EbitenCard) Draw(screen *ebiten.Image) {
 	}
 	// }
 
+}
+func (e *EbitenCard) DrawTooltip(screen *ebiten.Image) {
+	// jj := e.card.GetKeywords()
+	// if e.MouseIn && len(jj) > 0 {
+	// 	//ebitenutil.DrawRect(screen,)
+	// 	// fmt.Println(e.card.GetName())
+	// 	ebitenutil.DrawRect(screen, e.x+SPRITE_WIDTH, e.y, 140, 60, color.White)
+	// 	if e.Keywords == nil {
+	// 		keywordText := &EbitenText{}
+	// 		keywordText.face = tooltipText
+	// 		keywordText.x = e.x + SPRITE_WIDTH
+	// 		keywordText.y = e.y + 12
+	// 		keywordText.color = color.RGBA{255, 0, 0, 255}
+	// 		keywordText.text = jj[0]
+	// 		e.Keywords = keywordText
+
+	// 	}
+	// 	e.Keywords.Draw(screen)
+	// }
 }
 func (e *EbitenCard) AddAnimation(animation ...*MoveAnimation) {
 	e.mutex.Lock()

@@ -21,6 +21,7 @@ var EVENT_TRAP_REMOVED = "TrapRemoved"
 var EVENT_ATTACH_LIMITER = "AttachLimiter"
 var EVENT_DETACH_LIMITER = "DetachLimiter"
 var EVENT_BEFORE_PUNISH = "BeforePunish"
+var EVENT_BEFORE_TRAP = "BeforeTrap"
 var EVENT_ADD_RESOURCE = "AddResource"
 var EVENT_ADD_OVERLAY = "AddOverlay"
 var EVENT_REMOVE_OVERLAY = "RemoveOverlay"
@@ -49,6 +50,7 @@ var EVENT_ATTR_ADD_RESOURCE_NAME = "AttrAddResourceName"
 var EVENT_ATTR_ADD_RESOURCE_AMOUNT = "AttrAddResourceAmount"
 var EVENT_ATTR_ADD_OVERLAY_BASE_CARD = "AddOverlayBase"
 var EVENT_ATTR_ADD_OVERLAY_ADDED_CARD = "AddOverlayNew"
+var EVENT_ATTR_BEFORE_TRAP = "BeforeTrap"
 
 var EVENT_ATTR_LIMITER = "Limiter"
 var EVENT_ATTR_LIMITER_ACTION = "LimiterAction"
@@ -189,6 +191,11 @@ type AbstractGamestate interface {
 	GetCurrentResource() Resource
 	AddResource(name string, amount int)
 	PayResource(cost Cost)
+
+	// control filler card factory
+	SetFillerIndex(int)
+	GetFillerIndex() int
+	AppendCardFiller(func(AbstractGamestate) []Card)
 
 	// this function will decorate the current gamestate since we now have multi act gamenow
 	ActDecorators() []func(AbstractGamestate) AbstractGamestate

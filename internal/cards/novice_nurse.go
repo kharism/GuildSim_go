@@ -18,7 +18,7 @@ func (r *NoviceNurse) GetName() string {
 }
 func (r *NoviceNurse) GetCost() Cost {
 	j := NewCost()
-	j.AddResource(RESOURCE_NAME_EXPLORATION, 3)
+	j.AddResource(RESOURCE_NAME_EXPLORATION, 2)
 	return j
 }
 func (r *NoviceNurse) GetDescription() string {

@@ -17,7 +17,7 @@ func (r *RookieNurse) GetName() string {
 	return "RookieNurse"
 }
 func (r *RookieNurse) GetDescription() string {
-	return "Heal 2 Hp"
+	return "Heal 1 Hp"
 }
 func (r *RookieNurse) GetCost() Cost {
 	cost := NewCost()

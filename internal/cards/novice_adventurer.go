@@ -18,7 +18,7 @@ func (r *NoviceAdventurer) GetName() string {
 }
 func (r *NoviceAdventurer) GetCost() Cost {
 	j := NewCost()
-	j.AddResource(RESOURCE_NAME_EXPLORATION, 3)
+	j.AddResource(RESOURCE_NAME_EXPLORATION, 2)
 	return j
 }
 func (r *NoviceAdventurer) GetDescription() string {

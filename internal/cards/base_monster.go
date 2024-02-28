@@ -44,6 +44,10 @@ type Punisher interface {
 	OnPunish()
 }
 
+func (a *BaseMonster) GetKeywords() []string {
+	return []string{}
+}
+
 // a hack. any card implement this interface will not be shuffled back on end of turn
 // when we can't defeat/explore/recruit cards on center row. They also cannot be returned
 // by card eff such as winged lion

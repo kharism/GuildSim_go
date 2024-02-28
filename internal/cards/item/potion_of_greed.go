@@ -15,7 +15,7 @@ func (h *GreedPotion) Dispose(source string) {
 	h.state.BanishCard(h, source)
 }
 func (h *GreedPotion) GetName() string {
-	return "Greed Potion"
+	return "GreedPotion"
 }
 func (h *GreedPotion) GetDescription() string {
 	return "draw 2 cards"

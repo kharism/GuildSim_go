@@ -25,7 +25,7 @@ func CardFactory(setname string, gamestate cards.AbstractGamestate) []cards.Card
 	case SET_POTION_COMMON_RANDOM:
 		item.CreatePotionRandom(gamestate, cards.RARITY_COMMON)
 	case SET_FILLER_CARDS:
-		return createFillerCenterDeck(gamestate)
+		return CreateFillerCenterDeck2(gamestate)
 	case SET_CENTER_DECK_2:
 		return createStarterCenterDeckAct2(gamestate)
 	case SET_CENTER_DECK_1:
@@ -46,7 +46,27 @@ func createStarterDeck(gamestate cards.AbstractGamestate) []cards.Card {
 	}
 	return deck
 }
-func createFillerCenterDeck(gamestate cards.AbstractGamestate) []cards.Card {
+
+// before defeating 1st boss filler
+func CreateFillerCenterDeck1(gamestate cards.AbstractGamestate) []cards.Card {
+	deck := []cards.Card{}
+	for i := 0; i < 3; i++ {
+		h := cards.NewGoblinMonster(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 3; i++ {
+		h := cards.NewPyroKnight(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 3; i++ {
+		h := cards.NewRookieMage(gamestate)
+		deck = append(deck, &h)
+	}
+	return deck
+}
+
+// after defeating 1st boss fillter
+func CreateFillerCenterDeck2(gamestate cards.AbstractGamestate) []cards.Card {
 	deck := []cards.Card{}
 	for i := 0; i < 3; i++ {
 		h := cards.NewGoblinSmallLairArea(gamestate)
@@ -89,27 +109,60 @@ func createStarterCenterDeckAct2(gamestate cards.AbstractGamestate) []cards.Card
 		h := cards.NewWolfShaman(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 3; i++ {
-		h := cards.NewTigerRevenger(gamestate)
+	for i := 0; i < 6; i++ {
+		h := cards.NewWildBoar(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 2; i++ {
-		h := cards.NewWolfPack(gamestate)
+	for i := 0; i < 6; i++ {
+		h := cards.NewDeadweight(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 6; i++ {
+		h := cards.NewArcher(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 6; i++ {
+		h := cards.NewElephantDjinn(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 6; i++ {
+		h := cards.NewWishyDjinn(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 0; i++ {
+		h := cards.NewDartTrap(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 1; i++ {
+		h := cards.NewSlowTrap(gamestate)
+		deck = append(deck, &h)
+	}
+	// for i := 0; i < 1; i++ {
+	// 	h := cards.NewTigerRevenger(gamestate)
+	// 	deck = append(deck, &h)
+	// }
+	// for i := 0; i < 1; i++ {
+	// 	h := cards.NewWolfPack(gamestate)
+	// 	deck = append(deck, &h)
+	// }
+	for i := 0; i < 1; i++ {
 		h := cards.NewIceWyvern(gamestate)
 		deck = append(deck, &h)
 	}
 	rand.Shuffle(len(deck), func(i, j int) {
 		deck[i], deck[j] = deck[j], deck[i]
 	})
-
+	deck = deck[:20]
+	UniqueCard := cards.GetPool(gamestate).Fetch()
+	deck = append(deck, UniqueCard)
+	rand.Shuffle(len(deck), func(i, j int) {
+		deck[i], deck[j] = deck[j], deck[i]
+	})
 	return deck
 }
 func createStarterCenterDeck(gamestate cards.AbstractGamestate) []cards.Card {
 	deck := []cards.Card{}
-	for i := 0; i < 12; i++ {
+	for i := 0; i < 9; i++ {
 		h := cards.NewGoblinMonster(gamestate)
 		deck = append(deck, &h)
 	}
@@ -145,7 +198,7 @@ func createStarterCenterDeck(gamestate cards.AbstractGamestate) []cards.Card {
 		h := cards.NewDeadweight(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 3; i++ {
 		h := cards.NewMonsterSlayer(gamestate)
 		deck = append(deck, &h)
 	}
@@ -176,5 +229,10 @@ func createStarterCenterDeck(gamestate cards.AbstractGamestate) []cards.Card {
 		deck[i], deck[j] = deck[j], deck[i]
 	})
 	deck = deck[:25]
+	UniqueCard := cards.GetPool(gamestate).Fetch()
+	deck = append(deck, UniqueCard)
+	rand.Shuffle(len(deck), func(i, j int) {
+		deck[i], deck[j] = deck[j], deck[i]
+	})
 	return deck
 }

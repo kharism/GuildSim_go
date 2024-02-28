@@ -79,7 +79,7 @@ func StackMiniboss1(state cards.AbstractGamestate) {
 	rand.Shuffle(len(deck), func(i, j int) {
 		deck[i], deck[j] = deck[j], deck[i]
 	})
-	deck = deck[:20]
+	deck = deck[:15]
 	state.AddCardToCenterDeck(cards.DISCARD_SOURCE_NAN, true, deck...)
 }
 func (s *ProgressListener) DoAction(data map[string]interface{}) {
@@ -89,8 +89,10 @@ func (s *ProgressListener) DoAction(data map[string]interface{}) {
 
 		// add more difficult location to explore
 		StackMiniboss1(s.state)
+		s.state.SetFillerIndex(1)
 		return
 	} else if s.MinibossDefeated == 2 {
+		s.state.SetFillerIndex(1)
 		deck := []cards.Card{}
 		for i := 0; i < 3; i++ {
 			ll := cards.NewBulwark(s.state)
@@ -102,13 +104,18 @@ func (s *ProgressListener) DoAction(data map[string]interface{}) {
 		}
 		s.state.AddCardToCenterDeck(cards.DISCARD_SOURCE_NAN, true, deck...)
 	} else if s.MinibossDefeated == 3 {
-
+		deck := []cards.Card{}
+		for i := 0; i < 3; i++ {
+			ll := cards.NewRogueInfiltrator(s.state)
+			deck = append(deck, &ll)
+		}
+		// traps
 	}
 }
 
 func AttachProgressionCounter(state cards.AbstractGamestate) cards.AbstractGamestate {
-	state.AttachListener(cards.EVENT_MINIBOSS_DEFEATED, &ProgressListener{state: state})
-	state.AttachListener(cards.EVENT_BOSS_DEFEATED, &ProgressListener{state: state})
+	// state.AttachListener(cards.EVENT_MINIBOSS_DEFEATED, &ProgressListener{state: state})
+	// state.AttachListener(cards.EVENT_BOSS_DEFEATED, &ProgressListener{state: state})
 	return state
 }
 
@@ -141,7 +148,8 @@ func AttachTreasure(state cards.AbstractGamestate) cards.AbstractGamestate {
 }
 
 func AttachHuntForDragonLord(state cards.AbstractGamestate) cards.AbstractGamestate {
-	pp := cards.NewUndeadDragon(state)
-	state.AddCardToCenterDeck(cards.DISCARD_SOURCE_NAN, true, &pp)
+	pp := cards.NewDragonKnight(state)
+	pp2 := cards.NewDragonValley(state)
+	state.AddCardToCenterDeck(cards.DISCARD_SOURCE_NAN, true, &pp, &pp2)
 	return state
 }
