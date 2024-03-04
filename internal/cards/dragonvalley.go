@@ -11,7 +11,12 @@ func (d *DragonValley) GetName() string {
 func (d *DragonValley) GetDescription() string {
 	return "If you have dragonclaw you can explore this card for free. OnExplore: Shuffle Undead Dragon and other dragons"
 }
+func (d *DragonValley) Unbanishable() {
 
+}
+func (d *DragonValley) Unshuffleable() {
+
+}
 func NewDragonValley(state AbstractGamestate) DragonValley {
 	return DragonValley{state: state}
 }

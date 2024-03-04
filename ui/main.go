@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
 	"github/kharism/GuildSim_go/internal/decorator"
 	"github/kharism/GuildSim_go/internal/factory"
 	"github/kharism/GuildSim_go/internal/gamestate"
 	"log"
+	"os"
 	"sync"
 
 	"golang.org/x/image/font"
@@ -13,9 +15,13 @@ import (
 
 	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/audio"
 )
 
-type Game struct{}
+type Game struct {
+	musicPlayer   *Player
+	musicPlayerCh chan *Player
+}
 
 var (
 	err        error
@@ -76,6 +82,7 @@ var mplusNormalFont font.Face
 var mplusResource font.Face
 var mplusDamage font.Face
 var tooltipText font.Face
+var audioContext *audio.Context
 
 func init() {
 	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
@@ -186,6 +193,15 @@ func AttachCenterCardRecDefExp(state cards.AbstractGamestate) cards.AbstractGame
 func (g *Game) ChangeState(stateName string) {
 	switch stateName {
 	case STATE_MAIN_GAME:
+		// play different bgsound
+		player, err := NewPlayer(audioContext, "sound/the-celtic-handmaiden-147078.mp3", typeMP3)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(0)
+		}
+
+		g.musicPlayer.audioPlayer.Pause()
+		g.musicPlayer = player
 		cards.ResetPool()
 		starterDeckSet := []string{factory.SET_STARTER_DECK}
 		centerDeckSet := []string{factory.SET_CENTER_DECK_1}
@@ -248,8 +264,8 @@ func (g *Game) ChangeState(stateName string) {
 		// rookieCard.y = HAND_START_Y
 		// mm.cardInHand = append(mm.cardInHand, rookieCard)
 		currentState = mainGame
-		vampire := cards.NewRagingVampire(mm.defaultGamestate)
-		mm.defaultGamestate.CardsInCenterDeck.Stack(vampire)
+		// vampire := cards.NewRagingVampire(mm.defaultGamestate)
+		// mm.defaultGamestate.CardsInCenterDeck.Stack(vampire)
 		mm.defaultGamestate.CenterRowInit()
 		// for i := 0; i < 10; i++ {
 		// 	hh := cards.NewArcher(mm.defaultGamestate)
@@ -261,12 +277,12 @@ func (g *Game) ChangeState(stateName string) {
 		// mm.defaultGamestate.CardsInCenterDeck.Stack(&spikeFloor)
 		// mm.defaultGamestate.CardsInCenterDeck.Stack(&slimeRoom)
 
-		rookieMage := cards.NewRookieMage(mm.defaultGamestate)
+		// rookieMage := cards.NewRookieMage(mm.defaultGamestate)
 		// stunCurse1 := cards.NewStunCurse(mm.defaultGamestate)
 		// stunCurse2 := cards.NewStunCurse(mm.defaultGamestate)
 		// stunCurse3 := cards.NewStunCurse(mm.defaultGamestate)
 		// mm.defaultGamestate.GetMainDeck().Stack(vampire)
-		mm.defaultGamestate.GetMainDeck().Stack(&rookieMage)
+		// mm.defaultGamestate.GetMainDeck().Stack(&rookieMage)
 		// mm.defaultGamestate.GetMainDeck().Stack(&stunCurse3)
 		mm.defaultGamestate.BeginTurn()
 	case STATE_MAIN_MENU:
@@ -274,6 +290,7 @@ func (g *Game) ChangeState(stateName string) {
 	}
 }
 func (g *Game) Update() error {
+	g.musicPlayer.update()
 	return currentState.Update()
 	// return nil
 }
@@ -286,10 +303,22 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return 1200, 600
 }
 
+var game *Game
+
 func main() {
+	audioContext = audio.NewContext(sampleRate)
 	ebiten.SetWindowSize(1200, 600)
 	ebiten.SetWindowTitle("Hello, World!")
-	game := &Game{}
+	game = &Game{
+		musicPlayerCh: make(chan *Player),
+	}
+	m, err := NewPlayer(audioContext, "./sound/perfect-beauty-191271.mp3", typeMP3)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+		// return nil, err
+	}
+	game.musicPlayer = m
 	mainMenu = NewMainMenuState(game)
 	mainGame = NewMainGameState(game)
 

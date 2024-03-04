@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"github/kharism/GuildSim_go/internal/cards"
 	"github/kharism/GuildSim_go/internal/gamestate"
@@ -19,6 +20,10 @@ type OnDrawAction struct {
 
 func (d *OnDrawAction) DoAction(data map[string]interface{}) {
 	// fmt.Println("OnDrawAction")
+	go func() {
+		seSignal <- SFX_DRAW
+	}()
+
 	drawnCards := data[cards.EVENT_ATTR_CARD_DRAWN].(cards.Card)
 
 	newEbitenCard := NewEbitenCardFromCard(drawnCards)
@@ -50,6 +55,9 @@ type OnPlayAction struct {
 }
 
 func (p *OnPlayAction) DoAction(data map[string]interface{}) {
+	go func() {
+		seSignal <- SFX_PLAY
+	}()
 	playedCards := data[cards.EVENT_ATTR_CARD_PLAYED].(cards.Card)
 	fmt.Println("Play Card", playedCards.GetName())
 	mm := mainGame.(*MainGameState)
@@ -470,6 +478,9 @@ type onDefeatAction struct {
 }
 
 func (p *onDefeatAction) DoAction(data map[string]interface{}) {
+	go func() {
+		seSignal <- SFX_DEFEAT
+	}()
 	fmt.Println("defeat")
 	exploredCard := data[cards.EVENT_ATTR_CARD_DEFEATED].(cards.Card)
 	newCenterCard := []*EbitenCard{}
@@ -769,8 +780,12 @@ type onTakeDamage struct {
 func (p *onTakeDamage) DoAction(data map[string]interface{}) {
 	damageAmount := data[cards.EVENT_ATTR_CARD_TAKE_DAMAGE_AMMOUNT].(int)
 	// TODO: add take damage/heal animation
+
 	damageText := &EbitenText{face: mplusDamage, x: DMG_START_X, y: DMG_START_Y}
 	if damageAmount > 0 {
+		go func() {
+			seSignal <- SFX_ATTACKED
+		}()
 		damageText.text = fmt.Sprintf("%d", damageAmount)
 		damageText.color = color.RGBA{255, 0, 0, 255}
 	} else if damageAmount < 0 {
