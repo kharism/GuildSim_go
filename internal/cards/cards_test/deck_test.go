@@ -261,6 +261,11 @@ func (d *DummyGamestate) GetBoolPicker() cards.AbstractBoolPicker {
 func (d *DummyGamestate) SetBoolPicker(a cards.AbstractBoolPicker) {
 	d.boolPiker = a
 }
+func (d *DummyGamestate) AddQuest(s string)    {}
+func (d *DummyGamestate) RemoveQuest(s string) {}
+func (d *DummyGamestate) GetQuests() []string {
+	return []string{}
+}
 func (d *DummyGamestate) EndTurn() {
 	// reset resource except money and reputation
 	curRes := d.GetCurrentResource().Detail

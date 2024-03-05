@@ -122,6 +122,7 @@ func AttachProgressionCounter(state cards.AbstractGamestate) cards.AbstractGames
 // sample implementation of AbstractDecorator. This will add TombOfForgottenMonarch when the player recruit 3 Heroes
 func AttachTombOfForgottenMonarch(state cards.AbstractGamestate) cards.AbstractGamestate {
 	tomb := cards.NewTombMonarchEntrance(state)
+	state.AddQuest("Explore Tomb of Forgotten monarch and defeat whatever lies there")
 	cardsAdded := []cards.Card{&tomb}
 	pushCenterDeckAction := cards.NewPushCenterDeckAction(state, cardsAdded, false)
 	removeEventListenerAction := cards.NewRemoveEventListenerAction(state, cards.EVENT_ATTR_CARD_RECRUITED, nil)

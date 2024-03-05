@@ -59,6 +59,7 @@ type DefaultGamestate struct {
 	CardsDiscarded    cards.Deck
 	CardsBanished     []cards.Card
 	ItemCards         []cards.Card
+	Quests            []string
 
 	CurrentFillerIdx int
 	FillerFuncList   []func(cards.AbstractGamestate) []cards.Card
@@ -98,11 +99,28 @@ func (d *DefaultGamestate) AddCardToCenterDeck(source string, shuffle bool, c ..
 	}
 
 }
-
+func (d *DefaultGamestate) AddQuest(mission string) {
+	d.Quests = append(d.Quests, mission)
+}
+func (d *DefaultGamestate) RemoveQuest(mission string) {
+	newQuest := []string{}
+	for _, val := range d.Quests {
+		if val == mission {
+			continue
+		}
+		newQuest = append(newQuest, val)
+	}
+	// d.Quests = append(d.Quests, mission)
+	d.Quests = newQuest
+}
+func (d *DefaultGamestate) GetQuests() []string {
+	return d.Quests
+}
 func NewDefaultGamestate() cards.AbstractGamestate {
 	d := DefaultGamestate{}
 	d.currentResource = cards.NewResource()
 	d.CardsPlayed = []cards.Card{}
+	d.Quests = []string{}
 	d.TopicsListeners = map[string]*DummyEventListener{}
 	d.RuleEnforcer = map[string]*cards.RuleEnforcer{}
 	d.CenterCards = []cards.Card{}

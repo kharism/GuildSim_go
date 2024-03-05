@@ -197,6 +197,10 @@ type AbstractGamestate interface {
 	GetFillerIndex() int
 	AppendCardFiller(func(AbstractGamestate) []Card)
 
+	AddQuest(string)
+	GetQuests() []string
+	RemoveQuest(string)
+
 	// this function will decorate the current gamestate since we now have multi act gamenow
 	ActDecorators() []func(AbstractGamestate) AbstractGamestate
 	AddActDecorator(func(AbstractGamestate) AbstractGamestate)

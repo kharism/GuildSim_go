@@ -38,6 +38,7 @@ type MainGameState struct {
 	ItemIcon      *ebiten.Image
 	Reputation    *ebiten.Image
 	Block         *ebiten.Image
+	Scroll        *ebiten.Image
 	cardsInCenter []*EbitenCard
 	cardInHand    []*EbitenCard
 	cardsPlayed   []*EbitenCard
@@ -77,6 +78,7 @@ type MainGameState struct {
 	cardListState   *cardListState
 	gameoverState   *gameOverSubstate
 	actClearState   *actClearSubstate
+	questLogState   *questLogState
 }
 type SubState interface {
 	Draw(screen *ebiten.Image)
@@ -159,6 +161,7 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 		//fmt.Println(inpututil.MouseButtonPressDuration(ebiten.MouseButtonLeft))
 		xCurInt, yCurInt := ebiten.CursorPosition()
 		xCur, yCur := float64(xCurInt), float64(yCurInt)
+		fmt.Println(yCur, xCur)
 		if xCur != float64(s.m.startDragX) {
 			// it basically release from drag mode and not picking card
 			// if the first/leftmost card in hand is on the right of HAND_START, move all hand card to their ori position
@@ -193,7 +196,7 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 					break
 				}
 			}
-		} else if yCur > CENTER_DECK_START_X && xCur < CENTER_DECK_START_X+HAND_DIST_X {
+		} else if yCur > CENTER_DECK_START_Y && xCur < CENTER_DECK_START_X+HAND_DIST_X {
 			fmt.Println("Clicked center deck")
 			// left click on main deck, look at the content of main deck
 			s.m.cardListState.cards = []cards.Card{}
@@ -264,8 +267,17 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 				}
 			}
 		} else {
-			if xCur > ITEM_ICON_START_X {
+			if xCur > QUEST_ICON_START_X {
 				go func() {
+					s.m.questLogState.message = s.m.defaultGamestate.GetQuests()[0]
+					// s.m.cardPicker.optional = true
+					// s.m.mutex.Lock()
+					s.m.currentSubState = s.m.questLogState
+					// s.m.mutex.Unlock()
+				}()
+			} else if xCur > ITEM_ICON_START_X {
+				go func() {
+					// s.m.cardPicker.QuestMessage = ""
 					items := s.m.defaultGamestate.ItemCards
 					pickedIndex := s.m.cardPicker.PickCardOptional(items, "Items")
 					if pickedIndex > -1 {
@@ -492,6 +504,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 		log.Fatal(err)
 	}
 	centerdeck, _, err := ebitenutil.NewImageFromFile("img/cardBack.png")
+	scroll, _, err := ebitenutil.NewImageFromFile("img/misc/scroll.png")
 	mutex := &sync.Mutex{}
 	// image1, _, err := ebitenutil.NewImageFromFile("img/RookieAdventurer.png")
 	// if err != nil {
@@ -501,7 +514,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	cardInHand := []*EbitenCard{}
 	cardsPlayed := []*EbitenCard{}
 	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger,
-		paperBg: paperBg, checkMark: checkmark, btn: btn, CenterDeck: centerdeck, iconCombat: iconCombat, iconExplore: iconExplore, mutex: mutex,
+		paperBg: paperBg, checkMark: checkmark, btn: btn, CenterDeck: centerdeck, iconCombat: iconCombat, Scroll: scroll, iconExplore: iconExplore, mutex: mutex,
 		cardsPlayed: cardsPlayed, DiscardPile: discardPile, MainDeck: mainDeck, EndturnBtn: EndturnBtn, GameOver: game_over,
 		ItemIcon: item_icon, Reputation: iconReputation, Block: iconBlock, ActClear: act_clear,
 	}
@@ -520,6 +533,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	mgs.cardListState = cardListState
 	mgs.boolPicker = boolPicker
 	mgs.actClearState = &actClearSubstate{m: mgs}
+	mgs.questLogState = &questLogState{m: mgs}
 	return mgs
 }
 
@@ -633,6 +647,11 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	// if !ok {
 	// 	combat = 0
 	// }
+
+	op.GeoM.Reset()
+	// op.GeoM.Scale(2, 2)
+	op.GeoM.Translate(QUEST_ICON_START_X, QUEST_ICON_START_Y)
+	screen.DrawImage(m.Scroll, op)
 
 	op.GeoM.Reset()
 	op.GeoM.Scale(0.4, 0.4)
