@@ -29,7 +29,7 @@ func (m *LichMageMonster) OnSlain() {
 	// add next area to the center deck
 	hh := NewTombMonarchCC(m.state)
 	newCards := []Card{&hh}
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 0; i++ {
 		jj := NewSpikeFloor(m.state)
 		kk := NewBoulderTrap(m.state)
 		newCards = append(newCards, &jj, &kk)

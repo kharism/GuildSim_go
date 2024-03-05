@@ -8,6 +8,8 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,12 +31,14 @@ type MainGameState struct {
 	iconExplore   *ebiten.Image
 	DiscardPile   *ebiten.Image
 	MainDeck      *ebiten.Image
+	CenterDeck    *ebiten.Image
 	EndturnBtn    *ebiten.Image
 	GameOver      *ebiten.Image
 	ActClear      *ebiten.Image
 	ItemIcon      *ebiten.Image
 	Reputation    *ebiten.Image
 	Block         *ebiten.Image
+	Scroll        *ebiten.Image
 	cardsInCenter []*EbitenCard
 	cardInHand    []*EbitenCard
 	cardsPlayed   []*EbitenCard
@@ -74,6 +78,7 @@ type MainGameState struct {
 	cardListState   *cardListState
 	gameoverState   *gameOverSubstate
 	actClearState   *actClearSubstate
+	questLogState   *questLogState
 }
 type SubState interface {
 	Draw(screen *ebiten.Image)
@@ -114,11 +119,16 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 		} else if yCur > PLAYED_START_Y {
 			cardCollection = s.m.cardsPlayed
 		} else if yCur > CENTER_DECK_START_Y {
-			cardCollection = s.m.cardsInCenter
+			if xCur < s.m.cardsInCenter[0].x {
+
+			} else {
+				cardCollection = s.m.cardsInCenter
+			}
+
 		}
 		for i := len(cardCollection) - 1; i >= 0; i-- {
 			if cardCollection[i].x < xCur {
-				if jj, ok := cardCollection[i].card.(cards.Overlay); ok {
+				if jj, ok := cardCollection[i].card.(cards.Overlay); ok && len(jj.GetOverlay()) > 0 {
 					ol := jj.GetOverlay()
 					all := []cards.Card{cardCollection[i].card}
 					all = append(all, ol...)
@@ -128,10 +138,12 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 					s.m.currentSubState = s.m.cardListState
 				} else {
 					s.m.detailViewCard = cardCollection[i]
-					if s.m.detailViewCard != nil {
-						s.m.detailState.prevSubState = s
-						s.m.currentSubState = s.m.detailState
-					}
+					s.m.detailState.prevSubState = s.m.mainState
+					s.m.detailState.ShowDetail(s.m.detailViewCard.card)
+					// if s.m.detailViewCard != nil {
+					// 	s.m.detailState.prevSubState = s
+					// 	s.m.currentSubState = s.m.detailState
+					// }
 				}
 
 				//fmt.Println("cardIndex at", i)
@@ -149,6 +161,7 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 		//fmt.Println(inpututil.MouseButtonPressDuration(ebiten.MouseButtonLeft))
 		xCurInt, yCurInt := ebiten.CursorPosition()
 		xCur, yCur := float64(xCurInt), float64(yCurInt)
+		fmt.Println(yCur, xCur)
 		if xCur != float64(s.m.startDragX) {
 			// it basically release from drag mode and not picking card
 			// if the first/leftmost card in hand is on the right of HAND_START, move all hand card to their ori position
@@ -195,6 +208,22 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 				s.m.cardListState.cards[i], s.m.cardListState.cards[j] = s.m.cardListState.cards[j], s.m.cardListState.cards[i]
 			})
 			s.m.currentSubState = s.m.cardListState
+		} else if yCur > CENTER_DECK_START_Y && xCur < CENTER_DECK_START_X+HAND_DIST_X {
+			fmt.Println("Clicked center deck")
+			// left click on main deck, look at the content of main deck
+			s.m.cardListState.cards = []cards.Card{}
+			cardInDeck := s.m.defaultGamestate.CardsInCenterDeck.List()
+			for _, v := range cardInDeck {
+				s.m.cardListState.cards = append(s.m.cardListState.cards, v)
+			}
+			sort.Slice(s.m.cardListState.cards, func(i, j int) bool {
+				return strings.Compare(s.m.cardListState.cards[i].GetName(), s.m.cardListState.cards[j].GetName()) == 1
+			})
+			// rand.Shuffle(len(s.m.cardListState.cards), func(i, j int) {
+			// 	s.m.cardListState.cards[i], s.m.cardListState.cards[j] = s.m.cardListState.cards[j], s.m.cardListState.cards[i]
+			// })
+			s.m.currentSubState = s.m.cardListState
+
 		} else if yCur > PLAYED_START_Y {
 			// do nothing. This is just so we have safe area to release left mouse button
 		} else if yCur > CENTER_START_Y {
@@ -238,14 +267,23 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 				}
 			}
 		} else {
-			if xCur > ITEM_ICON_START_X {
+			if xCur > QUEST_ICON_START_X {
 				go func() {
+					s.m.questLogState.message = s.m.defaultGamestate.GetQuests()[0]
+					// s.m.cardPicker.optional = true
+					// s.m.mutex.Lock()
+					s.m.currentSubState = s.m.questLogState
+					// s.m.mutex.Unlock()
+				}()
+			} else if xCur > ITEM_ICON_START_X {
+				go func() {
+					// s.m.cardPicker.QuestMessage = ""
 					items := s.m.defaultGamestate.ItemCards
 					pickedIndex := s.m.cardPicker.PickCardOptional(items, "Items")
 					if pickedIndex > -1 {
-						item := s.m.defaultGamestate.ItemCards[pickedIndex]
+						item := items[pickedIndex]
 						if _, ok := item.(cards.Consumable); ok {
-							s.m.defaultGamestate.RemoveItemIndex(pickedIndex)
+							s.m.defaultGamestate.RemoveItem(item)
 							s.m.defaultGamestate.ConsumeItem(item.(cards.Consumable))
 						}
 					}
@@ -256,6 +294,9 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 	if inpututil.IsKeyJustReleased(ebiten.KeySpace) {
 		// cardInHand := s.m.defaultGamestate.CardsInHand
 		fmt.Println("Space pressed")
+		go func() {
+			seSignal <- SFX_DRAW
+		}()
 		// go func() {
 		// 	kk := []cards.Card{}
 		// 	for i := 0; i < 10; i++ {
@@ -268,11 +309,11 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 		// 	fmt.Println("DDDD", cardPick)
 		// }()
 		// s.m.currentSubState = s.m.boolPicker
-		go func() {
-			if s.m.boolPicker.BoolPick("Draw a card?") {
-				s.m.defaultGamestate.Draw()
-			}
-		}()
+		// go func() {
+		// 	if s.m.boolPicker.BoolPick("Draw a card?") {
+		// 		s.m.defaultGamestate.Draw()
+		// 	}
+		// }()
 
 	}
 }
@@ -298,19 +339,28 @@ func (s *mainMainState) Update() error {
 	return nil
 }
 
+type detailStateQueue struct {
+	card      *EbitenCard
+	prevState SubState
+}
 type detailState struct {
 	m            *MainGameState
 	prevSubState SubState
 	wait         chan bool
+	Keywords     *EbitenText
+	queue        []detailStateQueue
 }
 
+// due to interface limitation, please set prevSubState first before using this method
 func (s *detailState) ShowDetail(c cards.Card) {
-	s.m.detailViewCard = NewEbitenCardFromCard(c)
-	s.m.mutex.Lock()
+	// s.m.detailViewCard = NewEbitenCardFromCard(c)
+	// s.m.mutex.Lock()
+	newQueueItem := detailStateQueue{card: NewEbitenCardFromCard(c), prevState: s.prevSubState}
+	s.queue = append(s.queue, newQueueItem)
 	s.prevSubState = s.m.currentSubState
 
 	s.m.currentSubState = s
-	s.m.mutex.Unlock()
+	// s.m.mutex.Unlock()
 	// <-s.wait
 }
 func (s *detailState) Draw(screen *ebiten.Image) {
@@ -318,12 +368,41 @@ func (s *detailState) Draw(screen *ebiten.Image) {
 	// op.GeoM.Translate(0, 0)
 	screen.DrawImage(s.m.bgImage2, op)
 	op2 := &ebiten.DrawImageOptions{}
-	op2.GeoM.Translate(600-ORI_CARD_WIDTH/2, 0)
-	screen.DrawImage(s.m.detailViewCard.image, op2)
+	op2.GeoM.Translate(600-ORI_CARD_WIDTH/2+40, 0)
+	if s.m.detailViewCard == nil && len(s.queue) > 0 {
+		curCard := s.queue[0]
+		s.m.detailViewCard = curCard.card
+		s.queue = s.queue[1:]
+		s.prevSubState = curCard.prevState
+	}
+	if s.m.detailViewCard != nil {
+		screen.DrawImage(s.m.detailViewCard.image, op2)
+		keyword := s.m.detailViewCard.card.GetKeywords()
+		if len(keyword) > 0 {
+			// draw background first
+			ebitenutil.DrawRect(screen, 10, 10, 400, 555, color.White)
+			s.Keywords = &EbitenText{}
+			s.Keywords.color = color.RGBA{255, 0, 0, 255}
+			s.Keywords.x = 40
+			s.Keywords.y = 50
+			allKeyword := strings.Join(keyword, "\n")
+			s.Keywords.text = allKeyword
+			s.Keywords.Draw(screen)
+		}
+	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
-		s.m.currentSubState = s.prevSubState
-		// s.wait <- true
-		s.prevSubState = nil
+		if len(s.queue) == 0 {
+			s.m.currentSubState = s.prevSubState
+			// s.wait <- true
+			s.prevSubState = nil
+			s.m.detailViewCard = nil
+		} else {
+			curCard := s.queue[0]
+			s.m.detailViewCard = curCard.card
+			s.queue = s.queue[1:]
+			s.prevSubState = curCard.prevState
+		}
+
 	}
 }
 func (s *detailState) Update() error {
@@ -424,6 +503,8 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	if err != nil {
 		log.Fatal(err)
 	}
+	centerdeck, _, err := ebitenutil.NewImageFromFile("img/cardBack.png")
+	scroll, _, err := ebitenutil.NewImageFromFile("img/misc/scroll.png")
 	mutex := &sync.Mutex{}
 	// image1, _, err := ebitenutil.NewImageFromFile("img/RookieAdventurer.png")
 	// if err != nil {
@@ -433,14 +514,14 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	cardInHand := []*EbitenCard{}
 	cardsPlayed := []*EbitenCard{}
 	mgs := &MainGameState{bgImage2: background2, bgImage: background, cardInHand: cardInHand, stateChanger: stateChanger,
-		paperBg: paperBg, checkMark: checkmark, btn: btn, iconCombat: iconCombat, iconExplore: iconExplore, mutex: mutex,
+		paperBg: paperBg, checkMark: checkmark, btn: btn, CenterDeck: centerdeck, iconCombat: iconCombat, Scroll: scroll, iconExplore: iconExplore, mutex: mutex,
 		cardsPlayed: cardsPlayed, DiscardPile: discardPile, MainDeck: mainDeck, EndturnBtn: EndturnBtn, GameOver: game_over,
 		ItemIcon: item_icon, Reputation: iconReputation, Block: iconBlock, ActClear: act_clear,
 	}
 	mgs.CardPlayedChan = make(chan cards.Card)
 	go CardPlayer(mgs, mgs.CardPlayedChan)
 	mainState := &mainMainState{m: mgs, mutex: &sync.Mutex{}}
-	detailState := &detailState{m: mgs}
+	detailState := &detailState{m: mgs, queue: []detailStateQueue{}}
 	cardpicker := &cardPickState{m: mgs, pickedCards: make(chan int)}
 	boolPicker := &boolPickState{m: mgs, pickedOption: make(chan bool)}
 	cardListState := &cardListState{m: mgs}
@@ -452,6 +533,7 @@ func NewMainGameState(stateChanger AbstractStateChanger) AbstractEbitenState {
 	mgs.cardListState = cardListState
 	mgs.boolPicker = boolPicker
 	mgs.actClearState = &actClearSubstate{m: mgs}
+	mgs.questLogState = &questLogState{m: mgs}
 	return mgs
 }
 
@@ -528,6 +610,8 @@ func (e *EbitenText) Update() {
 	}
 }
 
+var TooltipedCard *EbitenCard
+
 func (m *MainGameState) Draw(screen *ebiten.Image) {
 
 	// ebitenutil.DebugPrint(screen, "Hello, World!")
@@ -563,6 +647,11 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	// if !ok {
 	// 	combat = 0
 	// }
+
+	op.GeoM.Reset()
+	// op.GeoM.Scale(2, 2)
+	op.GeoM.Translate(QUEST_ICON_START_X, QUEST_ICON_START_Y)
+	screen.DrawImage(m.Scroll, op)
 
 	op.GeoM.Reset()
 	op.GeoM.Scale(0.4, 0.4)
@@ -603,11 +692,15 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 		c.Draw(screen)
 	}
 	// center deck size
+	op.GeoM.Reset()
+	op.GeoM.Scale(HAND_SCALE, HAND_SCALE)
+	op.GeoM.Translate(CENTER_DECK_START_X, CENTER_DECK_START_Y)
+	screen.DrawImage(m.CenterDeck, op)
 	m.mutex.Unlock()
 	m.defaultGamestate.MutexLock()
 	size := m.defaultGamestate.CardsInCenterDeck.Size()
 	m.defaultGamestate.MutexUnlock()
-	text.Draw(screen, fmt.Sprintf("%d", size), mplusResource, CENTER_DECK_START_X, CENTER_DECK_START_Y+50, color.RGBA{0, 255, 0, 255})
+	text.Draw(screen, fmt.Sprintf("%d", size), mplusResource, CENTER_DECK_START_X+40, CENTER_DECK_START_Y+70, color.RGBA{55, 0, 255, 255})
 	op.GeoM.Reset()
 	op.GeoM.Scale(HAND_SCALE, HAND_SCALE)
 	op.GeoM.Translate(MAIN_DECK_X, MAIN_DECK_Y)
@@ -628,7 +721,6 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	screen.DrawImage(m.EndturnBtn, op)
 
 	m.mutex.Lock()
-	m.currentSubState.Draw(screen)
 	for _, c := range m.cardsInLimbo {
 		c.Draw(screen)
 	}
@@ -636,6 +728,11 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 	for _, c := range m.textInLimbo {
 		c.Draw(screen)
 	}
+	if TooltipedCard != nil {
+		// TooltipedCard.DrawTooltip(screen)
+	}
+
+	m.currentSubState.Draw(screen)
 	m.mutex.Unlock()
 
 	// if len(m.cardsPlayed) > 0 {
@@ -648,6 +745,10 @@ func (m *MainGameState) Draw(screen *ebiten.Image) {
 func (m *MainGameState) Update() error {
 	dist := 0
 	m.mutex.Lock()
+	if !game.musicPlayer.audioPlayer.IsPlaying() {
+		game.musicPlayer.audioPlayer.Rewind()
+		game.musicPlayer.audioPlayer.Play()
+	}
 	defer m.mutex.Unlock()
 	if m.dragMode {
 		curX, _ := ebiten.CursorPosition()
@@ -673,19 +774,37 @@ func (m *MainGameState) Update() error {
 			// c.Update()
 		}
 	}
+	// mouseX, mouseY := ebiten.CursorPosition()
 	// if m.dragMode {
 	for _, c := range m.cardInHand {
 		c.x_drag = dist
+		// if c.IsMouseIn(float64(mouseX), float64(mouseY)) {
+		// 	c.MouseIn = true
+		// 	TooltipedCard = c
+		// } else {
+		// 	c.MouseIn = false
+		// }
 		c.Update()
 	}
 	// }
 
 	for _, c := range m.cardsPlayed {
+		// if c.IsMouseIn(float64(mouseX), float64(mouseY)) {
+		// 	c.MouseIn = true
+		// 	TooltipedCard = c
+		// } else {
+		// 	c.MouseIn = false
+		// }
 		c.Update()
 	}
 
 	for _, c := range m.cardsInCenter {
-
+		// if c.IsMouseIn(float64(mouseX), float64(mouseY)) {
+		// 	c.MouseIn = true
+		// 	TooltipedCard = c
+		// } else {
+		// 	c.MouseIn = false
+		// }
 		c.Update()
 	}
 

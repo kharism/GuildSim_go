@@ -45,6 +45,7 @@ func (m *ForgottenMonarchP2) OnSlain() {
 	m.state.AddResource(RESOURCE_NAME_REPUTATION, 10)
 	data := map[string]interface{}{}
 	data[EVENT_ATTR_BOSS_DEFEATED_COUNT] = 1
+	m.state.RemoveQuest("Explore Tomb of Forgotten monarch and defeat whatever lies there")
 	m.state.NotifyListener(EVENT_BOSS_DEFEATED, data)
 }
 func (m *ForgottenMonarchP2) OnPunish() {

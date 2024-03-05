@@ -12,6 +12,9 @@ func (h *BaseItem) GetCost() Cost {
 	cost := NewCost()
 	return cost
 }
+func (a *BaseItem) GetKeywords() []string {
+	return []string{}
+}
 
 // return Hero,Area,Monster,Event etc
 func (h *BaseItem) GetCardType() CardType {

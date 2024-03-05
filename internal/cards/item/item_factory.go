@@ -25,6 +25,12 @@ func CreatePotion(name string, state cards.AbstractGamestate) cards.Card {
 	case name == "Recursion Potion":
 		h := NewRecursionPotion(state)
 		return &h
+	case name == "Banish Potion":
+		h := NewBanishPotion(state)
+		return &h
+	case name == "PotionofGreed":
+		h := NewGreedPotion(state)
+		return &h
 	default:
 		h := NewHealingPotion(state)
 		return &h
@@ -68,8 +74,8 @@ func CreateRelic(name string, state cards.AbstractGamestate) cards.Card {
 	return nil
 }
 func CreatePotionRandom(state cards.AbstractGamestate, rarity int) cards.Card {
-	commonList := []string{"Explore Potion", "Combat Potion", "Healing Potion"}
-	rareList := []string{"RefreshPotion", "Recursion Potion"}
+	commonList := []string{"Explore Potion", "Combat Potion", "Healing Potion", "Banish Potion", "PotionofGreed"}
+	rareList := []string{"RefreshPotion", "Recursion Potion", "Uncurse potion"}
 	allList := []string{}
 	if (rarity & cards.RARITY_COMMON) != 0 {
 		allList = append(allList, commonList...)

@@ -2,6 +2,7 @@ package cards
 
 import (
 	"fmt"
+	"math/rand"
 )
 
 type TombForgottenMonarchEntrance struct {
@@ -54,5 +55,19 @@ func (a *TombForgottenMonarchEntrance) OnExplored() {
 	skeletonGuardDefeatedListener := NewCardDefeatedListener(cardFilter, countDownAction)
 	removeEventListenerAction.(*RemoveEventListenerAction).listener = append(removeEventListenerAction.(*RemoveEventListenerAction).listener, skeletonGuardDefeatedListener)
 	a.state.AttachListener(EVENT_CARD_DEFEATED, skeletonGuardDefeatedListener)
+	// add some combat generating card to ensure we can defeat mini boss
+	atk := rand.Int() % 3
+	switch atk {
+	case 0:
+		j := NewArcher(a.state)
+		allAddedCard = append(allAddedCard, &j)
+	case 1:
+		j := NewMonsterSlayer(a.state)
+		allAddedCard = append(allAddedCard, &j)
+	case 2:
+		j := NewArcher(a.state)
+		allAddedCard = append(allAddedCard, &j)
+	}
 	a.state.AddCardToCenterDeck(DISCARD_SOURCE_NAN, true, allAddedCard...)
+
 }

@@ -17,6 +17,9 @@ func (h *BaseHero) GetCost() Cost {
 func (h *BaseHero) GetCardType() CardType {
 	return Hero
 }
+func (a *BaseHero) GetKeywords() []string {
+	return []string{}
+}
 
 func (h *BaseHero) OnAddedToHand() {}
 

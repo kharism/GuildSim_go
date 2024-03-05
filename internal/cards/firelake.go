@@ -1,5 +1,7 @@
 package cards
 
+import "golang.org/x/exp/rand"
+
 type Firelake struct {
 	BaseArea
 	gamestate AbstractGamestate
@@ -46,7 +48,10 @@ func (ed *Firelake) OnExplored() {
 		ll := NewBulwark(ed.gamestate)
 		monsters = append(monsters, &ll)
 	}
-	ed.gamestate.AddCardToCenterDeck(DISCARD_SOURCE_NAN, true, monsters...)
+	rand.Shuffle(len(monsters), func(i, j int) {
+		monsters[i], monsters[j] = monsters[j], monsters[i]
+	})
+	ed.gamestate.AddCardToCenterDeck(DISCARD_SOURCE_NAN, true, monsters[:5]...)
 }
 
 // when slain, do this

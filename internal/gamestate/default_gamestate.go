@@ -59,6 +59,11 @@ type DefaultGamestate struct {
 	CardsDiscarded    cards.Deck
 	CardsBanished     []cards.Card
 	ItemCards         []cards.Card
+	Quests            []string
+
+	CurrentFillerIdx int
+	FillerFuncList   []func(cards.AbstractGamestate) []cards.Card
+
 	//ui stuff
 	cardPiker         cards.AbstractCardPicker
 	centerCardChanged bool
@@ -94,11 +99,28 @@ func (d *DefaultGamestate) AddCardToCenterDeck(source string, shuffle bool, c ..
 	}
 
 }
-
+func (d *DefaultGamestate) AddQuest(mission string) {
+	d.Quests = append(d.Quests, mission)
+}
+func (d *DefaultGamestate) RemoveQuest(mission string) {
+	newQuest := []string{}
+	for _, val := range d.Quests {
+		if val == mission {
+			continue
+		}
+		newQuest = append(newQuest, val)
+	}
+	// d.Quests = append(d.Quests, mission)
+	d.Quests = newQuest
+}
+func (d *DefaultGamestate) GetQuests() []string {
+	return d.Quests
+}
 func NewDefaultGamestate() cards.AbstractGamestate {
 	d := DefaultGamestate{}
 	d.currentResource = cards.NewResource()
 	d.CardsPlayed = []cards.Card{}
+	d.Quests = []string{}
 	d.TopicsListeners = map[string]*DummyEventListener{}
 	d.RuleEnforcer = map[string]*cards.RuleEnforcer{}
 	d.CenterCards = []cards.Card{}
@@ -111,7 +133,17 @@ func NewDefaultGamestate() cards.AbstractGamestate {
 	d.CardsInCenterDeck = cards.Deck{}
 	d.CardsInDeck = cards.Deck{}
 	d.mutex = &sync.Mutex{}
+	d.FillerFuncList = append(d.FillerFuncList, factory.CreateFillerCenterDeck1, factory.CreateFillerCenterDeck2)
 	return &d
+}
+func (d *DefaultGamestate) SetFillerIndex(i int) {
+	d.CurrentFillerIdx = i
+}
+func (d *DefaultGamestate) GetFillerIndex() int {
+	return d.CurrentFillerIdx
+}
+func (d *DefaultGamestate) AppendCardFiller(newFunc func(cards.AbstractGamestate) []cards.Card) {
+	d.FillerFuncList = append(d.FillerFuncList, newFunc)
 }
 func (d *DefaultGamestate) AttachLegalCheck(actionName string, lc cards.LegalChecker) {
 	if _, ok := d.RuleEnforcer[actionName]; !ok {
@@ -311,17 +343,6 @@ func (d *DefaultGamestate) SetBoolPicker(a cards.AbstractBoolPicker) {
 	d.boolPicker = a
 }
 func (d *DefaultGamestate) EndTurn() {
-	d.mutex.Lock()
-	// remove cards played
-	for i := len(d.CardsPlayed) - 1; i >= 0; i-- {
-		c := d.CardsPlayed[i]
-		c.Dispose(cards.DISCARD_SOURCE_PLAYED)
-		if pun, ok := c.(cards.Punisher); ok {
-			pun.OnPunish()
-		}
-	}
-	d.CardsPlayed = []cards.Card{}
-	d.mutex.Unlock()
 
 	// remove cards in hand
 	for i := len(d.CardsInHand) - 1; i >= 0; i-- {
@@ -379,6 +400,17 @@ func (d *DefaultGamestate) EndTurn() {
 			pun.OnPunish()
 		}
 	}
+	d.mutex.Lock()
+	// remove cards played
+	for i := len(d.CardsPlayed) - 1; i >= 0; i-- {
+		c := d.CardsPlayed[i]
+		c.Dispose(cards.DISCARD_SOURCE_PLAYED)
+		if pun, ok := c.(cards.Punisher); ok {
+			pun.OnPunish()
+		}
+	}
+	d.CardsPlayed = []cards.Card{}
+	d.mutex.Unlock()
 	// d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK] = 0
 	decreaseAmount := d.GetCurrentResource().Detail[cards.RESOURCE_NAME_BLOCK]
 	d.AddResource(cards.RESOURCE_NAME_BLOCK, -decreaseAmount)
@@ -457,7 +489,7 @@ func (d *DefaultGamestate) DiscardCard(c cards.Card, source string) {
 	}
 }
 func (d *DefaultGamestate) CenterRowInit() {
-	d.CardsInCenterDeck.Shuffle()
+	// d.CardsInCenterDeck.Shuffle()
 	for i := 0; i < 5; i++ {
 		f := d.ReplaceCenterCard()
 		d.CenterCards = append(d.CenterCards, f)
@@ -487,7 +519,7 @@ func (d *DefaultGamestate) UpdateCenterCard(c cards.Card) {
 func (d *DefaultGamestate) updateCenterCard(c cards.Card) {
 	replacementCard := d.ReplaceCenterCard()
 	if d.CardsInCenterDeck.Size() == 0 {
-		filler := factory.CardFactory(factory.SET_FILLER_CARDS, d)
+		filler := d.FillerFuncList[d.CurrentFillerIdx](d) //factory.CardFactory(factory.SET_FILLER_CARDS, d)
 		d.CardsInCenterDeck.SetList(filler)
 	}
 	newCenterCards := []cards.Card{}
@@ -558,6 +590,9 @@ func (d *DefaultGamestate) ReplaceCenterCard() cards.Card {
 		j := replacementCard.(cards.Trapper)
 		if !j.IsDisarmed() {
 			fmt.Println("Invoke Trap")
+			data := map[string]interface{}{}
+			data[cards.EVENT_ATTR_BEFORE_TRAP] = j
+			d.NotifyListener(cards.EVENT_BEFORE_TRAP, data)
 			j.Trap()
 		} else {
 			d.BanishCard(replacementCard, cards.DISCARD_SOURCE_CENTER)

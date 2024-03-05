@@ -132,6 +132,11 @@ func (d *DummyGamestate) PayResource(cost cards.Cost) {
 		d.currentResource.Detail[key] -= val
 	}
 }
+func (d *DummyGamestate) SetFillerIndex(i int) {}
+func (d *DummyGamestate) GetFillerIndex() int  { return 0 }
+func (d *DummyGamestate) AppendCardFiller(func(cards.AbstractGamestate) []cards.Card) {
+
+}
 func (d *DummyGamestate) BeginTurn() {
 	//d.centerCardChanged = false
 	for i := 0; i < 5; i++ {
@@ -255,6 +260,11 @@ func (d *DummyGamestate) GetBoolPicker() cards.AbstractBoolPicker {
 }
 func (d *DummyGamestate) SetBoolPicker(a cards.AbstractBoolPicker) {
 	d.boolPiker = a
+}
+func (d *DummyGamestate) AddQuest(s string)    {}
+func (d *DummyGamestate) RemoveQuest(s string) {}
+func (d *DummyGamestate) GetQuests() []string {
+	return []string{}
 }
 func (d *DummyGamestate) EndTurn() {
 	// reset resource except money and reputation

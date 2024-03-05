@@ -39,6 +39,9 @@ func (a *BaseTrap) OnReturnToDeck() {}
 
 // when added to hand do this
 func (b *BaseTrap) OnAddedToHand() {}
+func (a *BaseTrap) GetKeywords() []string {
+	return []string{}
+}
 
 // when a card is added to item list
 func (b *BaseTrap) OnAcquire() {}

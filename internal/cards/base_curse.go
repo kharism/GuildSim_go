@@ -8,6 +8,9 @@ func (h *BaseCurse) GetName() string {
 func (h *BaseCurse) GetDescription() string {
 	return ""
 }
+func (h *BaseCurse) GetKeywords() []string {
+	return []string{}
+}
 func (h *BaseCurse) GetCost() Cost {
 	cost := NewCost()
 	return cost

@@ -57,13 +57,24 @@ func (b *UndeadDragon) OnSlain() {
 	if len(playedList) > 0 {
 		selectedIdx := b.state.GetCardPicker().PickCard(playedList, "Pick card to banish")
 		discardedCard := playedList[selectedIdx]
-		b.state.RemoveCardFromHandIdx(selectedIdx)
+		b.state.RemoveCardFromPlayedIdx(selectedIdx)
 		b.state.BanishCard(discardedCard, DISCARD_SOURCE_PLAYED)
 	}
 	data := map[string]interface{}{}
 	data[EVENT_ATTR_CARD_DEFEATED] = b
 	b.state.NotifyListener(EVENT_MINIBOSS_DEFEATED, data)
 
+	// shuffle more boss monsters
+	allCard := []Card{}
+	tiger := NewTigerRevenger(b.state)
+	allCard = append(allCard, &tiger)
+	for i := 0; i < 3; i++ {
+		bb := NewBackBurner(b.state)
+		allCard = append(allCard, &bb)
+		bb2 := NewAvalanceDragon(b.state)
+		allCard = append(allCard, &bb2)
+	}
+	b.state.AddCardToCenterDeck(DISCARD_SOURCE_NAN, true, allCard...)
 }
 func (b *UndeadDragon) OnPunish() {
 	b.state.TakeDamage(4)

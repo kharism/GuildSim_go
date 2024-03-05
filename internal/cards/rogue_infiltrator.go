@@ -29,7 +29,7 @@ func (r *RogueInfiltrator) GetDescription() string {
 }
 func (r *RogueInfiltrator) GetCost() Cost {
 	cost := NewCost()
-	cost.AddResource(RESOURCE_NAME_EXPLORATION, 5)
+	cost.AddResource(RESOURCE_NAME_EXPLORATION, 3)
 	return cost
 }
 

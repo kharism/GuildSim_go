@@ -17,7 +17,7 @@ func (r *Thief) GetName() string {
 	return "Thief"
 }
 func (r *Thief) GetDescription() string {
-	return "gain 2 Exploration or peek top of center deck, if it is has a trap, disarm it. If it's not gain 1 exploration"
+	return "gain 2 Exploration or disarm trap in center row"
 }
 func (r *Thief) GetCost() Cost {
 	cost := NewCost()
@@ -25,19 +25,33 @@ func (r *Thief) GetCost() Cost {
 	return cost
 }
 func (r *Thief) OnPlay() {
-	if r.gamestate.GetBoolPicker().BoolPick("Gain 2 exploration?") {
+	centerCard := r.gamestate.GetCenterCard()
+	trapInCenter := []Card{}
+	for _, c := range centerCard {
+		if c.GetCardType() == Trap {
+			trapInCenter = append(trapInCenter, c)
+		}
+	}
+	if len(trapInCenter) == 0 {
 		r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 2)
 	} else {
-		//r.gamestate.AddResource(RESOURCE_NAME_BLOCK, 5)
-		topCenter := r.gamestate.PeekCenterCard()
-		r.gamestate.GetDetailViewer().ShowDetail(topCenter)
-		if _, ok := topCenter.(Trapper); ok {
-			j := topCenter.(Trapper)
-			j.Disarm()
+		if r.gamestate.GetBoolPicker().BoolPick("Gain 2 exploration?") {
+			r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 2)
 		} else {
-			r.gamestate.AddResource(RESOURCE_NAME_EXPLORATION, 1)
+			//r.gamestate.AddResource(RESOURCE_NAME_BLOCK, 5)
+			selectedIdx := r.gamestate.GetCardPicker().PickCard(trapInCenter, "Pick a card to disarm")
+			selectedCard := trapInCenter[selectedIdx]
+			// we do not disarm properly, since we do it for free.
+			// r.gamestate.Disarm(selectedCard)
+			selectedCard.(Trapper).OnDisarm()
+			r.gamestate.RemoveCardFromCenterRow(selectedCard)
+			r.gamestate.UpdateCenterCard(selectedCard)
+			selectedCard.Dispose(DISCARD_SOURCE_CENTER)
+			trapRemovedEvent := map[string]interface{}{EVENT_ATTR_TRAP_REMOVED: selectedCard}
+			r.gamestate.NotifyListener(EVENT_TRAP_REMOVED, trapRemovedEvent)
+			// d.BanishCard(c, cards.DISCARD_SOURCE_CENTER)
+			// r.gamestate.Dispose(cards.DISCARD_SOURCE_CENTER)
 		}
-
 	}
 
 }

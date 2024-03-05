@@ -37,6 +37,7 @@ func (i CardType) String() string {
 type Card interface {
 	GetName() string
 	GetDescription() string
+	GetKeywords() []string
 	GetCost() Cost
 
 	// return Hero,Area,Monster,Event etc

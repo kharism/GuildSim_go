@@ -11,6 +11,9 @@ func (a *BaseArea) GetDescription() string {
 func (a *BaseArea) GetCost() Cost {
 	return NewCost()
 }
+func (a *BaseArea) GetKeywords() []string {
+	return []string{}
+}
 
 // return Hero,Area,Monster,Event etc
 func (a *BaseArea) GetCardType() CardType {

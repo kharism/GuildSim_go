@@ -44,7 +44,12 @@ func (r *Resource) RemoveResource(key string, i int) error {
 	if _, ok := r.Detail[key]; !ok {
 		return RESOURCE_NOT_FOUND_ERROR
 	}
-	r.Detail[key] -= i
+	if r.Detail[key] >= i {
+		r.Detail[key] -= i
+	} else {
+		r.Detail[key] = 0
+	}
+
 	return nil
 }
 

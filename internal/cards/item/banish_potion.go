@@ -15,7 +15,7 @@ func (h *BanishPotion) Dispose(source string) {
 	h.state.BanishCard(h, source)
 }
 func (h *BanishPotion) GetName() string {
-	return "Banish Potion"
+	return "BanishPotion"
 }
 func (h *BanishPotion) GetDescription() string {
 	return "Banish 1 card from discard pile"
