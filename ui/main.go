@@ -289,6 +289,14 @@ func (g *Game) ChangeState(stateName string) {
 		// mm.defaultGamestate.GetMainDeck().Stack(&stunCurse3)
 		mm.defaultGamestate.BeginTurn()
 	case STATE_MAIN_MENU:
+		player, err := NewPlayer(audioContext, "sound/perfect-beauty-191271.mp3", typeMP3)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(0)
+		}
+
+		g.musicPlayer.audioPlayer.Pause()
+		g.musicPlayer = player
 		currentState = mainMenu
 	}
 }

@@ -44,6 +44,7 @@ func (b *DragonLord) GetKeywords() []string {
 func (r *DragonLord) OnSlain() {
 	data := map[string]interface{}{}
 	data[EVENT_ATTR_BOSS_DEFEATED_COUNT] = 2
+	r.gamestate.RemoveQuest("Defeat Dragonlord inside valley of dragon")
 	r.gamestate.NotifyListener(EVENT_BOSS_DEFEATED, data)
 }
 func (r *DragonLord) AttachOverlayCard(newCard Card) {

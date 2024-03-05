@@ -196,6 +196,18 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 					break
 				}
 			}
+		} else if yCur > HAND_START_Y && xCur < HAND_START_X {
+			fmt.Println("Clicked deck")
+			// left click on main deck, look at the content of main deck
+			s.m.cardListState.cards = []cards.Card{}
+			cardInDeck := s.m.defaultGamestate.CardsInDeck.List()
+			for _, v := range cardInDeck {
+				s.m.cardListState.cards = append(s.m.cardListState.cards, v)
+			}
+			rand.Shuffle(len(s.m.cardListState.cards), func(i, j int) {
+				s.m.cardListState.cards[i], s.m.cardListState.cards[j] = s.m.cardListState.cards[j], s.m.cardListState.cards[i]
+			})
+			s.m.currentSubState = s.m.cardListState
 		} else if yCur > CENTER_DECK_START_Y && xCur < CENTER_DECK_START_X+HAND_DIST_X {
 			fmt.Println("Clicked center deck")
 			// left click on main deck, look at the content of main deck
@@ -212,18 +224,6 @@ func (s *mainMainState) Draw(screen *ebiten.Image) {
 			// })
 			s.m.currentSubState = s.m.cardListState
 
-		} else if yCur > HAND_START_Y && xCur < HAND_START_X {
-			fmt.Println("Clicked deck")
-			// left click on main deck, look at the content of main deck
-			s.m.cardListState.cards = []cards.Card{}
-			cardInDeck := s.m.defaultGamestate.CardsInDeck.List()
-			for _, v := range cardInDeck {
-				s.m.cardListState.cards = append(s.m.cardListState.cards, v)
-			}
-			rand.Shuffle(len(s.m.cardListState.cards), func(i, j int) {
-				s.m.cardListState.cards[i], s.m.cardListState.cards[j] = s.m.cardListState.cards[j], s.m.cardListState.cards[i]
-			})
-			s.m.currentSubState = s.m.cardListState
 		} else if yCur > PLAYED_START_Y {
 			// do nothing. This is just so we have safe area to release left mouse button
 		} else if yCur > CENTER_START_Y {

@@ -54,11 +54,23 @@ func CreateFillerCenterDeck1(gamestate cards.AbstractGamestate) []cards.Card {
 		h := cards.NewGoblinMonster(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 1; i++ {
 		h := cards.NewPyroKnight(gamestate)
 		deck = append(deck, &h)
 	}
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 1; i++ {
+		h := cards.NewAggroDjinn(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 1; i++ {
+		h := cards.NewNoviceAdventurer(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 1; i++ {
+		h := cards.NewNoviceCombatant(gamestate)
+		deck = append(deck, &h)
+	}
+	for i := 0; i < 1; i++ {
 		h := cards.NewRookieMage(gamestate)
 		deck = append(deck, &h)
 	}
