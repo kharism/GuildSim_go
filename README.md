@@ -23,6 +23,7 @@ I'll try to make the code as robust as I can. I only have minor experience makin
 For now I only support textUI only while I'm also planning to make some simple GUI. But I haven't decided what UI framework to choose at the moment
 
 ## installation
+go to release page and download the latest release if you're on windows. Otherwise you need to compile it yourself.
 
 ### TextUI
 clone the repo and just run `go build main.go` and run the executable
